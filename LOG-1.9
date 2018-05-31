@@ -1,0 +1,128 @@
+Development of TALYS since release of TALYS-1.8
+
+- December 28, 2015
+
+********** Release of TALYS-1.8 **********
+
+- January 21, 2016
+
+Dimitri Rochman managed to crash TALYS, a rare feat indeed!
+For ldmodel 6, it was possible to have an undefined value for D0,
+leading to possible incident energies of 0 MeV, which crashes ECIS.
+Therefore a minimum value for eninclow, 1.e-11 MeV, was set in grid.f
+
+- February 12, 2016
+
+Solved an error found by Vlad Avrigeanu. Contrary to what is stated in the manual, 
+alphaomp was NOT yet the default in TALYS-1.8. To use the best alpha OMP, you
+have to explicitly put alphaomp 6.
+This is solved now in input4.f
+
+- June 1, 2016
+
+Implemented the possibility to read external files for M1 strength functions, 
+and also the possibility to scale them with the etable and ftable keywords.
+Changes were suggested by Stephane Goriely. etable and ftable are now extended,
+e.g. etable 40 93 1.2 M1
+A new keyword m1file was introduced.
+
+- June 2, 2016
+
+Replace RECENT, SIGMA1 and GROUPIE subroutines of PREPRO-2013 to PREPRO-2015.
+
+- July 9, 2016
+
+Revised Kalbach parametrization for break up reactions, according to the latest draft of her Phys Rev C paper.
+
+- July 16, 2016
+
+Added keyword massdir to add your own masstables to the talys/structure/mass/ directory
+
+- September 7, 2016
+
+Corrected an error in the deformed OMP for actinides of Soukhovitskii et al, after a problem was
+reported by Fabio Zeisler. The Fermi energy in the OMP definition was taken from the global KD03 formula,
+while the Soukhovitskii OMP uses specific Fermi energies per nucleus.
+
+- September 19, 2016
+
+Corrected an error found by Bernard Erasmus: medical isotope production
+Results were different for a second run in which the TALYS results were already 
+precalculated. Solved this by initializing the discrete levels for non-binary channels
+(this was omitted when 'reaction n').
+
+- November 2, 2016
+
+Stephane Goriely added 2 new keywords upbendc and upbende to adjust gamma-ray strength functions at low energy.
+
+- November 8, 2016
+
+Stephane Goriely added 2 new keywords astroex and nonthermlev to account for cross sections to excited states.
+To accommodate this I introduced variables MaxZastro and MaxNastro to keep the memory for astro arrays
+under control.
+
+- November 16, 2016
+
+Solved a problem for low lying 0+ states. ECIS seems to produce inelastic cross sections larger than
+the  reaction cross section. In case of a weakcoupling model, if the first discrete level is a 0+
+we replace it by 2+.
+
+- November 28, 2016
+
+Added a loop over astrophysical temperatures in resonance.f. Low energy resonance capture is now
+broadened by prepro at various temperatures to obtained physically more realistic reaction rates.
+
+- December 8, 2016
+
+Introduced the trim() option everywhere for characters so the length of pathnames no longer needs to
+be recorded, a nasty F77 feature.
+
+- December 15, 2016
+
+Added p-wave radiative width and D1, on the advice of Stephane Goriely.
+
+- March 12 2017
+
+Renamed the files of the entire structure/ directory. Instead of using e.g. z010.dat it is now called 
+Ne.lev for the discrete levels (Ne for the element, .lev for the extension) and similarly in all other databases.
+The filenaming is now consistent all over the TALYS code and its satellite codes.
+
+- April 3, 2017
+
+Improved the output of isomeric fission yield ratios, on the advice of Satoshi Chiba.
+
+- May 3, 2017
+
+Repaired a bug found by Ann-Cecilie Larsen and solved by Stephan Goriely on equidistant 
+energy grid in astrophysical calculations in partfunc.f
+
+- May 5, 2017
+
+Must repair bug found by Dmitry Smychko: adopt ENDSF suggested spin in all cases
+Must repair bug found by Steven Gardiner: K39 has even spin levels, maybe more general problem
+
+- September 22, 2017
+
+Separated quasi-deuteron calculation in separate subroutine
+
+- November 11, 2017
+
+Replaced PREPRO subroutines by 2017 versions.
+
+TODO
+
+Error in discrete level file, K39 has even spins!
+Also print negative parity in population, email from Yi Xu, March 2016
+optmodall y problem of Ch Wei
+Add units to the various output files
+use tabulated temperature in strength.f to remove level density
+inconsistency.
+Add logarithmic incident energy grid
+MSD/MSC
+Junghans parameterization for gamma strength functions
+Investigate option J=0,numJ,Jstep as suggested by Roberto
+Investigate option to disable widthfluc if compelastic small
+Change default for Cbreak for alpha-induced, see emails of Spyrou and Goriely
+(problems near threshold)
+Change default for JLM: if jlmomp y then force spherical y
+g + N14 file gives Infinity (Igor Rakhno)
