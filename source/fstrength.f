@@ -103,9 +103,6 @@ c
             if (e.gt.0..and.alev(Zcomp,Ncomp).gt.0.)
      +        Tnuc=sqrt(e/alev(Zcomp,Ncomp))
           endif
-c          Tnuc=0.61 ! For 160Dy and 162Dy, recommended
-c          Tnuc=0.59 ! For 161Dy,163Dy, recommended
-c          Tnuc=0.60 ! For 164Dy, recommended
           ggredep0=ggr1*twopi**2*Tnuc**2/egr2
           ggredep=ggredep0+ggr1*Egam2/egr2
           enum=ggredep*Egamma

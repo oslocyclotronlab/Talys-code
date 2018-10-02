@@ -8,7 +8,7 @@ unalias -a
 compiler='gfortran'       
 #compiler='lf95 --staticlink' 
 Thome=${HOME}
-bindir='/Applications/prog/bin'   # destiny directory of the TALYS executable
+bindir=$Thome'/bin'   # destiny directory of the TALYS executable
 #
 # From here on, the rest should work automatically
 #

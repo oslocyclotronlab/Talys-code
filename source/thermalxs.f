@@ -31,7 +31,7 @@ c 1. Inquire whether file is present
 c
       Z=ZZ(0,0,1)
       A=AA(0,0,1)
-      thchar=trim(nuc(Z))//'.therm'
+      thchar=trim(nuc(Z))//'.ther'
       thfile=trim(path)//'thermal/'//thchar
       inquire (file=thfile,exist=lexist)
       if (.not.lexist) goto 30

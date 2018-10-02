@@ -47,7 +47,6 @@ c
 c GDR parameters from the table can always be overruled by a value
 c given in the input file.
 c
-      nTqrpa=1
       Z=ZZ(Zix,Nix,0)
       A=AA(Zix,Nix,0)
       N=A-Z
@@ -142,6 +141,7 @@ c Tqrpa        : temperature for QRPA
 c dtemp        : temperature increment
 c qrpaexist    : flag for existence of tabulated QRPA strength functions
 c
+      nTqrpa=1
       gamchar=trim(nuc(Z))//'.psf'
       if (strength.eq.3) gamfile=trim(path)//'gamma/hfbcs/'//gamchar
       if (strength.eq.4) gamfile=trim(path)//'gamma/hfb/'//gamchar
