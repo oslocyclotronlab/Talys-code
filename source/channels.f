@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Marieke Duijvestijn and Arjan Koning
-c | Date  : June 21, 2014
+c | Date  : September 2, 2019
 c | Task  : Exclusive reaction channels
 c +---------------------------------------------------------------------
 c
@@ -65,9 +65,9 @@ c
 c Each idnum represents a different exclusive channel.
 c
       idnum=-1
-      Zend=min(numZchan,numZ)
+      Zend=min(numZchan,maxZ)
       Zend=min(Zend,Zinit)
-      Nend=min(numNchan,numN)
+      Nend=min(numNchan,maxN)
       Nend=min(Nend,Ninit)
       do 110 Zix=0,Zend
         do 110 Nix=0,Nend
@@ -153,7 +153,7 @@ c numlev        : maximum number of included discrete levels
 c Qexcl         : Q-value for exclusive channel
 c Ethrexcl      : threshold incident energy for exclusive channel
 c xschaniso     : channel cross section per isomer
-c exclyield     : exclusive channel yield per isomer
+c exclbranch    : exclusive channel yield per isomer
 c xsgamdischan  : discrete gamma channel cross section
 c S             : separation energy per particle
 c k0            : index of incident particle
@@ -175,7 +175,7 @@ c
               Qexcl(idnum,i)=0.
               Ethrexcl(idnum,i)=0.
               xschaniso(idnum,i)=0.
-              exclyield(idnum,i)=0.
+              exclbranch(idnum,i)=0.
               do 130 i2=0,numlev
                 xsgamdischan(idnum,i,i2)=0.
   130       continue
@@ -234,7 +234,8 @@ c ground state and isomers.
 c
                   Zcomp=Zix-parZ(type)
                   Ncomp=Nix-parN(type)
-                  Qexcl(idnum,0)=Qexcl(idorg,0)-S(Zcomp,Ncomp,type)
+                  if (Qexcl(idnum,0).eq.0.)
+     +              Qexcl(idnum,0)=Qexcl(idorg,0)-S(Zcomp,Ncomp,type)
                   do 230 nex=0,Nlast(Zix,Nix,0)
                     Qexcl(idnum,nex)=Qexcl(idnum,0)-edis(Zix,Nix,nex)
                     Ethrexcl(idnum,nex)=-(Qexcl(idnum,nex)/
@@ -423,7 +424,7 @@ c isomer/ground state is determined.
 c
             if (xschannel(idnum).ne.0.) then
               do 410 i=0,Nlast(Zix,Nix,0)
-                exclyield(idnum,i)=xschaniso(idnum,i)/xschannel(idnum)
+                exclbranch(idnum,i)=xschaniso(idnum,i)/xschannel(idnum)
   410         continue
             endif
 c
@@ -661,7 +662,7 @@ c Set threshold energy for inelastic scattering to that of first
 c excited state.
 c
       do 710 idc=0,idnum
-        if (idchannel(idc).eq.100000) then
+        if (k0.eq.1.and.idchannel(idc).eq.100000) then
           Ethrexcl(idc,0)=Ethrexcl(idc,1)
           goto 720
         endif

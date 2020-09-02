@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : November 16, 2016
+c | Date  : December 24, 2019
 c | Task  : Write input parameters
 c +---------------------------------------------------------------------
 c
@@ -21,7 +21,7 @@ c
       write(*,'(/" ########## USER INPUT ##########")')
       write(*,'(/" USER INPUT FILE"/)')
       do 10 i=1,nlines
-        write(*,'(1x,a80)') inline(i)
+        write(*,'(1x,a)') trim(inline(i))
    10 continue
 c
 c ********* All possible input parameters including defaults ***********
@@ -456,6 +456,8 @@ c strengthM1  : model for M1 gamma-ray strength function
 c flagelectron: flag for application of electron conversion coefficient
 c flagracap   : flag for radiative capture model
 c ldmodelracap: level density model for direct radiative capture
+c flagupbend  : flag for low-energy upbend of photon strength function
+c flagpsfglobal: flag for global photon strength functions only
 c
       write(*,'(" #"/" # Gamma emission"/" #")')
       write(*,'(" gammax             ",i2,"     gammax",
@@ -472,6 +474,12 @@ c
       write(*,'(" ldmodelracap       ",i2,"     ldmodelracap",
      +  " level density model for direct radiative capture")')
      +  ldmodelracap
+      write(*,'(" upbend              ",a1,"     flagupbend ",
+     +    "  flag for low-energy upbend of photon strength function")') 
+     +    yesno(flagupbend)
+      write(*,'(" psfglobal           ",a1,"    flagpsfglobal ",
+     +    "flag for global photon strength functions only")') 
+     +    yesno(flagpsfglobal)
 c
 c 6. Pre-equilibrium
 c
@@ -572,7 +580,7 @@ c
       write(*,'(" parity              ",a1,"     flagparity  ",
      +  " flag for non-equal parity distribution")') yesno(flagparity)
       write(*,'(" colenhance          ",a1,"     flagcolall  ",
-     +  " flag for collective enahncement of level density",
+     +  " flag for collective enhancement of level density",
      +  " for all nuclides")') yesno(flagcolall)
       write(*,'(" ctmglobal           ",a1,"     flagctmglob ",
      +  " flag for global CTM model (no discrete level info)")')
@@ -580,6 +588,9 @@ c
       write(*,'(" gshell              ",a1,"     flaggshell  ",
      +  " flag for energy dependence of single particle",
      +  " level density parameter g")') yesno(flaggshell)
+      write(*,'(" colldamp            ",a1,"     flagcolldamp",
+     +  " flag for damping of collective effects in effective ",
+     +  " level density")') yesno(flagcolldamp)
 c
 c 8. Fission
 c
@@ -606,6 +617,8 @@ c
      +  " flag for head band states in fission")') yesno(flaghbstate)
       write(*,'(" class2              ",a1,"     flagclass2 ",
      +  "  flag for class2 states in fission")') yesno(flagclass2)
+      write(*,'(" fispartdamp         ",a1,"  flagfispartdamp",
+     +  " flag for fission partial damping")') yesno(flagfispartdamp)
       write(*,'(" massdis             ",a1,"     flagmassdis",
      +  "  flag for calculation of fission fragment mass yields")')
      +  yesno(flagmassdis)
@@ -630,9 +643,11 @@ c flagcheck   : flag for output of numerical checks
 c flaglevels  : flag for output of discrete level information
 c flagdensity : flag for output of level densities
 c flagoutomp  : flag for output of optical model parameters
+c flagoutkd   : flag for output of KD03 OMP parameters
 c flagdirect  : flag for output of direct reaction results
 c flaginverse : flag for output of transmission coefficients and
 c               inverse reaction cross sections
+c flagdecay   : flag for output of decay of each population bin
 c flagtransen : flag for output of transmission coefficients per energy
 c flagoutecis : flag for output of ECIS results
 c flagurr     : flag for output of unresolved resonance parameters
@@ -678,11 +693,16 @@ c
      +  "  flag for output of level densities")') yesno(flagdensity)
       write(*,'(" outomp              ",a1,"     flagoutomp   flag",
      +  " for output of optical model parameters")') yesno(flagoutomp)
+      write(*,'(" outkd               ",a1,"     flagoutkd    flag",
+     +  " for output of KD03 OMP parameters")') yesno(flagoutkd)
       write(*,'(" outdirect           ",a1,"     flagdirect   flag",
      +  " for output of direct reaction results")') yesno(flagdirect)
       write(*,'(" outinverse          ",a1,"     flaginverse",
      +  "  flag for output of transmission coefficients",
      +  " and inverse reaction cross sections")') yesno(flaginverse)
+      write(*,'(" outdecay            ",a1,"     flagdecay  ",
+     +  "  flag for output of decay of each population bin")')
+     +  yesno(flagdecay)
       write(*,'(" outtransenergy      ",a1,"     flagtransen",
      +  "  flag for output of transmission coefficients per energy")')
      +  yesno(flagtransen)

@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 11, 2014
+c | Date  : December 19, 2019
 c | Task  : Output of residual production cross sections
 c +---------------------------------------------------------------------
 c
@@ -85,19 +85,19 @@ c xsnonel    : non-elastic cross section
 c flaginitpop: flag for initial population distribution
 c xsinitpop  : initial population cross section
 c
-      write(*,'(/" Total residual production cross section:",f12.5)')
+      write(*,'(/" Total residual production cross section:",f14.7)')
      +  xsresprod
       if (flagfission) then
-        write(*,'(" Total fission cross section            :",f12.5)')
+        write(*,'(" Total fission cross section            :",f14.7)')
      +    xsfistot
-        write(*,'(" Fission + res. production cross section:",f12.5)')
+        write(*,'(" Fission + res. production cross section:",f14.7)')
      +    xsresprod+xsfistot
       endif
       if (flaginitpop) then
-        write(*,'(" Initial population cross section       :",f12.5)')
+        write(*,'(" Initial population cross section       :",f14.7)')
      +    xsinitpop
       else
-        write(*,'(" Non-elastic cross section              :",f12.5)')
+        write(*,'(" Non-elastic cross section              :",f14.7)')
      +    xsnonel
       endif
 c

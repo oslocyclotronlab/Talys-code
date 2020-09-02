@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : November 1, 2015
+c | Date  : December 24, 2019
 c | Task  : Read input for fourth set of variables
 c +---------------------------------------------------------------------
 c
@@ -20,6 +20,7 @@ c flagbasic   : flag for output of basic information and results
 c flagpop     : flag for output of population
 c flagcheck   : flag for output of numerical checks
 c flagoutomp  : flag for output of optical model parameters
+c flagoutkd   : flag for output of KD03 OMP parameters
 c flagdirect  : flag for output of direct reaction cross sections
 c flaginverse : flag for output of transmission coefficients and
 c               inverse reaction cross sections
@@ -29,6 +30,7 @@ c flagdensity : flag for output of level densities
 c flagdisc    : flag for output of discrete state cross sections
 c flagfisout  : flag for output of fission information
 c flagfission : flag for fission
+c flagdecay   : flag for output of decay of each population bin
 c flagtransen : flag for output of transmission coefficients per energy
 c flagpeout   : flag for output of pre-equilibrium results
 c flagang     : flag for output of angular distributions
@@ -67,6 +69,7 @@ c flagcolldamp: flag for damping of collective effects in effective
 c               level density (without explicit collective enhancement)
 c               Only used for Bruyeres-le-Chatel (Pascal Romain) fission
 c               model
+c flagfispartdamp: flag for fission partial damping
 c flagctmglob : flag for global CTM model (no discrete level info)
 c cglobal     : global constant to adjust tabulated level densities
 c pglobal     : global constant to adjust tabulated level densities
@@ -116,7 +119,9 @@ c
       flagdensity=flagbasic
       flagdisc=flagbasic
       flagfisout=flagbasic
+      flagoutkd=.false.
       if (.not.flagfission) flagfisout=.false.
+      flagdecay=.false.
       flagtransen=.true.
       flagpeout=.false.
       flagang=.false.
@@ -168,6 +173,7 @@ c
       endif
       fismodelalt=4
       flagcolldamp=.false.
+      flagfispartdamp=.false.
       flagctmglob=.false.
       cglobal=1.e-20
       pglobal=1.e-20
@@ -268,9 +274,21 @@ c
           if (ch.ne.'y'.and.ch.ne.'n') goto 200
           goto 10
         endif
+        if (key.eq.'outkd') then
+          if (ch.eq.'n') flagoutkd=.false.
+          if (ch.eq.'y') flagoutkd=.true.
+          if (ch.ne.'y'.and.ch.ne.'n') goto 200
+          goto 10
+        endif
         if (key.eq.'outinverse') then
           if (ch.eq.'n') flaginverse=.false.
           if (ch.eq.'y') flaginverse=.true.
+          if (ch.ne.'y'.and.ch.ne.'n') goto 200
+          goto 10
+        endif
+        if (key.eq.'outdecay') then
+          if (ch.eq.'n') flagdecay=.false.
+          if (ch.eq.'y') flagdecay=.true.
           if (ch.ne.'y'.and.ch.ne.'n') goto 200
           goto 10
         endif
@@ -458,6 +476,12 @@ c
         if (key.eq.'colldamp') then
           if (ch.eq.'n') flagcolldamp=.false.
           if (ch.eq.'y') flagcolldamp=.true.
+          if (ch.ne.'y'.and.ch.ne.'n') goto 200
+          goto 10
+        endif
+        if (key.eq.'fispartdamp') then
+          if (ch.eq.'n') flagfispartdamp=.false.
+          if (ch.eq.'y') flagfispartdamp=.true.
           if (ch.ne.'y'.and.ch.ne.'n') goto 200
           goto 10
         endif

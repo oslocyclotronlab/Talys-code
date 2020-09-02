@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 15, 2016
+c | Date  : August 16, 2018
 c | Task  : Theoretical calculation of total radiative width
 c +---------------------------------------------------------------------
 c
@@ -232,7 +232,7 @@ c gamgamth: theoretical total radiative width
 c D0theo  : theoretical s-wave resonance spacing
 c swaveth : theoretical strength function for s-wave
 c
-        if (E.eq.0.) then
+        if (E.eq.Eavres) then
           if (ll.eq.0) then
             gamgamth(Zcomp,Ncomp,0)=Sgamsum*D0theo(Zcomp,Ncomp)
             swaveth(Zcomp,Ncomp)=Sgamsum

@@ -5,8 +5,7 @@ unalias -a
 # All you have to do is adapt the next variables to your own situation,
 # and run.....
 #
-compiler='gfortran'       
-#compiler='lf95 --staticlink' 
+compiler='gfortran'
 Thome=${HOME}
 bindir=$Thome'/bin'   # destiny directory of the TALYS executable
 #
@@ -20,7 +19,7 @@ talysdir=`pwd`
 # 2. Ensure that all directories have execute permission and that 
 #    all files have a read and write permission   
 #
-chmod -R u+rwX talys
+#chmod -R u+rwX talys
 #
 # 3. Ensure that TALYS can read the structure database by replacing
 #    the path name in subroutine machine.f

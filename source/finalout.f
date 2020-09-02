@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : August 10, 2015
+c | Date  : December 16, 2019
 c | Task  : Output of final results
 c +---------------------------------------------------------------------
 c
@@ -70,7 +70,6 @@ c                 3-5= folding potential, 6,8= Avrigeanu, 7=Nolte)
 c aradialcor    : adjustable parameter for shape of DF alpha potential
 c adepthcor     : adjustable parameter for depth of DF alpha potential
 c v1adjust..    : adjustable factors for OMP (default 1.)
-c tladjust      : adjustable factor for Tlj (default 1.)
 c k0            : index of incident particle
 c parinclude    : logical to include outgoing particle
 c flagcomp      : flag for compound nucleus calculation
@@ -106,7 +105,7 @@ c
         write(51,'("## Gamma-ray")')
         write(51,'("##")')
         write(51,'("gnorm          ",f10.5)') gnorm
-        write(51,'("xscaptherm     ",es12.5)') xscaptherm
+        write(51,'("xscaptherm     ",es12.5)') xscaptherm(-1)
         write(51,'("##")')
         write(51,'("## Pre-equilibrium")')
         write(51,'("##")')
@@ -164,16 +163,24 @@ c
      +        w3adjust(type)
             write(51,'("w4adjust      ",a1,f10.5)') parsym(type),
      +        w4adjust(type)
+            write(51,'("rwadjust      ",a1,f10.5)') parsym(type),
+     +        rwadjust(type)
+            write(51,'("awadjust      ",a1,f10.5)') parsym(type),
+     +        awadjust(type)
+            write(51,'("rvdadjust     ",a1,f10.5)') parsym(type),
+     +        rvdadjust(type)
+            write(51,'("avdadjust     ",a1,f10.5)') parsym(type),
+     +        avdadjust(type)
             write(51,'("d1adjust      ",a1,f10.5)') parsym(type),
      +        d1adjust(type)
             write(51,'("d2adjust      ",a1,f10.5)') parsym(type),
      +        d2adjust(type)
             write(51,'("d3adjust      ",a1,f10.5)') parsym(type),
      +        d3adjust(type)
-            write(51,'("rvdadjust     ",a1,f10.5)') parsym(type),
-     +        rvdadjust(type)
-            write(51,'("avdadjust     ",a1,f10.5)') parsym(type),
-     +        avdadjust(type)
+            write(51,'("rwdadjust     ",a1,f10.5)') parsym(type),
+     +        rwdadjust(type)
+            write(51,'("awdadjust     ",a1,f10.5)') parsym(type),
+     +        awdadjust(type)
             write(51,'("rvsoadjust    ",a1,f10.5)') parsym(type),
      +        rvsoadjust(type)
             write(51,'("avsoadjust    ",a1,f10.5)') parsym(type),
@@ -190,12 +197,6 @@ c
      +        rcadjust(type)
           endif
         enddo
-        do type=1,6
-          do l=0,4
-            write(51,'("tljadjust     ",a1,f10.5,i2)') parsym(type),
-     +        tladjust(type,l),l
-          enddo
-        enddo
         if (k0.eq.1.and.(parinclude(0).or.flagcomp).and.
      +    Rprime.ne.0.) then
           write(51,'("##")')
@@ -203,7 +204,7 @@ c
           write(51,'("## Z   A     S0        R      xs(therm)    D0",
      +      "         a         P        Sn")')
           write(51,'("##",2i4,7es10.3)') Ztarget,Atarget,
-     +      Sstrength(0)*1.e4,Rprime,xscaptherm,D0theo(0,0),
+     +      Sstrength(0)*1.e4,Rprime,xscaptherm(-1),D0theo(0,0),
      +      alev(0,0),pair(0,0),S(0,0,1)
         endif
       endif
@@ -477,7 +478,7 @@ c
             if (istat.eq.0) then
               write(*,'(/" Continuum exclusive ",a9," scattering")')
      +          reactionstring(type)
-              write(*,'(/"  Energy     Total      Continuum   ( ",a1,
+              write(*,'(/"  Energy     Total      Continuum   (",a1,
      +          ",g",a1,")"/)') parsym(k0),parsym(type)
               read(1,'(////)')
               do 460 nen=1,numinc

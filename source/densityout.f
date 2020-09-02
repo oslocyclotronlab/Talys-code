@@ -2,20 +2,23 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 15, 2016
+c | Date  : April 9, 2019
 c | Task  : Output of level density
 c +---------------------------------------------------------------------
 c
 c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
+      character*8      str(-1:1)
       character*12     ldfile,ldstring
+      character*13     ldfileout
       character*25     model
       integer          Zix,Nix,Z,N,A,ldmod,ibar,odd,J,ploop,parity,nex,
      +                 NL,NT,i
       real             aldmatch,SS,P,Eex,ignatyuk,spincut,ald,Krot,Kvib,
-     +                 Kcoll,chi2D0,Dratio,dEx,sigma
-      double precision densitytot,density,dens,Ncum,chi2,avdev
+     +                 Kcoll,chi2D0,Dratio,dEx,sigma,Tnuc
+      double precision densitytot,density,dens,Ncum,chi2,avdev,ldtot,
+     +                 ldtotP
 c
 c ********************** Level density parameters **********************
 c
@@ -78,6 +81,7 @@ c
      +  D0(Zix,Nix),dD0(Zix,Nix)
       write(*,'(" Theoretical D0  :",f18.2," eV")') D0theo(Zix,Nix)
       write(*,'(" Theoretical D1  :",f18.2," eV")') D1theo(Zix,Nix)
+      write(*,'(" Av. res. energy :",f18.2," eV")') Eavres*1.e6
 c
 c Other parameters
 c
@@ -142,6 +146,9 @@ c
      +  (sqrt(scutoffdisc(Zix,Nix,ibar)),ibar=0,nfisbar(Zix,Nix))
       write(*,'(" Sigma (Sn)      :",4f10.5)')
      +  (sqrt(spincut(Zix,Nix,ignatyuk(Zix,Nix,SS,ibar),SS,ibar)),
+     +  ibar=0,nfisbar(Zix,Nix))
+      write(*,'(" Rhotot(Sn=",f5.2,"):",1p,4e10.3)')
+     +  SS,(densitytot(Zix,Nix,SS,ibar,ldmod),
      +  ibar=0,nfisbar(Zix,Nix))
       if (flagcol(Zix,Nix).and..not.ldexist(Zix,Nix,1)) then
         write(*,'(" beta2           :",f10.5)') beta2(Zix,Nix,0)
@@ -392,6 +399,55 @@ c
           close (1)
         endif
   210 continue
+c
+c Level densities per parity on separate files
+c
+      if (filedensity) then
+        ibar=0
+        str(-1)='Negative'
+        str(1)='Positive'
+        do 310 parity=1,-1,-2
+          ldfileout='nld000000.tab'
+          write(ldfileout(4:9),'(2i3.3)') Z,A
+          open (unit=1,status='unknown',file=ldfileout)
+          write(1,'(20x,96("*"))')
+          write(1,'(20x,"*  Z=",i3," A=",i3,": ",a8,"-Parity ",
+     +      "Spin-dependent Level Density [MeV-1] for ",a2,i3,
+     +        " and ldmodel=",i2,"  *")') Z,A,str(parity),nuc(Z),A,ldmod
+          write(1,'(20x,96("*"))')
+          if (mod(A,2).eq.0) then
+            write(1,'(" U[MeV]  T[MeV]  NCUMUL   RHOOBS   RHOTOT  ",
+     +        31("   J=",i2.2,2x,:))') (J,J=0,29)
+          else
+            write(1,'(" U[MeV]  T[MeV]  NCUMUL   RHOOBS   RHOTOT  ",
+     +        31("  J=",i2.2,"/2",1x,:))') (J,J=1,59,2)
+          endif
+          Ncum=0.
+          dEx=edens(1)
+          do 320 nex=1,nendens(Zix,Nix)
+            Eex=edens(nex)
+            Tnuc=sqrt(Eex/alev(Zix,Nix))
+            if (nex.gt.1) dEx=Eex-edens(nex-1)
+            dens=densitytot(Zix,Nix,Eex,ibar,ldmod)
+            Ncum=Ncum+dens*dEx
+            ldtot=0.
+            do 330 J=0,29
+              ldtot=ldtot+(2.*J+1)*
+     +          density(Zix,Nix,Eex,real(J+0.5*odd),parity,ibar,ldmod)
+  330       continue
+            if (ldmod.le.4) then
+              ldtotP=densitytot(Zix,Nix,Eex,ibar,ldmod)*pardis
+            else
+              ldtotP=ldtottableP(Zix,Nix,nex,parity,ibar)
+            endif
+            write(1,'(1x,f6.2,f7.3,1x,1p,33e9.2)') Eex,Tnuc,Ncum,
+     +        ldtotP,ldtot,
+     +        (density(Zix,Nix,Eex,real(J+0.5*odd),1,ibar,ldmod),J=0,29)
+  320     continue
+          write(1,*)
+  310   continue
+        close(1)
+      endif
       return
       end
 Copyright (C)  2016 A.J. Koning, S. Hilaire and S. Goriely

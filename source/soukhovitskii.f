@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : March 21, 2012
+c | Date  : August 5, 2018
 c | Task  : Global optical model parameters for actinides by
 c |         Soukhovitskii et al.
 c +---------------------------------------------------------------------
@@ -64,7 +64,7 @@ c wso1,wso2 : components for Wso
       else
         eferm=-0.5*(S(1,0,2)+S(0,0,2))
       endif
-      f=eopt-eferm
+      f=max(eopt-eferm,-20.)
       Cviso=10.5
       V0r=-41.45
       Var=-0.06667

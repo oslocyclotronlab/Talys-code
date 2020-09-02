@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : November 2, 2016
+c | Date  : December 23, 2019
 c | Task  : Read input for fifth set of variables
 c +---------------------------------------------------------------------
 c
@@ -86,6 +86,8 @@ c Krotconstant  : normalization constant for rotational enhancement
 c s2adjust      : adjustable constant (Z,A,barrier-dependent) for spin
 c                 cutoff parameter
 c ctable,ptable : constant to adjust tabulated level densities
+c ctableadjust  : adjustable correction to ctable
+c ptableadjust  : adjustbbale correction to ptable
 c cglobal       : global constant to adjust tabulated level densities
 c pglobal       : global constant to adjust tabulated level densities
 c g             : single-particle level density parameter
@@ -94,6 +96,7 @@ c gn            : single-particle neutron level density parameter
 c gamgam        : total radiative width in eV
 c D0            : experimental s-wave resonance spacing in eV
 c etable,ftable : constant to adjust tabulated strength functions
+c etableadjust..: adjustable correction to tabulated strength functions
 c ldadjust      : logical for energy-dependent level density adjustment
 c gamadjust     : logical for energy-dependent gamma adjustment
 c fisadjust     : logical for energy-dependent fission adjustment
@@ -121,6 +124,7 @@ c                 4: triaxial no left-right symmetry
 c                 5: no symmetry
 c fbarrier      : height of fission barrier
 c fwidth        : width of fission barrier
+c bdamp         : fission partial damping parameter
 c fbaradjust,...: adjustable factors for fission parameters
 c                 (default 1.)
 c betafiscor    : adjustable factor for fission path width
@@ -178,8 +182,7 @@ c ompadjustp    : logical for energy-dependent OMP adjustment
 c Ejoin         : joining energy for high energy OMP
 c Vinfadjust    : adjustable factor for high energy limit of
 c                 real central potential
-c tljadjust     : logical for energy-dependent Tlj adjustment
-c tladjust      : adjustable factor for Tlj (default 1.)
+c adjustTJ      : logical for energy-dependent Tlj adjustment
 c jlmmode       : option for JLM imaginary potential normalization
 c flagrescue    : flag for final rescue: normalization to data
 c rescuefile    : file with incident energy dependent adjustment factors
@@ -217,8 +220,8 @@ c
 c
 c Advice of S. Goriely: no gamma normalization for A < 40.
 c
-      if (k0.ne.1.or.Atarget.lt.40.or.strength.eq.3.or.strength.eq.4)
-     +  then
+      if (k0.ne.1.or.Atarget.lt.40.or.strength.eq.3.or.strength.eq.4.
+     +  or.(strength.ge.6.and.strength.le.10)) then
         gnorm=1.
       else
         gnorm=-1.
@@ -244,9 +247,11 @@ c
       Esurf0=-1.
       Rgamma=2.
       elwidth=0.5
-      xscaptherm=0.
-      xsptherm=0.
-      xsalphatherm=0.
+      do i=-1,numisom
+        xscaptherm(i)=0.
+        xsptherm(i)=0.
+        xsalphatherm(i)=0.
+      enddo
       alphaldall=-99.
       betaldall=-99.
       gammashell1all=-99.
@@ -318,6 +323,8 @@ c
             Krotconstant(Zix,Nix,ibar)=1.
             ctable(Zix,Nix,ibar)=cglobal
             ptable(Zix,Nix,ibar)=pglobal
+            ctableadjust(Zix,Nix,ibar)=0.
+            ptableadjust(Zix,Nix,ibar)=0.
    30     continue
           g(Zix,Nix)=0.
           gp(Zix,Nix)=0.
@@ -327,10 +334,21 @@ c
           ldadjust(Zix,Nix)=.false.
           gamadjust(Zix,Nix)=.false.
           fisadjust(Zix,Nix)=.false.
+          do type=-1,6
+            adjustTJ(Zix,Nix,type)=.false.
+            TJadjust(Zix,Nix,type)=1.
+          enddo
           do 40 irad=0,1
             do 40 lval=1,numgam
               etable(Zix,Nix,irad,lval)=0.
               ftable(Zix,Nix,irad,lval)=1.
+              wtable(Zix,Nix,irad,lval)=1.
+              etableadjust(Zix,Nix,irad,lval)=0.
+              ftableadjust(Zix,Nix,irad,lval)=1.
+              wtableadjust(Zix,Nix,irad,lval)=1.
+              upbend(Zix,Nix,irad,lval,1)=0.
+              upbend(Zix,Nix,irad,lval,2)=0.
+              upbend(Zix,Nix,irad,lval,3)=0.
               do 40 igr=1,2
                 egr(Zix,Nix,irad,lval,igr)=0.
                 ggr(Zix,Nix,irad,lval,igr)=0.
@@ -344,22 +362,52 @@ c
                 epradjust(Zix,Nix,irad,lval,igr)=1.
                 gpradjust(Zix,Nix,irad,lval,igr)=1.
                 tpradjust(Zix,Nix,irad,lval,igr)=1.
-                upbend(Zix,Nix,irad,lval,igr)=0.
    40     continue
-          do type=0,6
-            fiso(Zix,Nix,type)=1.
+          upbend(Zix,Nix,0,1,1)=0.
+          upbend(Zix,Nix,0,1,3)=0.
+          if (strengthm1.eq.8) then
+            if (Ainit.ge.105) then
+              upbend(Zix,Nix,0,1,1)=1.e-8
+              upbend(Zix,Nix,0,1,3)=0.
+            else
+              upbend(Zix,Nix,0,1,1)=3.e-8
+              upbend(Zix,Nix,0,1,3)=4.
+            endif
+          endif
+          if (strengthm1.eq.3) then
+            upbend(Zix,Nix,0,1,1)=3.5e-8
+            upbend(Zix,Nix,0,1,3)=6.
+          endif
+          upbend(Zix,Nix,0,1,2)=0.8
+          if (strength.eq.8) then
+            upbend(Zix,Nix,1,1,1)=1.e-10
+            upbend(Zix,Nix,1,1,2)=3.
+          else
+            upbend(Zix,Nix,1,1,1)=0.
+            upbend(Zix,Nix,1,1,2)=0.
+          endif
+          do type=-1,6
+            fiso(type)=1.
           enddo
-          if (Zix.eq.0.and.Nix.eq.0) then
-            if (Zinit.eq.Ninit) then
-              if (k0.eq.1) fiso(Zix,Nix,k0)=2.
-              if (k0.eq.2) fiso(Zix,Nix,k0)=2.
-              if (k0.eq.6) fiso(Zix,Nix,k0)=5.
+          if (Zinit.eq.Ninit) then
+            if (k0.eq.0) then
+              fiso(1)=2.
+              fiso(2)=2.
+              fiso(6)=5.
             endif
-            if (Zinit.eq.Ninit-1.or.Zinit.eq.Ninit+1) then
-              if (k0.eq.1) fiso(Zix,Nix,k0)=1.5
-              if (k0.eq.2) fiso(Zix,Nix,k0)=1.5
-              if (k0.eq.6) fiso(Zix,Nix,k0)=1.5
+            if (k0.eq.1) fiso(0)=2.
+            if (k0.eq.2) fiso(0)=2.
+            if (k0.eq.6) fiso(0)=5.
+          endif
+          if (Zinit.eq.Ninit-1.or.Zinit.eq.Ninit+1) then
+            if (k0.eq.0) then
+              fiso(1)=1.5
+              fiso(2)=1.5
+              fiso(6)=1.5
             endif
+            if (k0.eq.1) fiso(0)=1.5
+            if (k0.eq.2) fiso(0)=1.5
+            if (k0.eq.6) fiso(0)=1.5
           endif
           aadjust(Zix,Nix)=1.
           gnadjust(Zix,Nix)=1.
@@ -369,8 +417,10 @@ c
             axtype(Zix,Nix,ibar)=1
             fbarrier(Zix,Nix,ibar)=0.
             fwidth(Zix,Nix,ibar)=0.
+            bdamp(Zix,Nix,ibar)=0.01
             fbaradjust(Zix,Nix,ibar)=1.
             fwidthadjust(Zix,Nix,ibar)=1.
+            bdampadjust(Zix,Nix,ibar)=1.
             Rtransmom(Zix,Nix,ibar)=1.
             Rclass2mom(Zix,Nix,ibar)=1.
             widthc2(Zix,Nix,ibar)=0.2
@@ -387,7 +437,7 @@ c
           if (oddZ.eq.1.and.oddN.eq.1) vfiscor(Zix,Nix)=1.02
           fismodelx(Zix,Nix)=fismodel
           if (Ninit-Nix.gt.144.or.fismodel.eq.5) axtype(Zix,Nix,1)=3
-          if (fismodel.ne.5) axtype(Zix,Nix,2)=2
+          if (fismodel.lt.5) axtype(Zix,Nix,2)=2
           Rtransmom(Zix,Nix,1)=0.6
           hbtransfile(Zix,Nix)='                                       '
           clas2file(Zix,Nix)='                                         '
@@ -502,12 +552,6 @@ c
           Dadjust(i,k)=0.
    85   continue
    82 continue
-      do 94 type=-1,6
-        tljadjust(type)=.false.
-        do 96 l=0,numl
-          tladjust(type,l)=1.
-   96   continue
-   94 continue
       flagrescue=.false.
       do 100 mt=1,nummt
         do 105 is=-1,numisom
@@ -745,11 +789,28 @@ c
           endif
           goto 110
         endif
+        if (key.eq.'ctableadjust') then
+          class=3
+          call getvalues(class,word,Zix,Nix,type,
+     +      ibar,irad,lval,igr,val,ival,cval,flagassign)
+          if (flagassign) then
+            ctableadjust(Zix,Nix,ibar)=val
+            ldadjust(Zix,Nix)=.true.
+          endif
+          goto 110
+        endif
         if (key.eq.'ptable') then
           class=3
           call getvalues(class,word,Zix,Nix,type,
      +      ibar,irad,lval,igr,val,ival,cval,flagassign)
           if (flagassign) ptable(Zix,Nix,ibar)=val
+          goto 110
+        endif
+        if (key.eq.'ptableadjust') then
+          class=3
+          call getvalues(class,word,Zix,Nix,type,
+     +      ibar,irad,lval,igr,val,ival,cval,flagassign)
+          if (flagassign) ptableadjust(Zix,Nix,ibar)=val
           goto 110
         endif
         if (key.eq.'g') then
@@ -770,7 +831,7 @@ c
           class=1
           call getvalues(class,word,Zix,Nix,type,
      +      ibar,irad,lval,igr,val,ival,cval,flagassign)
-          if (flagassign) gp(Zix,Nix)=val
+          if (flagassign) gn(Zix,Nix)=val
           goto 110
         endif
         if (key.eq.'egr') then
@@ -907,25 +968,18 @@ c
           if (flagassign) upbend(Zix,Nix,irad,lval,2)=val
           goto 110
         endif
+        if (key.eq.'upbendf') then
+          class=5
+          call getvalues(class,word,Zix,Nix,type,
+     +      ibar,irad,lval,igr,val,ival,cval,flagassign)
+          if (flagassign) upbend(Zix,Nix,irad,lval,3)=val
+          goto 110
+        endif
         if (key.eq.'fiso') then
-          do 120 type=0,6
-            if (ch.eq.parsym(type)) then
-              type2=type
-              goto 130
-            endif
-  120     continue
-          goto 1000
-  130     continue
-          read(word(3),*,end=1000,err=1000) iz
-          read(word(4),*,end=1000,err=1000) ia
-          read(word(5),*,end=1000,err=1000) val
-          Zix=Zinit-iz
-          Nix=Ninit-ia+iz
-          if (Zix.lt.0.or.Zix.gt.numZ.or.Nix.lt.0.or.Nix.gt.numN) then
-            goto 1040
-          else
-            fiso(Zix,Nix,type2)=val
-          endif
+          class=6
+          call getvalues(class,word,Zix,Nix,type,
+     +      ibar,irad,lval,igr,val,ival,cval,flagassign)
+          if (flagassign) fiso(type)=val
           goto 110
         endif
         if (key.eq.'gamgam') then
@@ -1001,12 +1055,52 @@ c
           endif
           goto 110
         endif
+        if (key.eq.'etableadjust') then
+          class=5
+          call getvalues(class,word,Zix,Nix,type,
+     +      ibar,irad,lval,igr,val,ival,cval,flagassign)
+          if (flagassign) then
+            etableadjust(Zix,Nix,irad,lval)=val
+            gamadjust(Zix,Nix)=.true.
+          endif
+          goto 110
+        endif
         if (key.eq.'ftable') then
           class=5
           call getvalues(class,word,Zix,Nix,type,
      +      ibar,irad,lval,igr,val,ival,cval,flagassign)
           if (flagassign) then
             ftable(Zix,Nix,irad,lval)=val
+            gamadjust(Zix,Nix)=.true.
+          endif
+          goto 110
+        endif
+        if (key.eq.'ftableadjust') then
+          class=5
+          call getvalues(class,word,Zix,Nix,type,
+     +      ibar,irad,lval,igr,val,ival,cval,flagassign)
+          if (flagassign) then
+            ftableadjust(Zix,Nix,irad,lval)=val
+            gamadjust(Zix,Nix)=.true.
+          endif
+          goto 110
+        endif
+        if (key.eq.'wtable') then
+          class=5
+          call getvalues(class,word,Zix,Nix,type,
+     +      ibar,irad,lval,igr,val,ival,cval,flagassign)
+          if (flagassign) then
+            wtable(Zix,Nix,irad,lval)=val
+            gamadjust(Zix,Nix)=.true.
+          endif
+          goto 110
+        endif
+        if (key.eq.'wtableadjust') then
+          class=5
+          call getvalues(class,word,Zix,Nix,type,
+     +      ibar,irad,lval,igr,val,ival,cval,flagassign)
+          if (flagassign) then
+            wtableadjust(Zix,Nix,irad,lval)=val
             gamadjust(Zix,Nix)=.true.
           endif
           goto 110
@@ -1033,6 +1127,17 @@ c
           endif
           goto 110
         endif
+        if (key.eq.'bdamp') then
+          ibar=1
+          class=3
+          call getvalues(class,word,Zix,Nix,type,
+     +      ibar,irad,lval,igr,val,ival,cval,flagassign)
+          if (flagassign) then
+            bdamp(Zix,Nix,ibar)=val
+            fisadjust(Zix,Nix)=.true.
+          endif
+          goto 110
+        endif
         if (key.eq.'fisbaradjust') then
           ibar=1
           class=3
@@ -1051,6 +1156,17 @@ c
      +      ibar,irad,lval,igr,val,ival,cval,flagassign)
           if (flagassign) then
             fwidthadjust(Zix,Nix,ibar)=val
+            fisadjust(Zix,Nix)=.true.
+          endif
+          goto 110
+        endif
+        if (key.eq.'bdampadjust') then
+          ibar=1
+          class=3
+          call getvalues(class,word,Zix,Nix,type,
+     +      ibar,irad,lval,igr,val,ival,cval,flagassign)
+          if (flagassign) then
+            bdampadjust(Zix,Nix,ibar)=val
             fisadjust(Zix,Nix)=.true.
           endif
           goto 110
@@ -1521,13 +1637,13 @@ c
           if (flagassign) Vinfadjust(type)=val
           goto 110
         endif
-        if (key.eq.'tljadjust') then
-          class=8
+        if (key.eq.'tjadjust') then
+          class=12
           call getvalues(class,word,Zix,Nix,type,
      +      ibar,irad,lval,igr,val,ival,cval,flagassign)
           if (flagassign) then
-            tladjust(type,lval)=val
-            tljadjust(type)=.true.
+            TJadjust(Zix,Nix,type)=val
+            adjustTJ(Zix,Nix,type)=.true.
           endif
           goto 110
         endif
@@ -1844,15 +1960,15 @@ c
           goto 110
         endif
         if (key.eq.'xscaptherm')  then
-          read(value,*,end=1000,err=1000) xscaptherm
+          read(value,*,end=1000,err=1000) xscaptherm(-1)
           goto 110
         endif
         if (key.eq.'xsptherm')  then
-          read(value,*,end=1000,err=1000) xsptherm
+          read(value,*,end=1000,err=1000) xsptherm(-1)
           goto 110
         endif
         if (key.eq.'xsalphatherm')  then
-          read(value,*,end=1000,err=1000) xsalphatherm
+          read(value,*,end=1000,err=1000) xsalphatherm(-1)
           goto 110
         endif
         if (key.eq.'anglesrec')  then
@@ -1919,10 +2035,10 @@ c
           Tcool(1)=0
           unitTcool(1)=' '
           do 320 k=1,5
-            read(word(2*k),*,iostat=istat) Tcool(k)
+            read(word(2*k),'(i9)',iostat=istat) Tcool(k)
             if (istat.lt.0) goto 1000
             if (istat.gt.0) goto 110
-            read(word(2*k+1),*,end=1000,err=1000) unitTcool(k)
+            read(word(2*k+1),'(a1)',end=1000,err=1000) unitTcool(k)
   320     continue
           goto 110
         endif

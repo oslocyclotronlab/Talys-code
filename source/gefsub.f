@@ -657,7 +657,7 @@ C     '
       RZpol = 0
       DO I = 1 , 3
       RA = (ZC_Mode_4 - RZPol) * REAL(I_A_CN) / REAL(I_Z_CN)
-      RZpol = Zshift(4,2,NINT(RA))
+      RZpol = Zshift(4,2,ABS(NINT(RA)))
       END DO
       AC_Mode_4 = (ZC_Mode_4 - RZPol) * REAL(I_A_CN) / REAL(I_Z_CN)
       NC_Mode_4 = AC_Mode_4 - ZC_Mode_4
@@ -1172,7 +1172,7 @@ C     '
       RZpol = 0
       DO I = 1 , 3
       RA = (ZC_Mode_4 - RZPol) * REAL(I_A_CN) / REAL(I_Z_CN)
-      RZpol = Zshift(4,2,NINT(RA))
+      RZpol = Zshift(4,2,ABS(NINT(RA)))
       END DO
       AC_Mode_4 = (ZC_Mode_4 - RZPol) * REAL(I_A_CN) / REAL(I_Z_CN)
       NC_Mode_4 = AC_Mode_4 - ZC_Mode_4

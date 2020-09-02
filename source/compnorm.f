@@ -2,15 +2,15 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 21, 2012
+c | Date  : July 8, 2018
 c | Task  : Normalization of compound nucleus cross section
 c +---------------------------------------------------------------------
 c
 c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
-      integer Zix,Nix,parity,J2,jj2beg,jj2end,jj2,lbeg,lend,l,updown
-      real    xsreacsum,pik2,compterm(-1:1,0:2*numJ),cfratio,norm
+      integer Zix,Nix,parity,J2,jj2beg,jj2end,jj2,lbeg,lend,l,updown,J
+      real    xsreacsum,pik2,cfratio,norm
 c
 c There is a small difference between the reaction cross section as
 c calculated by ECIS and the sum over transmission coefficients.
@@ -84,7 +84,8 @@ c jj2beg: 2 * start of j summation
 c jj2end: 2 * end of j summation
 c jj2   : 2 * j
 c
-          compterm(parity,J2)=0.
+          J=J2/2
+          CNterm(parity,J)=0.
           jj2beg=int(abs(J2-targetspin2))
           jj2end=int(J2+targetspin2)
           do 30 jj2=jj2beg,jj2end,2
@@ -106,7 +107,7 @@ c updown  : spin index for transmission coefficient
 c spin2   : 2 * spin of particle (usually)
 c Tjlinc  : transmission coefficients as a function of j and l
 c           for the incident channel
-c compterm: compound nucleus formation cross section per spin
+c CNterm  : compound nucleus formation cross section per spin
 c           and parity
 c
 c A. Incident particles
@@ -125,11 +126,11 @@ c
                 if (pardif.eq.0.and.mod(l,2).eq.1) updown=0
                 if (pardif.ne.0.and.mod(l,2).eq.0) updown=0
               endif
-              compterm(parity,J2)=compterm(parity,J2)+
+              CNterm(parity,J)=CNterm(parity,J)+
      +          CNfactor*(J2+1.)*Tjlinc(updown,l)
    40       continue
    30     continue
-          xsreacsum=xsreacsum+compterm(parity,J2)
+          xsreacsum=xsreacsum+CNterm(parity,J)
    20   continue
    10 continue
 c
@@ -168,10 +169,13 @@ c
       if (flagcheck) then
         write(*,'(/" ++++++++++ Compound nucleus formation cross",
      +    " section ++++++++++"/)')
+        write(*,'(" Compound nucleus excitation energy:",f15.5/)') 
+     +    Etotal
         write(*,'(2(" J/Pi cross section "))')
         do 110 J2=J2beg,J2end,2
+          J=J2/2
           write(*,'(2(f4.1,a1,es12.5,3x))')
-     +      (0.5*J2,cparity(parity),compterm(parity,J2),parity=-1,1,2)
+     +      (0.5*J2,cparity(parity),CNterm(parity,J),parity=-1,1,2)
   110   continue
         write(*,'(/" ++++++++++ Normalization of reaction cross",
      +    " section ++++++++++"/)')

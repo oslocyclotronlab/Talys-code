@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning and Stephane Hilaire
-c | Date  : October 23, 2013
+c | Date  : July 8, 2018
 c | Task  : Compound reaction for initial compound nucleus
 c +---------------------------------------------------------------------
 c
@@ -10,6 +10,7 @@ c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
       logical          elastic
+      character*80     key
       integer          parspin2i,pspin2i,Zcomp,Ncomp,updown,l,parity,J2,
      +                 J,jj2beg,jj2end,l2beg,l2end,jj2primebeg,
      +                 jj2primeend,l2primebeg,l2primeend,jj2,l2,ihill,
@@ -17,10 +18,10 @@ c
      +                 Pprimebeg,Pprimeend,Irspin2beg,Irspin2end,J2res,
      +                 Pprime,pardif2,Irspin2,Ir,jj2prime,l2prime,
      +                 lprime,modl,irad,updown2,ielas,LLmax,iphase,LL,
-     +                 nex
+     +                 nex,Zres,Nres,Ares,oddres
       real             Tinc,fluxsum,ratio,Tout,Rspin,angfac,rJ,rlin,
      +                 rjin,rlout,rjout,phase,rLL,clin,clebsch,ra1in,
-     +                 racah,ra2in,clout,ra1out,ra2out,Ablatt
+     +                 racah,ra2in,clout,ra1out,ra2out,Ablatt,factor
       double precision factor1,fisterm,sumIPE,sumIP,sumIPas,rho,sumjl,
      +                 compterm
 c
@@ -51,6 +52,8 @@ c
       Wab=1.
       parspin2i=int(2.*parspin(k0))
       pspin2i=spin2(k0)
+      popdecay=0.
+      partdecay=0.
 c
 c The level densities and transmission coefficients can be prepared
 c before the nested loops over all quantum numbers.
@@ -64,6 +67,23 @@ c
       Zcomp=0
       Ncomp=0
       dExinc=0.
+c
+c Optional adjustment factors
+c
+c adjustTJ: logical for energy-dependent TJ adjustment
+c adjust  : subroutine for energy-dependent parameter adjustment
+c Fnorm   : multiplication factor
+c fiso    : correction factor for isospin forbidden transitions
+c
+      do type=-1,6
+        if (adjustTJ(Zcomp,Ncomp,type)) then
+          key='tjadjust'
+          call adjust(Einc,key,Zcomp,Ncomp,type,0,factor)
+        else
+          factor=1.
+        endif
+        Fnorm(type)=factor/fiso(type)
+      enddo
       call densprepare(Zcomp,Ncomp,1)
 c
 c *** Output of flux conservation check of transmission coefficients ***
@@ -604,6 +624,15 @@ c
                       xspop(Zix,Nix,nexout,Ir,Pprime)=
      +                  xspop(Zix,Nix,nexout,Ir,Pprime)+sumjl
                       sumIP=sumIP+sumjl
+                      if (flagpop) then
+                        xspopnucP(Zix,Nix,Pprime)=
+     +                    xspopnucP(Zix,Nix,Pprime)+sumjl
+                        xspopexP(Zix,Nix,nexout,Pprime)=
+     +                    xspopexP(Zix,Nix,nexout,Pprime)+sumjl
+                        popdecay(type,nexout,Ir,Pprime)=
+     +                    popdecay(type,nexout,Ir,Pprime)+sumjl
+                        partdecay(type)=partdecay(type)+sumjl
+                      endif
   190               continue
   180             continue
                   xspopex(Zix,Nix,nexout)=xspopex(Zix,Nix,nexout)+sumIP
@@ -672,6 +701,32 @@ c
               endif
   140       continue
   130     continue
+          if (flagdecay) then
+            do 142 type=0,6
+              Zix=Zindex(Zcomp,Ncomp,type)
+              Nix=Nindex(Zcomp,Ncomp,type)
+              Zres=ZZ(Zcomp,Ncomp,type)
+              Nres=NN(Zcomp,Ncomp,type)
+              Ares=AA(Zcomp,Ncomp,type)
+              oddres=mod(Ares,2)
+              rJ=0.5*J2
+              do 144 Pprime=-1,1,2
+                write(*,'(/" Compound nucleus decay of J=",f4.1," P=",
+     +            i2," Pop=",es10.3," to bins of Z=",i3," N=",i3," (",
+     +            i3,a2,"), P=",i2," via ",a8," emission"/)')
+     +            rJ,parity,CNterm(parity,J),
+     +            Zres,Nres,Ares,nuc(Zres),Pprime,parname(type)
+                write(*,'(" Total: ",es10.3,/)') partdecay(type)
+                write(*,'(" bin    Ex",10("    J=",f4.1)/)')
+     +            (Ir+0.5*oddres,Ir=0,8)
+                do 146 nexout=0,maxex(Zix,Nix)
+                  write(*,'(1x,i3,f8.3,10es10.3)')
+     +              nexout,Ex(Zix,Nix,nexout),
+     +              (popdecay(type,nexout,Ir,Pprime),Ir=0,9)
+  146           continue
+  144         continue
+  142       continue
+          endif
   120   continue
   110 continue
 c

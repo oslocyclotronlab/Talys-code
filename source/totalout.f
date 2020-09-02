@@ -89,10 +89,10 @@ c
      +      "     Comp. el.   Shape el.   Reaction",
      +      "   Comp. nonel   Direct    Pre-equil.  Dir. Capt.")')
           do 10 nen=1,numinclow
-            write(1,'(10es12.5)') eninc(nen),fxsnonel(nen),
+            write(1,'(11es12.5)') eninc(nen),fxsnonel(nen),
      +        fxselastot(nen),fxstotinc(nen),fxscompel(nen),
      +        fxselasinc(nen),fxsreacinc(nen),fxscompnonel(nen),
-     +        fxsdirdiscsum(nen),fxspreeqsum(nen)
+     +        fxsdirdiscsum(nen),fxspreeqsum(nen),fxsracape(nen)
    10     continue
         else
           open (unit=1,file=totfile,status='old')

@@ -1,4 +1,4 @@
-      subroutine BUenhance(Z00,N00,BFsum)
+      subroutine buenhance(Z00,N00,BFsum)
 c +---------------------------------------------------------------------
 c
 c | Author: Marilena Avrigeanu

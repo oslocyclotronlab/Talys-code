@@ -117,7 +117,7 @@ c 2. Giant resonance states
 c
 c Egrcoll: energy of giant resonance
 c
-        if (type.eq.k0) then
+        if (flaggiant.and.type.eq.k0) then
           do 310 l=0,3
             do 320 i=1,2
               if (betagr(l,i).eq.0.) goto 320

@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 12, 2016
+c | Date  : August 16, 2018
 c | Task  : S-wave resonance parameters
 c +---------------------------------------------------------------------
 c
@@ -12,11 +12,12 @@ c
       logical      lexist
       character*6  reschar
       character*90 resfile
-      integer      Zix,Nix,Z,A,ia
+      integer      Zix,Nix,Z,A,ia,Nrrf
       real         D0f,dD0f,gamgamf,dgamgamf
 c
 c ********** Resonance spacings and total radiative widths *************
 c
+c Eavres : average resonance energy
 c Zix    : charge number index for residual nucleus
 c Nix    : neutron number index for residual nucleus
 c ZZ,Z   : charge number of residual nucleus
@@ -31,6 +32,7 @@ c by a value given in the input file.
 c
 c 1. Inquire whether file is present
 c
+      Eavres=0.01
       Z=ZZ(Zix,Nix,0)
       A=AA(Zix,Nix,0)
       reschar=trim(nuc(Z))//'.res'
@@ -50,9 +52,10 @@ c D0f    : help variable
 c dD0f   : help variable
 c gamgamf: experimental total radiative width in eV
 c dgamgamf: uncertainty in gamgam
+c Nrr,Nrrf: number of resonances
 c
-   10 read(2,'(4x,i4,2e9.2,10x,2f9.5)',end=20) ia,D0f,dD0f,gamgamf,
-     +  dgamgamf
+   10 read(2,'(4x,i4,2e9.2,10x,2f9.5,i4)',end=20) ia,D0f,dD0f,gamgamf,
+     +  dgamgamf,Nrrf
       if (A.ne.ia) goto 10
       if (dD0f.ne.0..and.D0(Zix,Nix).eq.0.) dD0(Zix,Nix)=dD0f*1000.
       if (D0f.ne.0..and.D0(Zix,Nix).eq.0.) D0(Zix,Nix)=D0f*1000.
@@ -60,6 +63,11 @@ c
      +  dgamgamf
       if (gamgamf.ne.0..and.gamgam(Zix,Nix).eq.0.)
      +  gamgam(Zix,Nix)=gamgamf
+      if (Nrrf.ne.0) Nrr(Zix,Nix)=Nrrf
+      if (Zix.eq.0.and.Nix.eq.0) then
+        if (Nrrf.gt.0.and.D0(Zix,Nix).gt.0.) 
+     +    Eavres=0.5*((Nrrf-1)*D0(Zix,Nix))*1.e-6
+      endif
    20 close (unit=2)
 c
 c 3. Tabulated value for total radiative width or systematics

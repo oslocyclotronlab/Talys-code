@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Gilles Noguere and Arjan Koning
-c | Date  : August 31, 2014
+c | Date  : June 8, 2019
 c | Task  : Output of unresolved resonance parameters in separate files
 c +---------------------------------------------------------------------
 c
@@ -50,7 +50,7 @@ c
      +    i3,a2,") Target spin=",f4.1)') Ztarget,Atarget,Atarget,
      +    Starget,jdis(0,1,Ltarget)
         write(21,'("# Thermal capture cross section=",es12.5," mb",
-     +    "   Sn=",es12.5," MeV")') xscaptherm,S(0,0,1)
+     +    "   Sn=",es12.5," MeV")') xscaptherm(-1),S(0,0,1)
         write(21,'("#")')
       endif
       write(21,'("#  Einc[MeV]=",es12.5)') Einc

@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : November 2, 2016
+c | Date  : December 18, 2019
 c | Task  : Gamma ray strength functions
 c +---------------------------------------------------------------------
 c
@@ -14,7 +14,8 @@ c
       real         fstrength,Efs,Egamma,sgr1,egr1,ggr1,kgr1,egr2,ggr2,
      +             Egam2,e,Tnuc,ggredep0,ggredep,enum,denom,factor1,
      +             factor2,eb,ee,Eq(0:numgamqrpa),gamb,game,f1,f2,fb,fe,
-     +             tpr1,epr1,gpr1,epr2,gpr2,Tb,Te,upbendc,upbende
+     +             tpr1,epr1,gpr1,epr2,gpr2,Tb,Te,upbendc,upbende,
+     +             upbendf
 c
 c ************************* Strength functions *************************
 c
@@ -47,6 +48,7 @@ c 5. Goriely Hybrid model
 c 6. Goriely T-dependent HFB
 c 7. T-dependent RMF
 c 8. Gogny D1M HFB+QRPA
+c 9. SMLO
 c
       fstrength=0.
       do 10 i=1,ngr(Zcomp,Ncomp,irad,l)
@@ -74,7 +76,7 @@ c
           egr1=egr(Zcomp,Ncomp,irad,l,i)
           ggr1=ggr(Zcomp,Ncomp,irad,l,i)
         endif
-        kgr1=kgr(Zcomp,Ncomp,irad,l)
+        kgr1=kgr(l)
         egr2=egr1**2
         ggr2=ggr1**2
         Egam2=Egamma**2
@@ -275,7 +277,7 @@ c
           epr1=epr(Zcomp,Ncomp,irad,l,1)
           gpr1=gpr(Zcomp,Ncomp,irad,l,1)
         endif
-        kgr1=kgr(Zcomp,Ncomp,irad,l)
+        kgr1=kgr(l)
         epr2=epr1**2
         gpr2=gpr1**2
         Egam2=Egamma**2
@@ -283,23 +285,28 @@ c
         denom=(Egam2-epr2)**2+Egam2*gpr2
         fstrength=fstrength+kgr1*tpr1*enum/denom
       endif
-c
-c inclusion of an additional low-E upbend of M1 nature
+c 
+c Inclusion of an additional low-E limit of E1 nature
 c
 c upbend        : properties of the low-energy upbend of given multipolarity
 c
-      upbendc=upbend(Zcomp,Ncomp,irad,l,1)
-      if (upbendc.gt.0.) then
+      if (flagupbend) then
+        upbendc=upbend(Zcomp,Ncomp,irad,l,1)
         upbende=upbend(Zcomp,Ncomp,irad,l,2)
-        fstrength=fstrength+upbendc*exp(-upbende*Egamma)
+        upbendf=upbend(Zcomp,Ncomp,irad,l,3)
+        if (strengthM1.eq.8.and.irad.eq.0.and.l.eq.1.and.
+     +    Zcomp+Ncomp.ge.105) upbendf=0.
+        if (irad.eq.1.and.l.eq.1) then
+          e=min(Efs,20.)+S(Zcomp,Ncomp,1)-Egamma
+          if (e.gt.1.) fstrength=fstrength+
+     +      upbendc*e/(1.+exp(Egamma-upbende))
+        endif
+c 
+c Inclusion of an additional low-E upbend of M1 nature
+c
+        if (irad.eq.0) fstrength=fstrength+upbendc*exp(-upbende*Egamma)*
+     +    exp(-upbendf*abs(beta2(Zcomp,Ncomp,0)))
       endif
-c
-c Reduction of gamma-strength for isospin forbidden transitions into
-c Z=N nuclei
-c
-c fiso: correction factor for isospin forbidden transitions
-c
-      fstrength=fstrength/fiso(Zcomp,Ncomp,k0)
       return
       end
 Copyright (C)  2013 A.J. Koning, S. Hilaire and S. Goriely

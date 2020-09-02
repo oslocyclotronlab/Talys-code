@@ -43,6 +43,7 @@ c
         intens=xsJP*branchratio(Zcomp,Ncomp,nex,i)
         xspop(Zcomp,Ncomp,k,Jres,Pres)=
      +    xspop(Zcomp,Ncomp,k,Jres,Pres)+intens
+        popdecay(0,k,Jres,Pres)=popdecay(0,k,Jres,Pres)+intens
         xspopex(Zcomp,Ncomp,k)=xspopex(Zcomp,Ncomp,k)+intens
         xspopex(Zcomp,Ncomp,nex)=xspopex(Zcomp,Ncomp,nex)-intens
         xspartial(0,nex)=xspartial(0,nex)+intens

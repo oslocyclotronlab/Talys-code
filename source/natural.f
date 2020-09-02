@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : January 5, 2017
+c | Date  : February 8, 2019
 c | Task  : Calculation for natural elements
 c +---------------------------------------------------------------------
 c
@@ -20,11 +20,11 @@ c
       character*20 totfile,tot0file
       character*21 discfile,specfile,fyfile
       character*29 recfile
-      character*80 str(6)
+      character*80 str(9)
       integer      i,k,k2,type,jend,iang,j,n1,n2,nen,neniso(numiso),
      +             nenen,zbeg,zend,abeg,aend,iz,ia,npart,ih,it,id,ip,in,
      +             nex
-      real         en(numen2),xst(10),xstotnat(10,numen2),
+      real         en(numen2),xst(10),xstotnat(10,numen2),ang(0:numang),
      +             xsprodnat(numen2),xsyieldnat(numen2),xsnat(0:numen2),
      +             xs1nat(0:numen2),xs2nat(0:numen2),xs,y,xs1,xs2,
      +             enspec(numiso,0:numen2nat),E,entmp,Ea,Eb,Efac,
@@ -231,7 +231,7 @@ c
               open (2,file=discfile,status='old')
               read(2,'(////)',end=250,err=250)
               do 240 iang=0,nangle
-                read(2,'(f5.1,3e16.5)',end=250,err=250) angle(iang),xs,
+                read(2,'(f5.1,3e16.5)',end=250,err=250) ang(iang),xs,
      +            xs1,xs2
                 xsnat(iang)=xsnat(iang)+abun(i)*xs
                 xs1nat(iang)=xs1nat(iang)+abun(i)*xs1
@@ -250,7 +250,7 @@ c
             write(3,'("#   E         xs            Direct",
      +        "         Compound")')
             do 260 iang=0,nangle
-              write(3,'(f5.1,3es16.5)') angle(iang),xsnat(iang),
+              write(3,'(f5.1,3es16.5)') ang(iang),xsnat(iang),
      +          xs1nat(iang),xs2nat(iang)
   260       continue
             close (unit=3)
@@ -813,7 +813,7 @@ c               file
 c natstring  : string extension for file names
 c Yfile      : file with production yields
 c state      : state of final nuclide
-c Ntime      : number of time points
+c numtime    : maximum number of time points
 c activitynat: activity of produced element in MBq
 c activity   : yield of produced isotope in MBq
 c yieldnat   : activity of produced element in MBq/(mA.h)
@@ -843,7 +843,7 @@ c
         do 1310 iz=zbeg,zend
           do 1310 ia=abeg,aend
             do 1320 nex=-1,min(numlev,99)
-              do k=0,Ntime
+              do k=0,numtime
                 actnat(k)=0.
                 Nisnat(k)=0.
                 Ynat(k)=0.
@@ -858,11 +858,12 @@ c
                 if (lexist) then
                   resexist=.true.
                   open (2,status='old',file=Yfile)
-                  do k=1,6
+                  do k=1,9
                     read(2,'(a80)') str(k)
                   enddo
-                  do 1340 k=1,Ntime
-                    read(2,*,end=1350,err=1350) xs,act,Nis,Y,frac
+                  do 1340 k=1,numtime
+                    read(2,'(f8.1,3es15.5,f15.5)',end=1350,err=1350) 
+     +                xs,act,Nis,Y,frac
                     actnat(k)=actnat(k)+abun(i)*act
                     Nisnat(k)=Nisnat(k)+abun(i)*Nis
                     Ynat(k)=Ynat(k)+abun(i)*Y
@@ -875,10 +876,10 @@ c
                 open (3,status='unknown',file=Yfile(1:11))
                 write(3,'("# Reaction: ",a1," + nat",a2,a58)')
      +             parsym(k0),nuc(Ztarget),str(1)(22:80)
-                do k=2,6
+                do k=2,9
                   write(3,'(a80)') str(k)
                 enddo
-                do 1360 k=1,Ntime
+                do 1360 k=1,numtime
                   write(3,'(f8.1,3es15.5,f15.5)') Tgrid(k),
      +              actnat(k),Nisnat(k),Ynat(k),fracnat(k)
  1360           continue

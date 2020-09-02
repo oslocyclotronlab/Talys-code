@@ -2,18 +2,18 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : July 16, 2012
+c | Date  : June 9, 2019
 c | Task  : Estimate of thermal cross sections
 c +---------------------------------------------------------------------
 c
 c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
-      integer      Zcomp,Ncomp,type,nen,idc,nex,i1,i2
+      integer      Zcomp,Ncomp,type,nen,idc,nex,i1,i2,Zix,Nix,i,Nis
       real         Etherm,ctherm,xscapres,xscap1,ratio,ratiores,ratiop,
      +             ratioresp,xspres,xsp1,ratioalpha,ratioresalpha,
      +             xsalphares,xsalpha1,Ereslog,elog,ealog,Eratio,xsa,R,
-     +             Rres,xsres,xsalog,xsreslog,xs
+     +             Rres,xsres,xsalog,xsreslog,xs,branchres
 c
 c *********************** Extrapolate cross sections *******************
 c
@@ -49,11 +49,11 @@ c
       Zcomp=0
       Ncomp=0
       Etherm=2.53e-8
-      ctherm=sqrt(Etherm)*xscaptherm
+      ctherm=sqrt(Etherm)*xscaptherm(-1)
       xscapres=ctherm/sqrt(E1v)
       xscap1=xspopnuc(Zcomp,Ncomp)
       if (xscap1.gt.0.) then
-        ratio=xscaptherm/xscap1
+        ratio=xscaptherm(-1)/xscap1
         ratiores=xscapres/xscap1
       else
         ratio=1.
@@ -64,12 +64,12 @@ c Protons
 c
       ratiop=ratio
       ratioresp=ratiores
-      if (xsptherm.ne.0.) then
-        ctherm=sqrt(Etherm)*xsptherm
+      if (xsptherm(-1).ne.0.) then
+        ctherm=sqrt(Etherm)*xsptherm(-1)
         xspres=ctherm/sqrt(E1v)
         xsp1=xspopnuc(1,0)
         if (xsp1.gt.0.) then
-          ratiop=xsptherm/xsp1
+          ratiop=xsptherm(-1)/xsp1
           ratioresp=xspres/xsp1
         else
           ratiop=1.
@@ -80,12 +80,12 @@ c Alpha particles
 c
       ratioalpha=ratio
       ratioresalpha=ratiores
-      if (xsalphatherm.ne.0.) then
-        ctherm=sqrt(Etherm)*xsalphatherm
+      if (xsalphatherm(-1).ne.0.) then
+        ctherm=sqrt(Etherm)*xsalphatherm(-1)
         xsalphares=ctherm/sqrt(E1v)
         xsalpha1=xspopnuc(2,2)
         if (xsalpha1.gt.0.) then
-          ratioalpha=xsalphatherm/xsalpha1
+          ratioalpha=xsalphatherm(-1)/xsalpha1
           ratioresalpha=xsalphares/xsalpha1
         else
           ratioalpha=1.
@@ -126,6 +126,7 @@ c
         fxscompnonel(nen)=0.
         fxsdirdiscsum(nen)=0.
         fxspreeqsum(nen)=0.
+        fxsracape(nen)=0.
 c
 c Exclusive channel cross sections
 c
@@ -147,7 +148,7 @@ c                production cross section (for exclusive gamma ray
 c                intensities)
 c Nlast        : last discrete level
 c fxschaniso   : channel cross section per isomer
-c fexclyield   : exclusive channel yield per isomer
+c fexclbranch  : exclusive channel yield per isomer
 c
         if (flagchannels) then
           do 120 idc=0,idnum
@@ -160,14 +161,21 @@ c
             if (eninc(nen).le.Ethrexcl(idc,0)) goto 120
             if (idchannel(idc).eq.100000) goto 120
             xsa=xschannel(idc)
-            if (xsa.lt.xseps) goto 120
+            if (xsa.le.xseps) goto 120
             R=ratio
             Rres=ratiores
+            branchres=0.
+            Zix=0
+            Nix=0
             if (idchannel(idc).eq.010000) then
+              Zix=1
+              Nix=0
               R=ratiop
               Rres=ratioresp
             endif
             if (idchannel(idc).eq.000001) then
+              Zix=2
+              Nix=2
               R=ratioalpha
               Rres=ratioresalpha
             endif
@@ -185,22 +193,42 @@ c
             fxsnonel(nen)=fxsnonel(nen)+fxschannel(nen,idc)
             fxsratio(nen,idc)=xsratio(idc)
             do 140 nex=0,Nlast(0,0,0)
+              fexclbranch(nen,idc,nex)=exclbranch(idc,nex)
+              Nis=0
+              do 145 i=0,numisom
+                if (Lisomer(Zix,Nix,i).eq.nex) then
+                  Nis=i
+                  goto 147
+                endif
+  145         continue
+              goto 140
+  147         branchres=0.
+              if (idchannel(idc).eq.0) then
+                if (xscaptherm(-1).gt.0.) 
+     +            branchres=xscaptherm(Nis)/xscaptherm(-1)
+              endif
+              if (idchannel(idc).eq.010000) then
+                if (xsptherm(-1).gt.0.) 
+     +            branchres=xsptherm(Nis)/xsptherm(-1)
+              endif
+              if (idchannel(idc).eq.000001) then
+                if (xsalphatherm(-1).gt.0.) 
+     +            branchres=xsalphatherm(Nis)/xsalphatherm(-1)
+              endif
+              if (eninc(nen).le.E1v) fexclbranch(nen,idc,nex)=branchres
               fxschaniso(nen,idc,nex)=0.
               if (eninc(nen).le.Ethrexcl(idc,nex)) goto 140
-              xsa=xschaniso(idc,nex)
-              if (xsa.lt.xseps) goto 140
               if (eninc(nen).gt.E1v) then
                 xsres=xsa*Rres
                 if (xsres.le.0..or.xsa.le.0.) goto 140
                 xsalog=log(xsa)
                 xsreslog=log(xsres)
                 call pol1(Ereslog,ealog,xsreslog,xsalog,elog,xs)
-                fxschaniso(nen,idc,nex)=exp(xs)
+                fxschaniso(nen,idc,nex)=exp(xs)*fexclbranch(nen,idc,nex)
               else
                 xs=xsa*R*Eratio
-                fxschaniso(nen,idc,nex)=xs
+                fxschaniso(nen,idc,nex)=xs*fexclbranch(nen,idc,nex)
               endif
-              fexclyield(nen,idc,nex)=exclyield(idc,nex)
   140       continue
             xsa=xsgamchannel(idc)
             if (xsa.lt.xseps) goto 120
@@ -485,6 +513,7 @@ c
         fxscompnonel(nen)=fxsnonel(nen)
         fxsdirdiscsum(nen)=xsdirdiscsum
         fxspreeqsum(nen)=xspreeqsum
+        fxsracape(nen)=xsracape
   110 continue
       return
       end

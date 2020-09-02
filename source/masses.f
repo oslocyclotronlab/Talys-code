@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 12, 2016
+c | Date  : December 20, 2019
 c | Task  : Nuclear masses
 c +---------------------------------------------------------------------
 c
@@ -177,7 +177,7 @@ c parZ: charge number of particle
 c parN: neutron number of particle
 c k0  : index of incident particle
 c
-      if (nucmass(parZ(k0),parN(k0)).eq.0.) then
+      if (nucmass(parZ(k0),parN(k0)).eq.0..and..not.flagduflo) then
         write(*,'(" TALYS-error: Target nucleus not in masstable")')
         stop
       endif
@@ -200,9 +200,13 @@ c
           do 120 Nix=0,maxN+4
             N=Ninit-Nix
             if (N.le.0) goto 110
+            A=Z+N
+            if (nucmass(Zix,Nix).eq.0..and.expmass(Zix,Nix).eq.0..and.
+     +        Zix.le.numZastro.and.Nix.le.numNastro)
+     +        write(*,'(" TALYS-warning: Duflo-Zuker mass for ",a,i3)')
+     +        trim(nuc(Z)),A
             call duflo(N,Z,exc)
             dumexc(Zix,Nix)=exc
-            A=Z+N
             thmass1=A+exc/amu
             if (nucmass(Zix,Nix).eq.0) nucmass(Zix,Nix)=thmass1
             if (expmass(Zix,Nix).eq.0..and.massmodel.eq.0)

@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : September 22, 2017
+c | Date  : August 15, 2018
 c | Task  : Gamma ray cross sections
 c +---------------------------------------------------------------------
 c
@@ -30,7 +30,7 @@ c
       do 10 irad=0,1
         do 10 l=1,gammax
           xsgdr=xsgdr+fstrength(Zcomp,Ncomp,Einc,Egamma,irad,l)/
-     +      kgr(Zcomp,Ncomp,irad,l)*Egamma
+     +      kgr(l)*Egamma
    10 continue
 c
 c 2. QD part

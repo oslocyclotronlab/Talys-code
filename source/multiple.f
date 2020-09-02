@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning and Stephane Hilaire
-c | Date  : October 27, 2015
+c | Date  : June 25, 2019
 c | Task  : Multiple emission
 c +---------------------------------------------------------------------
 c
@@ -11,11 +11,13 @@ c
       include "talys.cmb"
       character*13 fisfile,rpfile
       character*60 form1,form2
+      character*80 key
       integer      Zcomp,Ncomp,type,nen,nex,nexout,Zix,Nix,Z,N,A,odd,NL,
-     +             J,idensfis,parity,J2,Jfis,iang,p,h
+     +             J,idensfis,parity,J2,Jfis,iang,p,h,Jres,Ares,Zres,
+     +             Nres,oddres,Pres
       real         popepsA,xspopsave(0:numex),Exm,dEx,Exmin,popepsB,
      +             xsmax,Smax,emissum(0:numpar),Eaveragesum,Eout,sumxs,
-     +             xsdif,ang,kalbach,Eaverage(0:numpar)
+     +             xsdif,ang,kalbach,xsp,factor
 c
 c ******************** Loop over nuclei ********************************
 c
@@ -153,6 +155,7 @@ c strucwrite   : flag for output of nuclear structure info
 c flaglevels   : flag for output of discrete level information
 c levelsout    : subroutine for output of discrete levels
 c flagdensity  : flag for output of level densities
+c filedensity  : flag for level densities on separate files
 c densityout   : subroutine for output of level density parameters
 c flagfisout   : flag for output of fission information
 c fissionparout: subroutine for output for fission parameters
@@ -169,7 +172,8 @@ c
           if (flagpop) then
             if (.not.strucwrite(Zcomp,Ncomp)) then
               if (flaglevels) call levelsout(Zcomp,Ncomp)
-              if (flagdensity) call densityout(Zcomp,Ncomp)
+              if (flagdensity.or.filedensity) 
+     +          call densityout(Zcomp,Ncomp)
               if (flagfisout) call fissionparout(Zcomp,Ncomp)
               strucwrite(Zcomp,Ncomp)=.true.
             endif
@@ -180,27 +184,42 @@ c
             if (maxex(Zcomp,Ncomp).gt.NL) then
               write(*,'(" Maximum excitation energy:",f8.3,
      +          " Discrete levels:",i3," Continuum bins:",i3,
-     +          " Continuum bin size:",f8.3/)') Exmax(Zcomp,Ncomp),NL,
+     +          " Continuum bin size:",f8.3)') Exmax(Zcomp,Ncomp),NL,
      +          maxex(Zcomp,Ncomp)-NL,dExinc
             else
               write(*,'(" Maximum excitation energy:",f8.3,
      +          " Discrete levels:",i3)') Exmax(Zcomp,Ncomp),NL
             endif
-            write(*,'(" bin    Ex    Popul.",10("    J=",f4.1)/)')
-     +        (J+0.5*odd,J=0,9)
-            do 60 nex=0,maxex(Zcomp,Ncomp)
-              if (nex.le.NL) then
-                write(*,'(1x,i3,f8.3,es10.3,10es10.3)') nex,
+            do 55 parity=-1,1,2
+              write(*,'(/" Population of Z=",i3," N=",i3," (",i3,a2,
+     +          "), Parity=",i2," before decay:",es12.5)') Z,N,A,nuc(Z),
+     +          parity,xspopnucP(Zcomp,Ncomp,parity)
+              write(*,'(/" bin    Ex     Pop     Pop P=",i2,
+     +          9("    J=",f4.1)/)') parity,(J+0.5*odd,J=0,8)
+              do 60 nex=0,maxex(Zcomp,Ncomp)
+                write(*,'(1x,i3,f8.3,11es10.3)') nex,
      +            Ex(Zcomp,Ncomp,nex),xspopex(Zcomp,Ncomp,nex),
-     +            (max(xspop(Zcomp,Ncomp,nex,J,1),
-     +            xspop(Zcomp,Ncomp,nex,J,-1)),J=0,9)
-              else
-                write(*,'(1x,i3,f8.3,es10.3,10es10.3)') nex,
-     +            Ex(Zcomp,Ncomp,nex),xspopex(Zcomp,Ncomp,nex),
-     +            (xspop(Zcomp,Ncomp,nex,J,1),J=0,9)
-              endif
-   60       continue
+     +            xspopexP(Zcomp,Ncomp,nex,parity),
+     +            (xspop(Zcomp,Ncomp,nex,J,parity),J=0,8)
+   60         continue
+   55       continue
           endif
+c
+c Optional adjustment factors
+c
+c adjustTJ: logical for energy-dependent TJ adjustment
+c adjust  : subroutine for energy-dependent parameter adjustment
+c Fnorm   : multiplication factor
+c
+          do type=-1,6
+            if (adjustTJ(Zcomp,Ncomp,type)) then
+              key='tjadjust'
+              call adjust(Einc,key,Zcomp,Ncomp,type,0,factor)
+            else
+              factor=1.
+            endif
+            Fnorm(type)=factor
+          enddo
 c
 c Loop 110: De-excitation of nucleus, starting at the highest excitation
 c energy bin.
@@ -218,24 +237,22 @@ c
           if (flagpop) then
             write(*,'(/" Population of each bin of Z=",i3," N=",i3,
      +      " (",i3,a2,") before its decay"/)') Z,N,A,nuc(Z)
-            write(*,'(" bin    Ex    Popul.",10("    J=",f4.1)/)')
-     +        (J+0.5*odd,J=0,9)
+            write(*,'(" bin    Ex      Pop     P Pop per P",
+     +        9("  J=",f4.1,"  ")/)') (J+0.5*odd,J=0,8)
           endif
           do 110 nex=maxex(Zcomp,Ncomp),1,-1
             dExinc=deltaEx(Zcomp,Ncomp,nex)
             if (flagpop) then
               xspopsave(nex)=xspopex(Zcomp,Ncomp,nex)
-              if (nex.le.NL) then
-                write(*,'(1x,i3,f8.3,es10.3,10es10.3)') nex,
+              do 115 parity=-1,1,2
+                write(*,'(1x,i3,f8.3,es10.3,i3,10es10.3)') nex,
      +            Ex(Zcomp,Ncomp,nex),xspopex(Zcomp,Ncomp,nex),
-     +            (max(xspop(Zcomp,Ncomp,nex,J,1),
-     +            xspop(Zcomp,Ncomp,nex,J,-1)),J=0,9)
-              else
-                write(*,'(1x,i3,f8.3,es10.3,10es10.3)') nex,
-     +            Ex(Zcomp,Ncomp,nex),xspopex(Zcomp,Ncomp,nex),
-     +            (xspop(Zcomp,Ncomp,nex,J,1),J=0,9)
-              endif
+     +            parity,xspopexP(Zcomp,Ncomp,nex,parity),
+     +            (xspop(Zcomp,Ncomp,nex,J,parity),J=0,8)
+  115         continue
             endif
+            popdecay=0.
+            partdecay=0.
 c
 c For exclusive channel cross section calculations, some variables
 c need to be stored in extra arrays.
@@ -346,10 +363,39 @@ c              coefficients
 c
                   if (xspop(Zcomp,Ncomp,nex,J,parity).lt.popepsB)
      +              goto 145
+                  xsp=xspop(Zcomp,Ncomp,nex,J,parity)
                   J2=2*J+odd
                   if (flagfission.and.nfisbar(Zcomp,Ncomp).ne.0)
      +              call tfission(Zcomp,Ncomp,nex,J2,parity)
                   call compound(Zcomp,Ncomp,nex,J2,parity)
+                  if (flagdecay) then
+                    do 146 type=0,6
+                      Zix=Zindex(Zcomp,Ncomp,type)
+                      Nix=Nindex(Zcomp,Ncomp,type)
+                      Zres=ZZ(Zcomp,Ncomp,type)
+                      Nres=NN(Zcomp,Ncomp,type)
+                      Ares=AA(Zcomp,Ncomp,type)
+                      oddres=mod(Ares,2)
+                      do 147 Pres=-1,1,2
+                        write(*,'(/" Decay of Z=",i3," N=",i3," (",
+     +                    i3,a2,"), Bin=",i3," Ex=",f8.3," J=",f4.1,
+     +                    " P=",i2," Pop=",es10.3," to bins of Z=",i3,
+     +                    " N=",i3," (",i3,a2,"), P=",i2," via ",
+     +                    a8," emission"/)') 
+     +                    Z,N,A,nuc(Z),nex,Exinc,J+0.5*odd,parity,xsp,
+     +                    Zres,Nres,Ares,nuc(Zres),Pres,parname(type)
+                        write(*,'(" Total: ",es10.3,/)') partdecay(type)
+                        write(*,'(" bin    Ex",10("    J=",f4.1)/)') 
+     +                    (Jres+0.5*oddres,Jres=0,9)
+                        do 148 nexout=0,nexmax(type)
+                          write(*,'(1x,i3,f8.3,10es10.3)') 
+     +                      nexout,Ex(Zix,Nix,nexout),
+     +                      (popdecay(type,nexout,Jres,Pres),Jres=0,9)
+  148                   continue
+                        write(*,*)
+  147                 continue
+  146               continue
+                  endif
   145           continue
   140         continue
               if (flagfisout) call tfissionout(Zcomp,Ncomp,nex)
@@ -457,7 +503,7 @@ c
             do 310 type=0,6
               if (parskip(type)) goto 310
               emissum(type)=0.
-              Eaverage(type)=0.
+              Eaveragemul(Zcomp,Ncomp,type)=0.
               Eaveragesum=0.
               do 320 nen=ebegin(type),eend(type)
                 xscomp(type,nen)=xscomp(type,nen)+xsemis(type,nen)
@@ -479,7 +525,7 @@ c
      +            (xsemis(type,nen)+xsmpeemis(type,nen))*deltaE(nen)
   320         continue
               if (emissum(type).gt.0.)
-     +          Eaverage(type)=Eaveragesum/emissum(type)
+     +          Eaveragemul(Zcomp,Ncomp,type)=Eaveragesum/emissum(type)
 c
 c For ENDF-6 files, exclusive (n,gn), (n,gp) ... (n,ga) spectra are
 c required. This is stored here.
@@ -652,7 +698,7 @@ c
                   if (parskip(type)) goto 470
                   write(*,'(1x,a8,2(4x,es12.5),10x,f8.3)')
      +              parname(type),xsfeed(Zcomp,Ncomp,type),
-     +              emissum(type),Eaverage(type)
+     +              emissum(type),Eaveragemul(Zcomp,Ncomp,type)
   470           continue
               endif
             endif
@@ -757,4 +803,4 @@ c
    10 continue
       return
       end
-Copyright (C)  2013 A.J. Koning, S. Hilaire and S. Goriely
+Copyright (C)  2019 A.J. Koning, S. Hilaire and S. Goriely

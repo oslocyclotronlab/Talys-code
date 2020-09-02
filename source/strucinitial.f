@@ -227,11 +227,11 @@ c xsracapEM : direct-semidirect radiative capture cross section as
 c             function of type
 c
       do 310 l=1,numgam
+        kgr(l)=pi2h2c2/(2*l+1.)
         do 310 irad=0,1
           do 310 Nix=0,numN
             do 310 Zix=0,numZ
               ngr(Zix,Nix,irad,l)=1
-              kgr(Zix,Nix,irad,l)=0.
   310 continue
       do 320 l=1,numgam
         do 320 irad=0,1
@@ -298,6 +298,7 @@ c
         do 410 Nix=0,numN
           do 410 Zix=0,numZ
             ompglobal(Zix,Nix,k)=.false.
+            ef(Zix,Nix,k)=0.
             rc0(Zix,Nix,k)=0.
             rv0(Zix,Nix,k)=0.
             av0(Zix,Nix,k)=0.

@@ -1,10 +1,12 @@
       function twkbint(efis,ibar,Zix,Nix)
 c
 c +---------------------------------------------------------------------
-c | Author: Stephane Hilaire
-c | Date  : December 18, 2009
+c | Author: Stephane Hilaire and Guillaume Scamps
+c | Date  : October 11, 2009
 c | Task  : Interpolation of WKB penetrability
 c +---------------------------------------------------------------------
+c
+c      SCAMPS: Modification in order to do logarithmic interpolation
 c
 c ****************** Declarations and common blocks ********************
 c
@@ -27,10 +29,17 @@ c
         call locate(Ewkb,0,nbinswkb,efis,nen)
         Ea=Ewkb(nen)
         Eb=Ewkb(nen+1)
-        Ta=Twkb(Zix,Nix,nen,ibar)
-        Tb=Twkb(Zix,Nix,nen+1,ibar)
+      Ta=Twkb(Zix,Nix,nen,ibar)
+      Tb=Twkb(Zix,Nix,nen+1,ibar)
+      If (Ta.gt.0.and.Tb.gt.0) then
+        Ta=log(Ta)
+        Tb=log(Tb)
+        call pol1(Ea,Eb,Ta,Tb,efis,Tf)
+        twkbint=exp(Tf)
+      else
         call pol1(Ea,Eb,Ta,Tb,efis,Tf)
         twkbint=Tf
+      endif
       endif
       return
       end

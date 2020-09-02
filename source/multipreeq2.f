@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 9, 2013
+c | Date  : July 6, 2018
 c | Task  : Two-component multiple preequilibrium model
 c +---------------------------------------------------------------------
 c
@@ -336,6 +336,8 @@ c
                   Jterm=0.5*(2*J+1)*RnJ(2,J)/RnJsum(2)*term(type,nexout)
                   xspop(Zix,Nix,nexout,J,parity)=
      +              xspop(Zix,Nix,nexout,J,parity)+Jterm
+                  popdecay(type,nexout,J,parity)=
+     +              popdecay(type,nexout,J,parity)+Jterm
                   preeqpop(Zix,Nix,nexout,J,parity)=
      +              preeqpop(Zix,Nix,nexout,J,parity)+Jterm
   350         continue

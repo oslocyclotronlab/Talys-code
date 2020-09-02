@@ -2,14 +2,14 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : November 16, 2016
+c | Date  : December 18, 2019
 c | Task  : Reaction output for incident channel
 c +---------------------------------------------------------------------
 c
 c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
-      integer l,iang
+      integer l,iang,type
 c
 c *********** Total cross sections for incident channel ****************
 c
@@ -43,6 +43,10 @@ c
         write(*,'(" S1:",i4,f8.4," .e-4")') Atarget,Sstrength(1)*1.e4
         write(*,'(" R :",i4,f8.4," fm")') Atarget,Rprime
       endif
+      write(*,'(/" Isospin factors to reduce emission "/)')
+      do type=0,6
+        write(*,'(1x,a8,1x,f8.5)') parname(type),fiso(type)
+      enddo
 c
 c *********** Transmission coefficients for incident channel ***********
 c

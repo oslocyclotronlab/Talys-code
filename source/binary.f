@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning and Stephane Hilaire
-c | Date  : December 13, 2016
+c | Date  : April 7, 2019
 c | Task  : Binary reaction results
 c +---------------------------------------------------------------------
 c
@@ -11,7 +11,7 @@ c
       include "talys.cmb"
       integer type,Zix,Nix,NL,nex,J,parity,nen,Z,N,A,odd
       real    popepsA,factor,Eex,ald,ignatyuk,spindis,xscompall,
-     +        Eaveragesum,frac,Eaverage(0:numpar)
+     +        Eaveragesum,frac,term,xsb
 c
 c * Add direct and pre-equilibrium cross sections to population arrays *
 c
@@ -54,10 +54,17 @@ c
           if (xsdirdisc(type,nex).ne.0.) then
             J=int(jdis(Zix,Nix,nex))
             parity=parlev(Zix,Nix,nex)
-            xspop(Zix,Nix,nex,J,parity)=xspop(Zix,Nix,nex,J,parity)+
-     +        xsdirdisc(type,nex)
-            xspopex(Zix,Nix,nex)=xspopex(Zix,Nix,nex)+
-     +        xsdirdisc(type,nex)
+            term=xsdirdisc(type,nex)
+            xspop(Zix,Nix,nex,J,parity)=xspop(Zix,Nix,nex,J,parity)+term
+            xspopex(Zix,Nix,nex)=xspopex(Zix,Nix,nex)+term
+            if (flagpop) then
+              xspopnucP(Zix,Nix,parity)=xspopnucP(Zix,Nix,parity)+term
+              xspopexP(Zix,Nix,nex,parity)=
+     +          xspopexP(Zix,Nix,nex,parity)+term
+              popdecay(type,nex,J,parity)=
+     +          popdecay(type,nex,J,parity)+term
+              partdecay(type)=partdecay(type)+term
+            endif
           endif
           xspopex0(type,nex)=xspopex(Zix,Nix,nex)
    20   continue
@@ -118,9 +125,18 @@ c
      +        preeqpopex(Zix,Nix,nex)
             do 60 parity=-1,1,2
               do 60 J=0,maxJph
+                term=preeqpop(Zix,Nix,nex,J,parity)
                 xspop(Zix,Nix,nex,J,parity)=
-     +            xspop(Zix,Nix,nex,J,parity)+
-     +            preeqpop(Zix,Nix,nex,J,parity)
+     +            xspop(Zix,Nix,nex,J,parity)+term
+                if (flagpop) then
+                  xspopnucP(Zix,Nix,parity)=xspopnucP(Zix,Nix,parity)+
+     +              term
+                  xspopexP(Zix,Nix,nex,parity)=
+     +              xspopexP(Zix,Nix,nex,parity)+term
+                  popdecay(type,nex,J,parity)=
+     +              popdecay(type,nex,J,parity)+term
+                  partdecay(type)=partdecay(type)+term
+              endif
    60       continue
    50     continue
           xspopnuc(Zix,Nix)=xspopnuc(Zix,Nix)+xspreeqtot(type)+
@@ -177,12 +193,20 @@ c
             if (xsracappopex(nex).ne.0.) then
               J=int(jdis(Zix,Nix,nex))
               parity=parlev(Zix,Nix,nex)
+              term=xsracappopex(nex)
               xspop(Zix,Nix,nex,J,parity)=xspop(Zix,Nix,nex,J,parity)+
-     +          xsracappopex(nex)
-              xspopex(Zix,Nix,nex)=xspopex(Zix,Nix,nex)+
-     +          xsracappopex(nex)
-              xspopex0(type,nex)=xspopex(Zix,Nix,nex)+
-     +          xsracappopex(nex)
+     +          term
+              xspopex(Zix,Nix,nex)=xspopex(Zix,Nix,nex)+term
+              xspopex0(type,nex)=xspopex(Zix,Nix,nex)+term
+              if (flagpop) then
+                xspopnucP(Zix,Nix,parity)=xspopnucP(Zix,Nix,parity)+
+     +            term
+                xspopexP(Zix,Nix,nex,parity)=
+     +            xspopexP(Zix,Nix,nex,parity)+term
+                popdecay(type,nex,J,parity)=
+     +            popdecay(type,nex,J,parity)+term
+                partdecay(type)=partdecay(type)+term
+              endif
             endif
    80     continue
           do 90 nex=NL+1,maxex(Zix,Nix)
@@ -190,8 +214,18 @@ c
      +        xsracappopex(nex)
             do 90 parity=-1,1,2
               do 90 J=0,numJ
+                term=xsracappop(nex,J,parity)
                 xspop(Zix,Nix,nex,J,parity)=xspop(Zix,Nix,nex,J,parity)+
-     +            xsracappop(nex,J,parity)
+     +            term
+                if (flagpop) then
+                  xspopnucP(Zix,Nix,parity)=xspopnucP(Zix,Nix,parity)+
+     +              term
+                  xspopexP(Zix,Nix,nex,parity)=
+     +              xspopexP(Zix,Nix,nex,parity)+term
+                  popdecay(type,nex,J,parity)=
+     +              popdecay(type,nex,J,parity)+term
+                  partdecay(type)=partdecay(type)+term
+                endif
    90     continue
         endif
         xsdirect(type)=xsdirdisctot(type)+xsdircont(type)
@@ -271,10 +305,16 @@ c
             Eaveragesum=Eaveragesum-egrid(nendisc(type))*
      +        xsbinemis(type,nendisc(type))*frac
           endif
-          if (binemissum(type).gt.0.) then
-            Eaverage(type)=Eaveragesum/binemissum(type)
+          xsb=binemissum(type)
+          do 230 nex=0,NL
+            if (type.eq.k0.and.nex.eq.Ltarget) goto 230
+            xsb=xsb+xsdisc(type,nex)
+            Eaveragesum=Eaveragesum+xsdisc(type,nex)*eoutdis(type,nex)
+  230     continue
+          if (xsb.gt.0.) then
+            Eaveragebin(type)=Eaveragesum/xsb
           else
-            Eaverage(type)=0.
+            Eaveragebin(type)=0.
           endif
   210   continue
       endif
@@ -328,7 +368,7 @@ c
             write(*,'(1x,a8,3(10x,es12.5),10x,f8.3)')
      +        parname(type),
      +        xscompcont(type)+xspreeqtot(type)+xsgrtot(type),
-     +        binemissum(type),binnorm(type),Eaverage(type)
+     +        binemissum(type),binnorm(type),Eaveragebin(type)
   330     continue
         endif
         write(*,'(/" ++++++++++ POPULATION AFTER BINARY EMISSION",

@@ -3,7 +3,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : July 14, 2014
+c | Date  : December 23, 2019
 c | Task  : Assign values to keywords
 c +---------------------------------------------------------------------
 c
@@ -11,7 +11,7 @@ c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
       integer      numEkey
-      parameter    (numEkey=65)
+      parameter    (numEkey=68)
       logical      flagassign,lexist
       character*1  ch
       character*80 keyword(numEkey),word(40),key,adfile,cval
@@ -24,18 +24,19 @@ c
       data (keyword(i),i=1,numEkey) /
      +  'adepthcor', 'aradialcor',
      +  'avadjust', 'avdadjust', 'avsoadjust', 'awadjust', 'awdadjust',
-     +  'awsoadjust', 'cbreak', 'cknock', 'cstrip', 'ctable',
-     +  'd1adjust', 'd2adjust', 'd3adjust', 'egr', 'egradjust',
-     +  'epr', 'epradjust', 'etable',
+     +  'awsoadjust', 'bdamp', 'bdampadjust', 'cbreak', 'cknock', 
+     +  'cstrip', 'ctable', 'd1adjust', 'd2adjust', 'd3adjust', 'egr', 
+     +  'egradjust', 'epr', 'epradjust', 'etable',
      +  'fisbar', 'fisbaradjust', 'fishw', 'fishwadjust', 'ftable',
      +  'ggr', 'ggradjust', 'gnorm', 'gpr', 'gpradjust', 'krotconstant',
      +  'lv1adjust', 'lvadjust', 'lvsoadjust', 'lw1adjust',
      +  'lwadjust', 'lwsoadjust', 'm2constant', 'ptable', 'rcadjust',
      +  'rspincut', 'rvadjust', 'rvdadjust', 'rvsoadjust', 'rwadjust',
      +  'rwdadjust', 'rwsoadjust', 's2adjust', 'sgr', 'sgradjust',
-     +  'spr', 'spradjust', 'tljadjust', 'v1adjust', 'v2adjust',
+     +  'spr', 'spradjust', 'tjadjust', 'v1adjust', 'v2adjust',
      +  'v3adjust', 'v4adjust', 'vso1adjust', 'vso2adjust', 'w1adjust',
-     +  'w2adjust', 'w3adjust', 'w4adjust', 'wso1adjust', 'wso2adjust'/
+     +  'w2adjust', 'w3adjust', 'w4adjust', 'wso1adjust', 'wso2adjust',
+     +  'wtable'/
 c
 c ************************ Read values for keywords ********************
 c
@@ -56,6 +57,7 @@ c     [optional: local adjustment]
 c  9: keyword value [optional: local adjustment]
 c 10: keyword Z filename
 c 11: keyword Z A filename
+c 12: keyword Z A particle-type real-value filename
 c
 c flagassign: flag to assign value or not
 c word      : words on input line
@@ -67,7 +69,7 @@ c
       flagassign=.false.
       key=word(1)
       ch=word(2)(1:1)
-      val=0.
+      val=1.
       ival=0
       cval='                                                           '
 c
@@ -177,16 +179,29 @@ c
         if (Zix.lt.0.or.Zix.gt.numZ) then
           goto 200
         else
-          if (class.eq.11) then
+          if (class.ge.11) then
             read(word(3),*,end=100,err=100) ia
             in=ia-iz
             Nix=Ninit-in
             if (Nix.lt.0.or.Nix.gt.numN) then
               goto 200
             else
-              cval=word(4)
+              if (class.eq.12) then
+                read(word(4),*,end=100,err=100) ch
+                do 32 type2=-1,6
+                  if (ch.eq.parsym(type2)) then
+                    type=type2
+                    goto 34
+                  endif
+   32           continue
+                goto 180
+   34           read(word(5),*,end=100,err=100) val
+                i=5
+              else
+                cval=word(4)
+                i=4
+              endif
             endif
-            i=4
           else
             cval=word(3)
             i=3
@@ -245,7 +260,7 @@ c
       nenadjust(Nadjust)=k-1
       do 90 j=1,nenadjust(Nadjust)
         Eadjust(Nadjust,j)=Eadj(j)
-        Dadjust(Nadjust,j)=Dadj(j)
+        Dadjust(Nadjust,j)=val*Dadj(j)
    90 continue
       adjustkey(Nadjust)=key
       adjustfile(Nadjust)=adfile

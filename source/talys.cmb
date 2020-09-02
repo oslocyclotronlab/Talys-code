@@ -1,9 +1,9 @@
 c
-c                      TALYS.CMB for TALYS-1.9
+c                      TALYS.CMB for TALYS-1.95
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning, Stephane Hilaire and Stephane Goriely
-c | Date  : December 21, 2017
+c | Date  : December 28, 2019
 c | Task  : File with common blocks and declarations for TALYS
 c +---------------------------------------------------------------------
 c
@@ -42,7 +42,7 @@ c    +           memorypar=4,
      +           numl=60,
      +           numlines=5000,
      +           numpop=1000,
-     +           numenin=2000,
+     +           numenin=600,
      +           numZ=2+2*memorypar,
      +           numN=10+4*memorypar,
      +           numZph=4,
@@ -211,7 +211,7 @@ c
 c ************************ subroutine input3 ***************************
 c
       common /input3l/ flageciscalc,flaginccalc,flagendfecis,flagrel,
-     +                 flagcomp,flagfullhf,flaggiant0,
+     +                 flagcomp,flagfullhf,flaggiant0,flagpsfglobal,
      +                 flagpecomp,flagsurface,flag2comp,flagchannels,
      +                 flagfission,flagparity,flaghbstate,flagclass2,
      +                 flagbasic,flageciscomp,flagcpang,flagecisdwba,
@@ -228,7 +228,8 @@ c
      +                 fymodel,nonthermlev
       common /input3r/ ewfc,epreeq,emulpre
       logical      flageciscalc,flaginccalc,flagendfecis,flagrel,
-     +             flagcomp,flagfullhf,flaggiant0,flagpecomp,
+     +             flagcomp,flagfullhf,flaggiant0,flagpsfglobal,
+     +             flagpecomp,
      +             flagsurface,flag2comp,flagchannels,flagfission,
      +             flagparity,flaghbstate,flagclass2,flagbasic,
      +             flageciscomp,flagcpang,flagecisdwba,flagonestep,
@@ -251,9 +252,10 @@ c
      +                 flagang,flaglegendre,flagspec,flagres,flaggroup,
      +                 flagddx,flagoutdwba,flaggamdis,flagoutecis,
      +                 flagecissave,flagexc,flagelectron,flagspher,
-     +                 flagcoulomb,flagcolldamp,flagctmglob,
+     +                 flagcoulomb,flagupbend,flagcolldamp,flagctmglob,
      +                 flagpartable,flagurrnjoy,flagprod,flagoutfy,
-     +                 altomp(numpar),flagbinspec,flagrpevap
+     +                 altomp(numpar),flagbinspec,flagrpevap,flagdecay,
+     +                 flagfispartdamp,flagoutkd
       common /input4c/ reslib
       common /input4i/ maxchannel,ddxmode,pairmodel,fismodel,
      +                 fismodelalt,alphaomp,deuteronomp,lurr,gefran
@@ -263,9 +265,9 @@ c
      +        flagfisout,flagtransen,flagpeout,flagang,flaglegendre,
      +        flagspec,flagres,flaggroup,flagddx,flagoutdwba,flaggamdis,
      +        flagoutecis,flagecissave,flagexc,flagelectron,flagspher,
-     +        flagcoulomb,flagcolldamp,flagctmglob,flagpartable,
-     +        flagurrnjoy,flagprod,flagoutfy,altomp,flagbinspec,
-     +        flagrpevap
+     +        flagcoulomb,flagupbend,flagcolldamp,flagctmglob,
+     +        flagpartable,flagurrnjoy,flagprod,flagoutfy,altomp,
+     +        flagbinspec,flagrpevap,flagdecay,flagfispartdamp,flagoutkd
       character*8 reslib
       integer     maxchannel,ddxmode,pairmodel,fismodel,fismodelalt,
      +            alphaomp,deuteronomp,lurr,gefran
@@ -274,9 +276,10 @@ c
 c ************************ subroutine input5 ***************************
 c
       common /input5l/  flagrescue,ompadjustF(numpar),preeqadjust,
-     +                  ompadjustp(numpar),tljadjust(-1:numpar),
+     +                  ompadjustp(numpar),
+     +                  adjustTJ(0:numZ,0:numN,-1:numpar),
      +                  ldadjust(0:numZ,0:numN),
-     +                  gamadjust(0:numZ,0:numN),
+     _                  gamadjust(0:numZ,0:numN),
      +                  fisadjust(0:numZ,0:numN)
       common /input5c/  levelfile(0:numZ),deformfile(0:numZ),
      +                  hbtransfile(0:numZ,0:numN),adjustkey(numadj),
@@ -300,7 +303,8 @@ c
      +                  pairconstant,Pshiftconstant(0:numZ,0:numN),
      +                  Ufermi,cfermi,Ufermibf,cfermibf,Kph,M2constant,
      +                  M2limit,M2shift,Rpipi,Rnunu,Rpinu,Rnupi,Esurf0,
-     +                  Rgamma,elwidth,xscaptherm,xsptherm,xsalphatherm,
+     +                  Rgamma,elwidth,xscaptherm(-1:numisom),
+     +                  xsptherm(-1:numisom),xsalphatherm(-1:numisom),
      +                  massnucleus(0:numZ+4,0:numN+4),
      +                  massexcess(0:numZ+4,0:numN+4),
      +                  alev(0:numZ,0:numN),alimit(0:numZ,0:numN),
@@ -313,12 +317,18 @@ c
      +                  Krotconstant(0:numZ,0:numN,0:numbar),
      +                  beta2(0:numZ+4,0:numN+4,0:numbar),
      +                  ctable(0:numZ,0:numN,0:numbar),
-     +                  ptable(0:numZ,0:numN,0:numbar)
+     +                  ptable(0:numZ,0:numN,0:numbar),
+     +                  ctableadjust(0:numZ,0:numN,0:numbar),
+     +                  ptableadjust(0:numZ,0:numN,0:numbar)
       common /input5rB/ g(0:numZ,0:numN),gp(0:numZ,0:numN),
      +                  gn(0:numZ,0:numN),gamgam(0:numZ,0:numN),
      +                  D0(0:numZ,0:numN),
      +                  etable(0:numZ,0:numN,0:1,numgam),
      +                  ftable(0:numZ,0:numN,0:1,numgam),
+     +                  wtable(0:numZ,0:numN,0:1,numgam),
+     +                  etableadjust(0:numZ,0:numN,0:1,numgam),
+     +                  ftableadjust(0:numZ,0:numN,0:1,numgam),
+     +                  wtableadjust(0:numZ,0:numN,0:1,numgam),
      +                  egr(0:numZ,0:numN,0:1,numgam,2),
      +                  ggr(0:numZ,0:numN,0:1,numgam,2),
      +                  sgr(0:numZ,0:numN,0:1,numgam,2),
@@ -331,12 +341,14 @@ c
      +                  epradjust(0:numZ,0:numN,0:1,numgam,2),
      +                  gpradjust(0:numZ,0:numN,0:1,numgam,2),
      +                  tpradjust(0:numZ,0:numN,0:1,numgam,2),
-     +                  upbend(0:numZ,0:numN,0:1,numgam,2),
-     +                  fiso(0:numZ,0:numN,0:numpar),
+     +                  upbend(0:numZ,0:numN,0:1,numgam,3),
+     +                  fiso(-1:numpar),
      +                  fbarrier(0:numZ,0:numN,numbar),
      +                  fwidth(0:numZ,0:numN,numbar),
+     +                  bdamp(0:numZ,0:numN,numbar),
      +                  fbaradjust(0:numZ,0:numN,numbar),
      +                  fwidthadjust(0:numZ,0:numN,numbar),
+     +                  bdampadjust(0:numZ,0:numN,numbar),
      +                  betafiscor(0:numZ,0:numN),
      +                  vfiscor(0:numZ,0:numN),
      +                  Rtransmom(0:numZ,0:numN,numbar),
@@ -373,10 +385,11 @@ c
      +                  ompadjusts(numpar,numompadj,numrange),
      +                  adjustpar(numadj,4),Eadjust(numadj,numenadj),
      +                  Dadjust(numadj,numenadj),
-     +                  tladjust(-1:numpar,0:numl),RprimeU,astroT9,
+     +                  TJadjust(0:numZ,0:numN,-1:numpar),
+     +                  RprimeU,astroT9,
      +                  astroE,Ebeam,Eback,Ibeam,Area,rhotarget
       logical      flagrescue,preeqadjust,ompadjustF,ompadjustp,
-     +             tljadjust,ldadjust,gamadjust,fisadjust
+     +             adjustTJ,ldadjust,gamadjust,fisadjust
       character*80 adjustkey,adjustfile
       character*72 levelfile,deformfile,hbtransfile,clas2file,
      +             optmodfileN,optmodfileP,Exlfile,radialfile,
@@ -394,11 +407,12 @@ c
      +             elwidth,xscaptherm,xsptherm,xsalphatherm,massnucleus,
      +             massexcess,alev,alimit,gammald,pair,deltaW,Exmatch,T,
      +             E0,s2adjust,Krotconstant,beta2,ctable,ptable,g,gp,gn,
-     +             gamgam,D0,etable,ftable,egr,ggr,sgr,epr,gpr,tpr,
+     +             ctableadjust,ptableadjust,gamgam,D0,etable,ftable,
+     +             etableadjust,ftableadjust,egr,ggr,sgr,epr,gpr,tpr,
      +             egradjust,ggradjust,sgradjust,epradjust,gpradjust,
-     +             tpradjust,upbend,fiso,fbarrier,fwidth,fbaradjust,
-     +             fwidthadjust,betafiscor,vfiscor,
-     +             Rtransmom,Rclass2mom,widthc2,Cknock,Cstrip,
+     +             tpradjust,upbend,fiso,fbarrier,fwidth,bdamp,
+     +             fbaradjust,fwidthadjust,bdampadjust,betafiscor,
+     +             vfiscor,Rtransmom,Rclass2mom,widthc2,Cknock,Cstrip,
      +             Cbreak,Emsdmin,v1adjust,v2adjust,v3adjust,v4adjust,
      +             rvadjust,avadjust,w1adjust,w2adjust,w3adjust,
      +             w4adjust,rwadjust,awadjust,rvdadjust,avdadjust,
@@ -410,16 +424,16 @@ c
      +             adepthcor,aadjust,Tadjust,E0adjust,Exmatchadjust,
      +             gnadjust,gpadjust,gamgamadjust,ompadjustE1,
      +             ompadjustE2,ompadjustD,ompadjusts,adjustpar,Eadjust,
-     +             Dadjust,tladjust,RprimeU,astroT9,astroE,Ebeam,Eback,
-     +             Ibeam,Area,rhotarget
+     +             Dadjust,TJadjust,RprimeU,astroT9,astroE,
+     +             Ebeam,Eback,Ibeam,Area,rhotarget,wtable,wtableadjust
 c
 c ************************ subroutine input6 ***************************
 c
       common /input6l/ fileelastic,filespectrum(0:numpar),
      +                 fileangle(0:numlev),filediscrete(0:numlev),
      +                 filetotal,fileresidual,filechannels,filerecoil,
-     +                 filefission,filegamdis,filedensity,flagintegral,
-     +                 flagsacs,flagcompo
+     +                 filefission,filegamdis,filedensity,filepsf,
+     +                 flagintegral,flagsacs,flagcompo
       common /input6c/ xsfluxfile(numflux),fluxname(numflux)
       common /input6i/ transpower,ddxecount(0:numpar),
      +                 ddxacount(0:numpar),Nflux,integralexp(numflux)
@@ -428,7 +442,8 @@ c
       common /input6d/ transeps
       logical fileelastic,filespectrum,fileangle,filediscrete,filetotal,
      +        fileresidual,filechannels,filerecoil,filefission,
-     +        filegamdis,filedensity,flagsacs,flagintegral,flagcompo
+     +        filegamdis,filedensity,filepsf,flagsacs,flagintegral,
+     +        flagcompo
       character*72 xsfluxfile,fluxname
       integer          transpower,ddxecount,ddxacount,Nflux
       real             xseps,popeps,Rfiseps,fileddxe,fileddxa,
@@ -535,8 +550,11 @@ c
 c
 c ************************* subroutine resonancepar ********************
 c
-      common /resonanceparr/ dD0(0:numZ,0:numN),dgamgam(0:numZ,0:numN)
-      real dD0,dgamgam
+      common /resonancepari/ Nrr(0:numZ,0:numN)
+      common /resonanceparr/ dD0(0:numZ,0:numN),dgamgam(0:numZ,0:numN),
+     +                       Eavres
+      integer Nrr
+      real dD0,dgamgam,Eavres
 c
 c ************************ block data gamdata **************************
 c
@@ -547,7 +565,7 @@ c ************************* subroutine gammapar ************************
 c
       common /gammaparl/ qrpaexist(0:numZ,0:numN,0:1,numgam)
       common /gammapari/ ngr(0:numZ,0:numN,0:1,numgam),nTqrpa
-      common /gammaparr/ kgr(0:numZ,0:numN,0:1,numgam),
+      common /gammaparr/ kgr(numgam),
      +                   eqrpa(0:numZ,0:numN,0:numgamqrpa,0:1,numgam),
      +                   Tqrpa(numTqrpa),
      +                   fqrpa(0:numZ,0:numN,0:numgamqrpa,numTqrpa,0:1,
@@ -631,9 +649,13 @@ c
       common /wkbr/ betafis(numbeta),vfis(numbeta),Vpos(2*numbar),
      +              Vheight(2*numbar),Vwidth(2*numbar),
      +              Uwkb(0:numZ,0:numN,0:numbins),
-     +              Twkb(0:numZ,0:numN,0:numbins,numbar)
+     +              Twkb(0:numZ,0:numN,0:numbins,numbar),
+     +              Twkbdir(0:numZ,0:numN,0:numbins,numbar),
+     +              Twkbtrans(0:numZ,0:numN,0:numbins,numbar),
+     +              Twkbphase(0:numZ,0:numN,0:numbins,numbar)
       integer nbeta,iiextr,nextr
-      real    betafis,vfis,Vpos,Vheight,Vwidth,Uwkb,Twkb
+      real    betafis,vfis,Vpos,Vheight,Vwidth,Uwkb,Twkb,Twkbdir,
+     +        Twkbtrans,Twkbphase
 c
 c ************************ block data fisdata **************************
 c
@@ -1206,9 +1228,10 @@ c
 c *********************** subroutine compnorm **************************
 c
       common /compnormi/ J2beg,J2end,pardif
-      common /compnormr/ CNfactor,Crescue(nummt,-1:numisom)
+      common /compnormr/ CNfactor,Crescue(nummt,-1:numisom),
+     +                   CNterm(-1:1,0:numJ)
       integer J2beg,J2end,pardif
-      real    CNfactor,Crescue
+      real    CNfactor,Crescue,CNterm
 c
 c *********************** subroutine comptarget ************************
 c
@@ -1220,14 +1243,19 @@ c
      +                     Turrljinc(0:numl,0:numJ),
      +                     xsbinarylj(-1:numpar,0:numl,0:numJ),
      +                     cleg(0:numpar,0:numlev,0:3*numl),
-     +                     xscompcont(0:numpar)
+     +                     xscompcont(0:numpar),Fnorm(-1:numpar)
       common /comptargetd/ xspop(0:numZ,0:numN,0:numex,0:numJ,-1:1),
+     +                     popdecay(-1:numpar,0:numex,0:numJ,-1:1),
+     +                     partdecay(-1:numpar),
      +                     xspopex(0:numZ,0:numN,0:numex),
-     +                     xspopnuc(0:numZ,0:numN)
+     +                     xspopnuc(0:numZ,0:numN),
+     +                     xspopexP(0:numZ,0:numN,0:numex,-1:1),
+     +                     xspopnucP(0:numZ,0:numN,-1:1)
       integer          tnumi,tnumo,nulj,lminU,lmaxU,JminU,JmaxU,Purrlj
       real             Exinc,Wab,dExinc,xsbinary,Turrlj,Turrljinc,
-     +                 xsbinarylj,cleg,xscompcont
-      double precision xspop,xspopex,xspopnuc
+     +                 xsbinarylj,cleg,xscompcont,Fnorm
+      double precision xspop,popdecay,partdecay,xspopex,xspopnuc,
+     +                 xspopexP,xspopnucP
 c
 c ************************ subroutine densprepare **********************
 c
@@ -1245,10 +1273,13 @@ c
 c ************************* subroutine tfission ************************
 c
       common /tfissiond/ tfisdown(0:numJ,-1:1),tfis(0:numJ,-1:1),
+     +                   gamfis(0:numJ,-1:1),taufis(0:numJ,-1:1),
+     +                   denfis(0:numJ,-1:1),
      +                   tfisA(0:numJ,-1:1,0:numhill),
      +                   rhofisA(0:numJ,-1:1,0:numhill),
      +                   tfisup(0:numJ,-1:1)
-      double precision tfisdown,tfis,tfisA,rhofisA,tfisup
+      double precision tfisdown,tfis,gamfis,taufis,denfis,tfisA,
+     +                 rhofisA,tfisup
 c
 c *********************** subroutine compprepare ***********************
 c
@@ -1317,17 +1348,17 @@ c
       common /binaryr/ xspopex0(0:numpar,0:numlev),
      +                 sfactor(0:numZ,0:numN,0:numex,0:numJ,-1:1),
      +                 xspopdir(0:numZ,0:numN),xscompdisctot(0:numpar),
-     +                 xsdisc(0:numpar,0:numlev),
+     +                 Eaveragebin(0:numpar),xsdisc(0:numpar,0:numlev),
      +                 xscompdisc(0:numpar,0:numlev),
      +                 xsdisctot(0:numpar),xsdircont(0:numpar),
      +                 xsdirect(0:numpar),xsconttot(0:numpar),
      +                 xscompound(0:numpar),xscompel,xscompel6(numen6),
      +                 xsnonel6(numen6),xselastot,xsnonel,xscompnonel,
      +                 feedbinary(0:numpar,0:numex),binemissum(0:numpar)
-      real xspopex0,sfactor,xspopdir,xscompdisctot,xsdisc,xscompdisc,
-     +     xsdisctot,xsdircont,xsdirect,xsconttot,xscompound,xscompel,
-     +     xscompel6,xsnonel6,xselastot,xsnonel,xscompnonel,feedbinary,
-     +     binemissum
+      real xspopex0,sfactor,xspopdir,xscompdisctot,Eaveragebin,xsdisc,
+     +     xscompdisc,xsdisctot,xsdircont,xsdirect,xsconttot,xscompound,
+     +     xscompel,xscompel6,xsnonel6,xselastot,xsnonel,xscompnonel,
+     +     feedbinary,binemissum
 c
 c ************************** subroutine binaryspectra ******************
 c
@@ -1374,12 +1405,13 @@ c
      +                   fisfeedex(0:numZ,0:numN,0:numex+1),
      +                   fisfeedJP(0:numZ,0:numN,0:numex+1,0:numJ,-1:1),
      +                   xsfeed(0:numZ-2,0:numN-2,-1:numpar),
+     +                   Eaveragemul(0:numZ-2,0:numN-2,-1:numpar),
      +                   xsngn(-1:numpar),xsngnsum,
      +                   xsngnspec(0:numpar,0:numen)
       real xsmpeemis,xspartial,xsbinspec,xsmpe,mcontrib,mpecontrib,
      +     xsmpetot,Dmulti,popexcl,feedexcl,xspoppreeq,xspopcomp,Fdir,
      +     Fpreeq,Fcomp,xsmpreeq,xsmpreeqad,fisfeedex,fisfeedJP,xsfeed,
-     +     xsngn,xsngnsum,xsngnspec
+     +     Eaveragemul,xsngn,xsngnsum,xsngnspec
 c
 c ********************** subroutine excitation *************************
 c
@@ -1436,7 +1468,7 @@ c
      +                   xsfischancheck(0:numchantot),
      +                   xsratio(0:numchantot),
      +                   xschaniso(0:numchantot,0:numlev),
-     +                   exclyield(0:numchantot,0:numlev),
+     +                   exclbranch(0:numchantot,0:numlev),
      +                   xsgamdischan(0:numchantot,0:numlev,0:numlev),
      +                   Eavchannel(0:numchantot,0:numpar),
      +                   xschannelsp(0:numchantot,0:numpar,0:numen),
@@ -1451,7 +1483,7 @@ c
       real             xsparcheck,xsspeccheck,channelsum,xsabs,xsexcl,
      +                 gamexcl,xschannel,xsgamchannel,xsfischannel,
      +                 xschancheck,xsfischancheck,xsratio,xschaniso,
-     +                 exclyield,xsgamdischan,Eavchannel,xschannelsp,
+     +                 exclbranch,xsgamdischan,Eavchannel,xschannelsp,
      +                 xsfischannelsp,specemis,Especsum,gmult
       double precision Ethrexcl,Qexcl
 c
@@ -1459,9 +1491,9 @@ c ************************ subroutine totalxs **************************
 c
       common /totalxsr/ xsexclusive(0:numpar),xsexclcont(0:numpar),
      +                  xsparticle(0:numpar),multiplicity(0:numpar),
-     +                  xsfistot,xsfistot0
-      real xsexclusive,xsexclcont,xsparticle,multiplicity,xsfistot,
-     +     xsfistot0
+     +                  Eaverage(0:numpar),xsfistot,xsfistot0
+      real xsexclusive,xsexclcont,xsparticle,multiplicity,Eaverage,
+     +     xsfistot,xsfistot0
 c
 c *************************** subroutine spectra ***********************
 c
@@ -1497,8 +1529,7 @@ c
      +                  xsfpZApost(numelem,numneu),
      +                  xsfpApre(nummass),xsfpApost(nummass),
      +                  yieldApre(nummass),yieldApost(nummass),
-     +                  nupre(0:numpar,nummass),
-     +                  nupost(0:numpar,nummass),
+     +                  nuA(0:numpar,nummass),
      +                  yieldNpre(numneu),
      +                  yieldNpost(numneu),
      +                  yieldZApre(numelem,numneu),
@@ -1515,7 +1546,7 @@ c
       logical fpexist,fpaexist,nubarexist
       integer Aff,Zff
       real    excfis,xsfpZApre,xsfpZApost,xsfpApre,xsfpApost,yieldApre,
-     +        yieldApost,nupre,nupost,yieldNpre,yieldNpost,yieldZApre,
+     +        yieldApost,nuA,yieldNpre,yieldNpost,yieldZApre,
      +        yieldZApost,yieldfpex,fpratio,fpeps,xsfpex,Pdisnu,pfns,
      +        Eavpfns,maxpfns,nubar,disa,disacor,disaz,disazcor,
      +        xsfptotpost,xsfptotpre,yieldtotpost,yieldtotpre
@@ -1561,7 +1592,7 @@ c
      +           fxsgamdischan(numenlow,0:numchantot,0:numlev,0:numlev),
      +                   fxsratio(numenlow,0:numchantot),
      +                   fxschaniso(numenlow,0:numchantot,0:numlev),
-     +                   fexclyield(numenlow,0:numchantot,0:numlev),
+     +                   fexclbranch(numenlow,0:numchantot,0:numlev),
      +                   fxsbinary(numenlow,0:numpar),
      +                   fxspopnuc(numenlow,0:numZ,0:numN),
      +                   fxspopex(numenlow,0:numZ,0:numN,0:numlev),
@@ -1577,13 +1608,14 @@ c
      +                   fxstotinc(numenlow),fxscompel(numenlow),
      +                   fxselasinc(numenlow),fxsreacinc(numenlow)
       common /thermalrB/ fxscompnonel(numenlow),fxsdirdiscsum(numenlow),
+     +                   fxsracape(numenlow),
      +                   fxspreeqsum(numenlow),fnubar(numenlow,0:numpar)
       real fxschannel,fxsgamchannel,fxsgamdischan,fxsratio,fxschaniso,
-     +     fexclyield,fxsbinary,fxspopnuc,fxspopex,fxsbranch,
+     +     fexclbranch,fxsbinary,fxspopnuc,fxspopex,fxsbranch,
      +     fxsexclusive,fxsdisctot,fxsexclcont,fxsngn,fxsdisc,
      +     fxsdirdisc,fxscompdisc,fxsnonel,fxselastot,fxstotinc,
      +     fxscompel,fxselasinc,fxsreacinc,fxscompnonel,fxsdirdiscsum,
-     +     fxspreeqsum,fnubar
+     +     fxspreeqsum,fxsracape,fnubar
 c
 c ************************ subroutine residualout **********************
 c
@@ -1657,4 +1689,4 @@ c
      +                   xselassh6(numen6),xselas6(numen6),
      +                   xsnon6(numen6)
       real xstot6,xsreac6,xsopt6,xselassh6,xselas6,xsnon6
-Copyright (C)  2017 A.J. Koning, S. Hilaire and S. Goriely
+Copyright (C)  2019 A.J. Koning, S. Hilaire and S. Goriely

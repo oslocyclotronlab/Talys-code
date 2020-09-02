@@ -1,8 +1,8 @@
       subroutine wkb(Z,A,Zix,Nix,nbar)
 c
 c +---------------------------------------------------------------------
-c | Author: Roberto Capote, Arjan Koning, and Stephane Goriely
-c | Date  : December 13, 2013
+c | Author: Roberto Capote, Arjan Koning, Stephane Goriely, G. Scamps
+c | Date  : October 11, 2019
 c | Task  : Initialization of WKB approximation for fission
 c +---------------------------------------------------------------------
 c
@@ -12,7 +12,8 @@ c
       integer nsmooth
       integer Z,A,nbar,nbarr,i,j,n1,Find_Extrem,Zix,Nix,ii
       real    rmiu,centr,heigth,width,ucentr,uheigth,uwidth,uexc0,uexc1,
-     +        tdir,dE,uexc,phase(2*numbar),tff(2*numbar)
+     +        tdir,dE,uexc,phase(2*numbar),tff(2*numbar),Vwell,Vwell2,
+     +        Vtop,Vtop2,b1,b2
       character*9 filewkb
 c
 c ******* Finding maxima and minima of the deformation energy curve ****
@@ -102,11 +103,16 @@ C==================================================================
 C
 C     ENERGY LOOP
 C
+      b1=bdamp(Zix,Nix,1)
+      b2=bdamp(Zix,Nix,2)
       n1=3*nbinswkb/4
       uexc=0.
       Uwkb(Zix,Nix,0)=0.
       do j=1,nbar
         Twkb(Zix,Nix,0,j)=0.
+        Twkbdir(Zix,Nix,0,j)=0.
+        Twkbtrans(Zix,Nix,0,j)=0.
+        Twkbphase(Zix,Nix,0,j)=0.
       enddo
       do i=1,nbinswkb
         if (i.le.n1) then
@@ -117,8 +123,39 @@ C
         uexc=uexc+dE
         CALL WKBFIS(Z,A-Z,uexc, tff, phase, tdir)
         Uwkb(Zix,Nix,i)=uexc
+        if (flagfispartdamp) then
+          if (nbar.gt.1) then
+            Vwell=vfis(iiextr(2))
+            Vwell2=vfis(iiextr(4))
+            Vtop=min(Vheight(1),Vheight(3))
+            Vtop2=min(Vheight(3),Vheight(5))
+            Twkbdir(Zix,Nix,i,1)=tdir
+            if (uexc.lt.Vwell) then
+              Twkbtrans(Zix,Nix,i,1)=0.
+            else if (uexc.gt.Vtop) then
+              Twkbtrans(Zix,Nix,i,1)=1.
+            else
+              Twkbtrans(Zix,Nix,i,1)= (uexc**2-Vwell**2)/
+     +          ( (Vtop**2-Vwell**2)*exp(-(uexc-Vtop)/b1) )
+            endif
+            if (uexc.lt.Vwell2) then
+              Twkbtrans(Zix,Nix,i,2)=0.
+            else if (uexc.gt.Vtop2) then
+              Twkbtrans(Zix,Nix,i,2)=1.
+            else
+              Twkbtrans(Zix,Nix,i,2)= (uexc**2-Vwell2**2)/
+     +          ( (Vtop2**2-Vwell2**2)*exp(-(uexc-Vtop2)/b2) )
+            endif
+c           write(16,*)uexc,Twkbtrans(Zix,Nix,i,1),Twkbtrans(Zix,Nix,i,2)
+          else
+            Twkbdir(Zix,Nix,i,1)=0.
+            Twkbtrans(Zix,Nix,i,1)=1.
+            Twkbtrans(Zix,Nix,i,2)=1.
+          endif
+        endif
         do j=1,nbar
           Twkb(Zix,Nix,i,j)=tff(2*j-1)
+          if (flagfispartdamp) Twkbphase(Zix,Nix,i,j)=phase(2*j)
           if (flagfisout)
      +      write(22,'("i=",i2," E=",f8.3," j=",i2," T=",es12.3)')
      +      i,uexc,j,Twkb(Zix,Nix,i,j)
@@ -308,10 +345,12 @@ C
          dmom = (1.d0 - tff(k))*(1.d0 - tdirv(k+2))
          if(k.gt.1) then
            tdirv(k) = tff(k)*tdirv(k+2) /
-     &     (1.d0 + 2.d0*sqrt(dmom)*cos(2.d0*phase(k+1)) + dmom)
+     &     (1.d0 + dmom)
+c     &     (1.d0 + 2.d0*sqrt(dmom)*cos(2.d0*phase(k+1)) + dmom)
          else
            tdirv(1) = tff(1)*tdirv(3) /
-     &     (1.d0 + 2.d0*sqrt(dmom)*cos(2.d0*phase(2)) + dmom)
+     &     (1.d0 + dmom)
+c     &     (1.d0 + 2.d0*sqrt(dmom)*cos(2.d0*phase(2)) + dmom)
          endif
       enddo
         tdir = tdirv(1)
@@ -477,6 +516,8 @@ CC----------------------------------------------------------------------
 C     determination of the minima   and maxima
       do j=nsmooth+1 , nbeta-nsmooth
 
+c Modification SCAMPS to prevent problem (ex Fm324):
+        if (vfis(j).eq.vfis(j-1)) cycle
         logmax=.true.
         do k=j-nsmooth,j+nsmooth
           if (k.eq.j) cycle

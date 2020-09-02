@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning, Stephane Hilaire and Stephane Goriely
-c | Date  : December 21, 2017
+c | Date  : December 28, 2019
 c | Task  : Main program
 c +---------------------------------------------------------------------
 c
@@ -10,9 +10,9 @@ c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
 c
-c                            TALYS-1.9
+c                            TALYS-1.95
 c
-c                   (Version: December 21, 2017)
+c                   (Version: December 28, 2019)
 c
 c             Nuclear reactions from 1 keV to 200 MeV.
 c
@@ -23,11 +23,10 @@ c
 c       |-------------------------------------------------------|
 c       |                 Arjan Koning                          |
 c       |                                                       |
-c       | NRG - Nuclear Research and Consultancy Group          |
-c       | Westerduinweg 3                                       |
-c       | P.O. Box 25, NL-1755 ZG  Petten, The Netherlands      |
-c       | Phone: (+31) 224 564051  FAX: (+31) 224 568490        |
-c       | Email: koning@nrg.eu                                  |
+c       | IAEA - International Atomic Energy Agency             |
+c       | Wagrammerstrasse 5                                    |
+c       | P.O. Box 100, 1400 Vienna Austria                     |
+c       | Email: A.koning@iaea.org                              |
 c       |-------------------------------------------------------|
 c
 c       |-------------------------------------------------------|
@@ -67,4 +66,4 @@ c
       call talysreaction
       if (flagnatural) call natural
       end
-Copyright (C)  2017 A.J. Koning, S. Hilaire and S. Goriely
+Copyright (C)  2019 A.J. Koning, S. Hilaire and S. Goriely

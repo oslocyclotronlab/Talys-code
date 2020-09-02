@@ -31,7 +31,7 @@ c path   : directory containing structure files to be read
 c
 c The maximum length of the path is 60 characters
 c
-      home='/home/finux01b/akoning/'
+      home='/Users/koning/'
       path=trim(home)//'talys/structure/'
 c
 c Test to check accessibility of structure files

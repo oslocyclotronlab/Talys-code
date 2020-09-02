@@ -1,0 +1,93 @@
+Development of TALYS since release of TALYS-1.9
+
+- December 21, 2017
+
+********** Release of TALYS-1.9 **********
+
+- January 30, 2018
+
+Imported new PSF D1M + QRPA M1 datatables in structure directory. 
+Adopted two keywords, 'upbend' to enable or disable the low-energy upbend formula 
+of the PSF (default n) by Stephane Goriely. Also introduced the 'upbendf' parameter for 
+this formula.
+The upbendc, upbende and upbendf parameters now have a default, which are likely
+to change in the near future.
+
+- February 2, 2018
+
+Removed a few redundant quantities from massdis.f and ffevap.f, like pre-neutron nubar
+(which is nonsense)
+
+- February 13, 2018
+
+Corrected an error found by Stephane Goriely. Due to a trim() error in  densitytable.f
+tables for elements with only one symbol, like U, are not read for ldmodel 4, 5 and 6.
+Corrected that. I expect more comments about this one!
+
+- March 14, 2018
+
+Solved a few errors in medical isotope production, found by Jiri Ulrich.
+The Tcool keyword was not working properly. Solved that in input5.f
+Also some suggestions on time steps and the use of natural targets were adopted.
+
+- April 13, 2018
+
+Error found by Dimitri Rochman, the combination expmass n, massmodel 0 did not work. 
+Solved in masses.f
+
+- July 6, 2018
+
+Expanded the output for decay from each continuum and discrete bin. If outpopulation y,
+which is automatically enabled when outbasic y, then an extra keyword can be given 'outdecay y',
+which will output the precise Ex,J,pi dependent decay from each mother state in the CN decay.
+This was added on the advice of Stephane Goriely to better study reactions used by the Oslo
+group for the determination of PSF's.
+
+- March 12, 2019
+
+Added SMLO PSF tables from Stephane Goriely and Vladimir Plujko. Also changed some of the default
+parameter for upbend formula for PSF. strength 9 now added for SMLO.
+
+- March 15, 2019
+
+Added the fission width average fission lifetime, and fission level density
+to the specific output of the fission transmission coefficients.
+
+- April 7, 2019
+
+Corrected an error found by Stephane Goriely on the calculation of the average emission energy.
+The discrete levels were not properly taken into account. This quantiy was only printed in the
+basic output of TALYS (and not used for anything). Now, however, when 'outspectra y', files like
+Eaverage.n will be created containing the average emission energy per particle.
+
+- April 9, 2019
+
+With 'filedensity y' TALYS now also prints the level density tables exactly in the form as they
+are used as input from the nuclear structure data tables, these files are called e.g. nld041093.tab.
+
+- May 28, 2019
+
+Solved an error in levels.f: if the isomer of a residual nucleus is above the maximum level included it is brought down 
+to that maximum level. So far this was only implemented for the target nucleus, i.e. inelastic  scattering.
+
+- June 9 2019
+
+Added normalization of average number of neutrons to massdis.f
+
+- June 23 2019
+
+Solved a bug discovered by Rob Hoffman. In input5, for the gp parameter (single particle state density for protons) 
+gn was read instead of gp. SInce for fitting we often use gpadjust this bug got unnoticed for years!
+
+- June 23 2019
+
+Added a new keyword 'psfglobal' to use only global photon strength functions and parameters. By default
+'psfglobal n' meaning that the best GDR parameters, tuned PSF tables etc are used.
+This keyword was especially introduced for two tables for the SMLO model, one optimized and one global,
+but is applicable in general
+
+- August 13 2019
+
+Included fission partial damping model constructed by Guillaume Scamps and Stephane Goriely. This should bring
+TALYS closer to the capabilities of EMPIRE for fission prediction. For this, the keywords, fispartdamp, 
+bdamp and bdampadjust were added.

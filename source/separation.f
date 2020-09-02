@@ -30,6 +30,8 @@ c theoretical. Hence if (Zix,Nix) is in the Audi-Wapstra table but
 c (Zr,Nr) is not, for both nuclides the theoretical masses are used.
 c For the calculation of separation energies, Zix and Nix act as
 c compound nucleus indices.
+c Since the input for masses is very flexible, we have to build in an extra 
+c check for the separation energy to avoid numerical problems.
 c
       do 10 Zix=0,maxZ+2
         do 10 Nix=0,maxN+2

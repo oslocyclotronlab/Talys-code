@@ -142,7 +142,7 @@ c
       write(1,'("# ")')
       write(1,'("# Number of levels:",i4)') nlev(Zix,Nix)
       write(1,'("# ")')
-      write(1,'("# Number   Energy  Spin Parity  Branching  ",
+      write(1,'("# Number   Energy  Spin Parity  Branching ",
      +  "Ratio (%) Lifetime(sec) Assignment        ENSDF")')
       do 130 i=0,nlev(Zix,Nix)
         if (tau(Zix,Nix,i).ne.0.) then

@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : May 6, 2015
+c | Date  : April 7, 2019
 c | Task  : Initialization of arrays for various cross sections
 c +---------------------------------------------------------------------
 c
@@ -497,7 +497,14 @@ c
           Fcomp(Zix,Nix)=0.
           xsBFnuc(Zix,Nix)=0.
           xspopnucT(Zix,Nix)=0.
+          do 512 parity=-1,1,2
+            xspopnucP(Zix,Nix,parity)=0.
+  512     continue
   510 continue
+      do 514 parity=-1,1,2
+        do 514 J=0,numJ
+          CNterm(parity,J)=0.
+  514 continue
       do 515 nen=0,numen
         do 515 Nix=0,numN
           do 515 Zix=0,numZ
@@ -511,6 +518,9 @@ c
             xspopex(Zix,Nix,nex)=0.
             preeqpopex(Zix,Nix,nex)=0.
             maxJ(Zix,Nix,nex)=numJ
+            do 522 parity=-1,1,2
+              xspopexP(Zix,Nix,nex,parity)=0.
+  522       continue
   520 continue
       do 530 parity=-1,1,2
         do 530 J=0,numJ
@@ -534,6 +544,8 @@ c
         xsconttot(type)=0.
         xscompound(type)=0.
         xscompcont(type)=0.
+        Eaveragebin(type)=0.
+        Eaverage(type)=0.
   540 continue
       do 550 nex=0,numex
         do 550 type=0,numpar
@@ -642,6 +654,7 @@ c
         do 750 Nix=0,numN-2
           do 750 Zix=0,numZ-2
             xsfeed(Zix,Nix,type)=0.
+            if (type.ge.0) Eaveragemul(Zix,Nix,type)=0.
   750 continue
       do 760 type=-1,6
         xsngn(type)=0.
@@ -770,7 +783,7 @@ c                production cross section (for exclusive gamma ray
 c                intensities)
 c fxsgamdischan: discrete gamma channel cross section
 c fxschaniso   : channel cross section per isomer
-c fexclyield   : exclusive channel yield per isomer
+c fexclbranch  : exclusive channel yield per isomer
 c fxsgamdischan: discrete gamma channel cross section
 c fxsnonel     : non-elastic cross section
 c fxselastot   : total elastic cross section (shape + compound)
@@ -784,6 +797,7 @@ c fxscompnonel : total compound non-elastic cross section
 c fxsdirdiscsum: total direct cross section
 c fxspreeqsum  : total preequilibrium cross section summed over
 c                particles
+c fxsracape    : direct capture cross section
 c fisstring    : string for exclusive fission reaction channel
 c
       do 910 type=0,numpar
@@ -843,6 +857,7 @@ c
           fxscompnonel(nen)=0.
           fxsdirdiscsum(nen)=0.
           fxspreeqsum(nen)=0.
+          fxsracape(nen)=0.
           do 970 Nix=0,numN
             do 970 Zix=0,numZ
               fxspopnuc(nen,Zix,Nix)=0.
@@ -872,7 +887,7 @@ c
         do 1060 i=0,numchantot
           do 1070 nen=1,numenlow
             fxschaniso(nen,i,n1)=0.
-            fexclyield(nen,i,n1)=0.
+            fexclbranch(nen,i,n1)=0.
  1070     continue
  1060   continue
  1050 continue

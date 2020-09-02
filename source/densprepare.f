@@ -16,7 +16,7 @@ c
      +                 nb,nc,ibar,ibk,ibin,J,parity
       real             Ex0plus,Ex0min,Efs,SS,Rodd,dEx,dExhalf,Exout,
      +                 Rboundary,Ex1min,Ex1plus,Eout,emax,emin,Exm,
-     +                 Rspin,factl(0:numl),Egamma,factor,gn0,fstrength,
+     +                 Rspin,Egamma,factor,gn0,fstrength,
      +                 Ea,Eb,Ec,ta,tb,tc,tint,exfis,dExmin,elowest,elow,
      +                 emid
       double precision density
@@ -205,25 +205,6 @@ c
   110       continue
           endif
 c
-c Optional adjustment factors
-c
-c tljadjust: logical for energy-dependent Tlj adjustment
-c tladjust : adjustable factor for Tlj (default 1.)
-c adjust   : subroutine for energy-dependent parameter adjustment
-c factl    : multiplication factor
-c
-          if (tljadjust(type)) then
-            do 130 l=0,numl
-              key='tljadjust'
-              call adjust(Exout,key,0,0,type,l,factor)
-              factl(l)=factor*tladjust(type,l)
-  130       continue
-          else
-            do 140 l=0,numl
-              factl(l)=1.
-  140       continue
-          endif
-c
 c ************* Interpolation of transmission coefficients *************
 c
 c 1. Gamma transmission coefficients
@@ -259,7 +240,7 @@ c
             do 220 l=1,gammax
               do 220 irad=0,1
                 Tgam(nexout,l,irad)=twopi*(Egamma**(2*l+1))*gn0*
-     +            fstrength(Zcomp,Ncomp,Efs,Egamma,irad,l)*factl(l)
+     +            fstrength(Zcomp,Ncomp,Efs,Egamma,irad,l)*Fnorm(0)
   220       continue
           else
 c
@@ -317,7 +298,7 @@ c
                 tc=Tjl(type,nc,updown,l)
                 call pol2(Ea,Eb,Ec,ta,tb,tc,Eout,tint)
                 if (tint.lt.transeps) tint=0.
-                Tjlnex(type,nexout,updown,l)=factl(l)*tint
+                Tjlnex(type,nexout,updown,l)=Fnorm(type)*tint
   260       continue
             if (.not.flagfullhf) then
               do 270 l=0,lmax(type,nen)
@@ -326,7 +307,7 @@ c
                 tc=Tl(type,nc,l)
                 call pol2(Ea,Eb,Ec,ta,tb,tc,Eout,tint)
                 if (tint.lt.transeps) tint=0.
-                Tlnex(type,nexout,l)=factl(l)*tint
+                Tlnex(type,nexout,l)=Fnorm(type)*tint
   270         continue
             endif
 c

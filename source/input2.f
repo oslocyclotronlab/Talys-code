@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : November 1, 2015
+c | Date  : September 6, 2018
 c | Task  : Read input for second set of variables
 c +---------------------------------------------------------------------
 c
@@ -195,6 +195,7 @@ c
         if (key.eq.'maxlevelstar') then
           read(value,*,end=300,err=300) nlevmax
           nlevmax=max(nlevmax,Ltarget)
+          nlevbin(k0)=nlevmax
           goto 110
         endif
         if (key.eq.'maxlevelsres') then

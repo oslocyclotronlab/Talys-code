@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning and Marieke Duijvestijn
-c | Date  : November 8, 2018
+c | Date  : July 8, 2018
 c | Task  : Read input for third set of variables
 c +---------------------------------------------------------------------
 c
@@ -40,6 +40,7 @@ c maxrot      : number of included excited rotational levels
 c k0          : index for incident particle
 c strength    : model for E1 gamma-ray strength function
 c strengthM1  : model for M1 gamma-ray strength function
+c flagpsfglobal: flag for global photon strength functions only
 c flagpecomp  : flag for Kalbach complex particle emission model
 c flagsurface : flag for surface effects in exciton model
 c flaggiant0  : flag for collective contribution from giant resonances
@@ -78,6 +79,7 @@ c               outgoing particle, if available
 c flagasys    : flag for all level density parameters a from systematics
 c flaggshell  : flag for energy dependence of single particle level
 c               density parameter g
+c flagupbend  : flag for low-energy upbend of photon strength function
 c flagmassdis : flag for calculation of fission fragment mass yields
 c flagffevap  : flag for calculation of particle evaporation from
 c               fission fragment mass yields
@@ -138,6 +140,7 @@ c
       else
         flaggiant0=.false.
       endif
+      flagpsfglobal=.false.
       flag2comp=.true.
       flagchannels=.false.
       flagfission=.false.
@@ -177,6 +180,7 @@ c
    30 continue
       if (k0.eq.1.or.k0.eq.2) flagrot(k0)=.true.
       flagasys=.false.
+      flagupbend=.false.
       flaggshell=.false.
       flagmassdis=.false.
       flagffevap=.true.
@@ -252,6 +256,12 @@ c
         endif
         if (key.eq.'strengthm1') then
           read(value,*,end=300,err=300) strengthM1
+          goto 110
+        endif
+        if (key.eq.'psfglobal') then
+          if (ch.eq.'n') flagpsfglobal=.false.
+          if (ch.eq.'y') flagpsfglobal=.true.
+          if (ch.ne.'y'.and.ch.ne.'n') goto 300
           goto 110
         endif
         if (key.eq.'eciscalc') then
@@ -499,6 +509,12 @@ c
         if (key.eq.'gshell') then
           if (ch.eq.'n') flaggshell=.false.
           if (ch.eq.'y') flaggshell=.true.
+          if (ch.ne.'y'.and.ch.ne.'n') goto 300
+          goto 110
+        endif
+        if (key.eq.'upbend') then
+          if (ch.eq.'n') flagupbend=.false.
+          if (ch.eq.'y') flagupbend=.true.
           if (ch.ne.'y'.and.ch.ne.'n') goto 300
           goto 110
         endif

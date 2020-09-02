@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning and Stephane Hilaire
-c | Date  : December 12, 2016
+c | Date  : March 13, 2019
 c | Task  : Level density parameters
 c +---------------------------------------------------------------------
 c
@@ -101,8 +101,10 @@ c
      +        Pshift(Zix,Nix,ibar)=pshift0+Pshiftadjust(Zix,Nix,ibar)
    20     continue
         else
-          if (ctable(Zix,Nix,0).eq.1.e-20) ctable(Zix,Nix,0)=ald0
-          if (ptable(Zix,Nix,0).eq.1.e-20) ptable(Zix,Nix,0)=pshift0
+          if (ctable(Zix,Nix,0).eq.1.e-20) 
+     +      ctable(Zix,Nix,0)=ald0+ctableadjust(Zix,Nix,0)
+          if (ptable(Zix,Nix,0).eq.1.e-20) 
+     +      ptable(Zix,Nix,0)=pshift0+ptableadjust(Zix,Nix,0)
         endif
       endif
    30 close (unit=2)

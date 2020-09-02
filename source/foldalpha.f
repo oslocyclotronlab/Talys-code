@@ -112,6 +112,8 @@ c-------------------------------------------------------------------------------
       expj0=77.
       if(a.le.90.) expj0=135.-0.644*a
       ww=expj0*te/(raw**3/3.+7.603*alphav(5)*aaw*raw**2/a13)/pi
+c     ww=expj0*te/((1.-alphav(5))*raw**3/3.+7.603*alphav(5)*aaw*
+c    &  raw**2/a13)/pi
       alphav(3)=raw
       alphav(4)=aaw
       alphav(8)=ww
@@ -168,17 +170,6 @@ c volume integral
       alphav(4)=aaw
       alphav(8)=ww
 c
-c dispersive contributions: dwv = volume; dws = surface; dvolj = volume integral
-c new method for dispersive relation following Mahaux, Ngo and Satchler, NPA 449 (1986) 354
-c
-c raw: radius
-c dvolj: volume integral
-c eref: reference energy
-c
-      eref=150.
-      call mahaux(a,ee,eref,expj0,as,es,v5d,raw,aaw,dwv,dws,dvolj,
-     &  efermia)
-c
    50 continue
 
 c final radius, diffuseness and depth of the imaginary WS-type potential
@@ -187,12 +178,29 @@ c (default 1.)
 c   volume term
       rww=rvadjust(6)*alphav(3)*a13
       aww=avadjust(6)*alphav(4)
-      www=w1adjust(6)*alphav(8)*(1.-v5d)
+      if (alphaomp.eq.4) then
+        www=w1adjust(6)*alphav(8)
+      else
+        www=w1adjust(6)*alphav(8)*(1.-alphav(5))
+      endif
 c   surface term
       rws=rwdadjust(6)*1.09*rww
       aws=awdadjust(6)*1.6*aww
       wws=d1adjust(6)*alphav(8)*alphav(5)
-
+c
+c dispersive contributions: dwv = volume; dws = surface; dvolj = volume integral
+c new method for dispersive relation following Mahaux, Ngo and Satchler, NPA 449 (1986) 354
+c
+c raw: radius
+c dvolj: volume integral
+c eref: reference energy
+c
+      if (alphaomp.eq.5) then
+        eref=150.
+        call mahaux(a,ee,eref,expj0,as,es,v5d,raw,aaw,dwv,dws,dvolj,
+     &    efermia)
+      endif
+c
 c--------------------------------------------------------------------------------------------------
 c determination of the real folding potential through the product of the fourier transforms
 c rb         : maximum radius value
@@ -228,7 +236,14 @@ c
         factor2=1.
       endif
       do i=1,nu
-        rva(i)=factor1*aradialcor*rva(i)
+c       rva(i)=factor1*aradialcor*rva(i)
+c
+csg Correction of the radius dependence of the real part after an analysis of the 
+c   of the (a,g) and (a,n) data of deformed nuclei : 27/4/2018 (Brussels)
+c   increase of rva by 3% for deformed nuclei but only below typically 18 MeV
+
+        rva(i)=factor1*aradialcor*rva(i)*(1.+beta2(Zix,Nix,0)/15.
+     &    /(1.+exp((E-18.)/2.)))
         va(i)=factor2*adepthcor*va(i)
       enddo
 c

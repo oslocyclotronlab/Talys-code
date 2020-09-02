@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : November 16, 2016
+c | Date  : May 1, 2019
 c | Task  : Output of exclusive reaction channels
 c +---------------------------------------------------------------------
 c
@@ -36,7 +36,7 @@ c Nlast,NL  : last discrete level
 c tau       : lifetime of state in seconds
 c edis      : energy of level
 c xschaniso : channel cross section per isomer
-c exclyield : exclusive channel yield per isomer
+c exclbranch: exclusive channel yield per isomer
 c
       write(*,'(/" 6. Exclusive cross sections"/)')
       write(*,'(" 6a. Total exclusive cross sections "/)')
@@ -67,12 +67,12 @@ c
    30       continue
             goto 16
    40       write(*,'(61x,"0    ",es12.5,f9.5)')
-     +        xschaniso(idc,0),exclyield(idc,0)
+     +        xschaniso(idc,0),exclbranch(idc,0)
             do 50 nex=1,NL
               if (tau(Zcomp,Ncomp,nex).ne.0.) then
                 write(*,'(59x,i3,4x,es12.5,f9.5,2x,es12.5,
      +            " sec. ")') nex,xschaniso(idc,nex),
-     +            exclyield(idc,nex),tau(Zcomp,Ncomp,nex)
+     +            exclbranch(idc,nex),tau(Zcomp,Ncomp,nex)
               endif
    50       continue
           endif
@@ -231,9 +231,9 @@ c
                     write(1,'("#     E          xs       Branching")')
                     do 240 nen=1,numinclow
                       write(1,'(3es12.5)') eninc(nen),
-     +                  fxschaniso(nen,idc,nex),fexclyield(nen,idc,nex)
+     +                  fxschaniso(nen,idc,nex),fexclbranch(nen,idc,nex)
                         fxschaniso(nen,idc,nex)=0.
-                        fexclyield(nen,idc,nex)=0.
+                        fexclbranch(nen,idc,nex)=0.
   240               continue
                     do 250 nen=numinclow+1,nin-1
                       write(1,'(3es12.5)') eninc(nen),0.,0.
@@ -245,7 +245,7 @@ c
   260               continue
                   endif
                   write(1,'(3es12.5)') Einc,
-     +              xschaniso(idc,nex),exclyield(idc,nex)
+     +              xschaniso(idc,nex),exclbranch(idc,nex)
   270             close (unit=1)
                 endif
   230         continue

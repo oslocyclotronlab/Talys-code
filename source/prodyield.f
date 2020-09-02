@@ -43,15 +43,16 @@ c
       if (dT.gt.0.5.and.dT.le.1.0) dT=1.0
       do 10 it=0,Ntime
         Tgrid(it)=it*dT
-        if (Tgrid(it).gt.Th) then
-          Ntime=it-1
+        if (abs(Tgrid(it)-Th).lt.1./hoursec.or.Tgrid(it).gt.Th) then
+          Tgrid(it)=Th
+          Ntime=it
           goto 20
         endif
    10 continue
    20 if (Tco.gt.0.) then
         Tc=Tco/hoursec
         Ncool=numtime-Ntime
-        dT=log(Tc)/Ncool
+        dT=log(Tc+1.)/Ncool
         do 30 it=Ntime+1,numtime
           Tgrid(it)=Th+exp((it-Ntime)*dT)-1.
    30   continue

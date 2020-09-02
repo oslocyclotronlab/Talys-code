@@ -2,16 +2,17 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : October 17, 2014
+c | Date  : April 7, 2019
 c | Task  : Creation of spectra
 c +---------------------------------------------------------------------
 c
 c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
-      integer type,NL,nend,nen,iang,fine,nhigh,nenout,i,iangdisc
+      integer type,NL,nend,nen,iang,fine,nhigh,nenout,i,iangdisc,Zcomp,
+     +        Ncomp
       real    Elast,Ares,convfac1,convfac2,convfac3,Ehigh,Eout,Ea,Eb,
-     +        factor,diswidth,fac1,fac2,gauss
+     +        factor,diswidth,fac1,fac2,gauss,xssum,Eaveragesum
 c
 c ********** Add smoothed discrete cross sections to spectra ***********
 c
@@ -229,7 +230,20 @@ c
   120         continue
           endif
   110   continue
+c
+c ************************ Average emission energy *********************
+c
+        xssum=xsbinary(type)
+        Eaveragesum=Eaveragebin(type)*xsbinary(type)
+        do 210 Zcomp=0,maxZ
+          do 210 Ncomp=0,maxN
+            if (Zcomp.eq.0.and.Ncomp.eq.0) goto 210
+            xssum=xssum+xsfeed(Zcomp,Ncomp,type)
+            Eaveragesum=Eaveragesum+
+     +        Eaveragemul(Zcomp,Ncomp,type)*xsfeed(Zcomp,Ncomp,type)
+  210   continue
+        if (xssum.gt.0.) Eaverage(type)=Eaveragesum/xssum
    10 continue
       return
       end
-Copyright (C)  2013 A.J. Koning, S. Hilaire and S. Goriely
+Copyright (C)  2019 A.J. Koning, S. Hilaire and S. Goriely

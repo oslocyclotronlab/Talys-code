@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 21, 2017
+c | Date  : December 28, 2019
 c | Task  : Main output
 c +---------------------------------------------------------------------
 c
@@ -13,10 +13,9 @@ c
 c
 c *************************** Code and version *************************
 c
-      write(*,'(/"    TALYS-1.9 (Version: December 21, 2017)"/)')
-      write(*,'(" Copyright (C) 2017  A.J. Koning, S. Hilaire ",
-     +  "and S. Goriely      ")')
-      write(*,'(24x," IAEA         CEA          ULB    "/)')
+      write(*,'(/"    TALYS-1.95 (Version: December 28, 2019)"/)')
+      write(*,'(" Copyright (C) 2019  A.J. Koning, S. Hilaire ",
+     +  "and S. Goriely      "/)')
       write(*,'(" Dimensions - Cross sections: mb, Energies: MeV, ",
      +  "Angles: degrees")')
 c
@@ -80,7 +79,7 @@ c Projectile
 c
       if (.not.flaginitpop) then
         if (numinc.eq.1) then
-          write(*,'(/," 1 incident energy (LAB):"/)')
+          write(*,'(/,"     1 incident energy (LAB):"/)')
         else
           write(*,'(/,i6," incident energies (LAB):"/)') numinc
         endif
@@ -132,6 +131,7 @@ c
 c flaglevels   : flag for output of discrete level information
 c levelsout    : subroutine for output of discrete levels
 c flagdensity  : flag for output of level densities
+c filedensity  : flag for level densities on separate files
 c densityout   : subroutine for output of level density parameters
 c flagfisout   : flag for output of fission information
 c fissionparout: subroutine for output for fission parameters
@@ -144,10 +144,10 @@ c
       if (parskip(0)) return
       if (k0.ne.0) then
         if (flaglevels) call levelsout(Zcomp,Ncomp)
-        if (flagdensity) call densityout(Zcomp,Ncomp)
+        if (flagdensity.or.filedensity) call densityout(Zcomp,Ncomp)
         if (flagfisout) call fissionparout(Zcomp,Ncomp)
         strucwrite(Zcomp,Ncomp)=.true.
       endif
       return
       end
-Copyright (C)  2017 A.J. Koning, S. Hilaire and S. Goriely
+Copyright (C)  2019 A.J. Koning, S. Hilaire and S. Goriely

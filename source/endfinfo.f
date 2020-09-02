@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : July 25, 2012
+c | Date  : September 27, 2019
 c | Task  : Info for ENDF-6 file
 c +---------------------------------------------------------------------
 c
@@ -51,8 +51,8 @@ c
         write(2,'(es12.5)') eninc(nen)
    10 continue
       close (unit=2)
-      write(1,'(i3,"       : number of incident energies")') numinc
-      write(1,'(i3,"       : number of discrete levels")') nlevmax
+      write(1,'(i4,"      : number of incident energies")') numinc
+      write(1,'(i4,"      : number of discrete levels")') nlevmax
       write(1,'(a40,": file with incident energies")') endfenergyfile
       write(1,'(a1,"         : detailed ENDF-6 information",
      + " per channel")') yesno(flagendfdet)

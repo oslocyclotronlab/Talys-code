@@ -50,7 +50,7 @@ c
    10 continue
       write(*,'(/" Discrete levels of Z=",i3," N=",i3," (",i3,a2,") ")')
      +   Z,N,A,nuc(Z)
-      write(*,'(/" Number  Energy Spin Parity  Branching  ",
+      write(*,'(/" Number  Energy Spin Parity  Branching ",
      +  "Ratio (%) Lifetime(sec) Assignment        ENSDF"/)')
       do 20 i=0,nlev(Zix,Nix)
         if (tau(Zix,Nix,i).ne.0.) then

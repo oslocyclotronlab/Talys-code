@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : August 10, 2015
+c | Date  : March 13, 2019
 c | Task  : Read input for sixth set of variables
 c +---------------------------------------------------------------------
 c
@@ -53,6 +53,7 @@ c flagrecoil  : flag for calculation of recoils
 c flaggamdis  : flag for output of discrete gamma-ray intensities
 c flagdisc    : flag for output of discrete state cross sections
 c filedensity : flag for level densities on separate files
+c filepsf     : flag for photon strength functions on separate files
 c flagastro   : flag for calculation of astrophysics reaction rate
 c flagintegral: flag for calculation of effective cross section using
 c               integral spectrum
@@ -152,7 +153,8 @@ c
    90     continue
         endif
       endif
-      filedensity=.true.
+      filedensity=.false.
+      filepsf=.false.
       if (flagastro) fileresidual=.true.
       flagintegral=.false.
       flagsacs=.false.
@@ -326,6 +328,12 @@ c
         if (key.eq.'filedensity') then
           if (ch.eq.'n') filedensity=.false.
           if (ch.eq.'y') filedensity=.true.
+          if (ch.ne.'y'.and.ch.ne.'n') goto 300
+          goto 110
+        endif
+        if (key.eq.'filepsf') then
+          if (ch.eq.'n') filepsf=.false.
+          if (ch.eq.'y') filepsf=.true.
           if (ch.ne.'y'.and.ch.ne.'n') goto 300
           goto 110
         endif

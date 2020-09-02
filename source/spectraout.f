@@ -2,13 +2,14 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : November 16, 2016
+c | Date  : April 7, 2019
 c | Task  : Output of particle spectra
 c +---------------------------------------------------------------------
 c
 c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
+      character*10 Efile
       character*21 specfile
       integer      type,nen
 c
@@ -132,6 +133,32 @@ c
           endif
         endif
    10 continue
+      write(*,'(/" Average emission energies"/)')
+      do 110 type=0,6
+        if (parskip(type)) goto 110
+        write(*,'(1x,a8,4x,f8.3)') parname(type),Eaverage(type)
+        Efile='Eaverage.'//parsym(type)
+        if (nin.eq.numinclow+1) then
+          open (unit=1,file=Efile,status='replace')
+          write(1,'("# ",a1," + ",i3,a2," Average ",a8,
+     +      " emission energy")') parsym(k0),Atarget,Starget,
+     +      parname(type)
+          write(1,'("# Q-value    =",es12.5)') Q(type)
+          write(1,'("# ")')
+          write(1,'("# # energies =",i6)') numinc
+          write(1,'("#    E     E-average")')
+          do 210 nen=1,numinclow
+            write(1,'(3es12.5)') eninc(nen),0.,0.
+  210     continue
+        else
+          open (unit=1,file=Efile,status='old')
+          do 230 nen=1,nin+4
+            read(1,*,end=240,err=240)
+  230     continue
+        endif
+        write(1,'(2es12.5)') Einc,Eaverage(type)
+  240   close (unit=1)
+  110 continue
       return
       end
-Copyright (C)  2013 A.J. Koning, S. Hilaire and S. Goriely
+Copyright (C)  2019 A.J. Koning, S. Hilaire and S. Goriely

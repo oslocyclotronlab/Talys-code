@@ -1,8 +1,8 @@
-      subroutine thermalxs
+       subroutine thermalxs
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 12, 2016
+c | Date  : June 8, 2019
 c | Task  : Cross sections at thermal energies
 c +---------------------------------------------------------------------
 c
@@ -12,8 +12,8 @@ c
       logical      lexist
       character*8  thchar
       character*90 thfile
-      integer      Z,A,ia
-      real         xs,xsp,xsalpha,ald,Spair
+      integer      Z,A,ia,isoT,isoR,i
+      real         xs,xsp,xsalpha,ald,Spair,sumcap,sump,sumalpha
 c
 c ********** Resonance spacings and total radiative widths *************
 c
@@ -34,28 +34,40 @@ c
       thchar=trim(nuc(Z))//'.ther'
       thfile=trim(path)//'thermal/'//thchar
       inquire (file=thfile,exist=lexist)
-      if (.not.lexist) goto 30
+      if (.not.lexist) goto 110
       open (unit=2,file=thfile,status='old')
 c
 c 2. Search for the isotope under consideration and read information
 c
-c ia          : mass number from resonance table
-c xscaptherm  : thermal capture cross section
-c xsptherm    : thermal (n,p) cross section
-c xsalphatherm: thermal (n,a) cross section
-c xsalpha : (n,a) cross section
-c xsp   : (n,p) cross section
-c xs,....     : help variables
+c ia           : mass number from resonance table
+c xscaptherm   : thermal capture cross section
+c xsptherm     : thermal (n,p) cross section
+c xsalphatherm : thermal (n,a) cross section
+c xsalpha      : (n,a) cross section
+c xsp          : (n,p) cross section
+c xs,....      : help variables
 c
       xs=0.
       xsp=0.
       xsalpha=0.
-   10 read(2,'(4x,i4,8x,3(e9.2,9x))',end=20) ia,xs,xsp,xsalpha
+   10 read(2,'(4x,3i4,3(e9.2,9x))',end=20) ia,isoT,isoR,xs,xsp,xsalpha
       if (A.ne.ia) goto 10
-      if (xs.ne.0..and.xscaptherm.eq.0.) xscaptherm=xs
-      if (xsp.ne.0..and.xsptherm.eq.0.) xsptherm=xsp
-      if (xsalpha.ne.0..and.xsalphatherm.eq.0.) xsalphatherm=xsalpha
+      if (xs.ne.0.) xscaptherm(isoR)=xs
+      if (xsp.ne.0.) xsptherm(isoR)=xsp
+      if (xsalpha.ne.0.) xsalphatherm(isoR)=xsalpha
+      goto 10
    20 close (unit=2)
+      sumcap=0.
+      sump=0.
+      sumalpha=0.
+      do 30 i=0,numisom
+        sumcap=sumcap+xscaptherm(i)
+        sump=sump+xsptherm(i)
+        sumalpha=sumalpha+xsalphatherm(i)
+   30 continue
+      if (xscaptherm(-1).eq.0.) xscaptherm(-1)=sumcap
+      if (xsptherm(-1).eq.0.) xsptherm(-1)=sump
+      if (xsalphatherm(-1).eq.0.) xsalphatherm(-1)=sumalpha
 c
 c 2. Systematics
 c
@@ -69,11 +81,11 @@ c Spair   : help variable
 c S       : separation energy per particle
 c pair    : pairing energy
 c
-   30 if (xscaptherm.eq.0.) then
+  110 if (xscaptherm(-1).eq.0.) then
         ald=alev(0,0)
         Spair=S(0,0,1)-pair(0,0)
         Spair=max(Spair,1.)
-        xscaptherm=1.5e-3*(ald*Spair)**3.5
+        xscaptherm(-1)=1.5e-3*(ald*Spair)**3.5
       endif
       return
       end

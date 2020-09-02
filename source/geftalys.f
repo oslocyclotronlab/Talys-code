@@ -2321,7 +2321,7 @@ c      adding data into the array of the total P(A,Z) yield
 
 c      --- here we add data into the array with the total yield
        do i=1,350
-c	    write(*,*)'fsig(',nex,')=',fsig(nex)
+c    write(*,*)'fsig(',nex,')=',fsig(nex)
          ysum(i)=ysum(i)+apre(i)*fsig(nex)
          ysump(i)=ysump(i)+apost(i)*fsig(nex)
 

@@ -424,10 +424,9 @@ c
           spectfac(0,0,nex)=spectfacth(0,0)
         endif
       enddo
-c
       if (ispect.ne.2) then
-      write(filespec,'("levels/spect",a1,"/z",i3.3)') parsym(k0),
-     +  ZZ(0,0,0)
+        write(filespec,'("levels/spect",a1,"/",a2,".spect",a1)')
+     +    parsym(k0),nuc(ZZ(0,0,0)),parsym(k0)
       acp=AA(0,0,0)
       filespec=trim(path)//filespec
       inquire (file=filespec,exist=lexist)

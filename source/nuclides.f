@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : October 8, 2015
+c | Date  : August 16, 2018
 c | Task  : Properties of nuclides
 c +---------------------------------------------------------------------
 c
@@ -144,6 +144,7 @@ c targetP     : parity of target
 c parlev      : parity of level
 c targetE     : energy of target
 c edis        : energy of level
+c Eavres      : average resonance energy
 c
 c The nuclear masses and separation energies are read/calculated first,
 c for all nuclides that can possibly be formed in multiple reactions.
@@ -173,7 +174,8 @@ c
         odd=mod(A,2)
         if (type.eq.k0.and.odd.eq.1) call weakcoupling(Zix,Nix,type)
   110 continue
-      if (parinclude(0).or.flagcomp) call radwidtheory(Zcomp,Ncomp,0.)
+      if (parinclude(0).or.flagcomp) 
+     +  call radwidtheory(Zcomp,Ncomp,Eavres)
       if (flaggiant0) call sumrules
       targetspin=jdis(parZ(k0),parN(k0),Ltarget)
       targetspin2=int(2.*targetspin)

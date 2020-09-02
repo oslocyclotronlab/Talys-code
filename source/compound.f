@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : November 15, 2017
+c | Date  : July 7, 2018
 c | Task  : Hauser-Feshbach model for multiple emission
 c +---------------------------------------------------------------------
 c
@@ -281,7 +281,7 @@ c
 c If the parity of the residual nucleus is equal (unequal) to the parity
 c of compound nucleus,i.e. pardif2=0(1), the l-value must be even (odd).
 c
-c A choice is amde between averaged and full spin dependence of
+c A choice is made between averaged and full spin dependence of
 c the transmission coefficients in the Hauser-Feshbach model (only
 c significant in case of very large spin-orbit terms in the OMP).
 c
@@ -337,6 +337,15 @@ c
                   factor=real(feed*enumhf(type,nexout,Ir,Pprime))
                   xspop(Zix,Nix,nexout,Ir,Pprime)=
      +              xspop(Zix,Nix,nexout,Ir,Pprime)+factor
+                  if (flagpop) then
+                    xspopnucP(Zix,Nix,Pprime)=
+     +                xspopnucP(Zix,Nix,Pprime)+factor
+                    xspopexP(Zix,Nix,nexout,Pprime)=
+     +                xspopexP(Zix,Nix,nexout,Pprime)+factor
+                    popdecay(type,nexout,Ir,Pprime)=
+     +                popdecay(type,nexout,Ir,Pprime)+factor
+                    partdecay(type)=partdecay(type)+factor
+                  endif
                   sumIP=sumIP+factor
   120           continue
   110         continue
@@ -385,6 +394,8 @@ c
               Pprime=parlev(Zcomp,Ncomp,nexout)
               xspop(Zcomp,Ncomp,nexout,Ir,Pprime)=
      +          xspop(Zcomp,Ncomp,nexout,Ir,Pprime)+leftover
+              popdecay(0,nexout,Ir,Pprime)=
+     +          popdecay(0,nexout,Ir,Pprime)+leftover
               mcontrib(0,nex,nexout)=mcontrib(0,nex,nexout)+leftover
   210       continue
           endif

@@ -82,6 +82,10 @@ c
           inline(i)(k+11:80)=str(k+11:80)
           return
         endif
+        if (inline(i)(k+1:k+8).eq.'tjadjust') then
+          inline(i)(k+9:80)=str(k+9:80)
+          return
+        endif
         if (inline(i)(k+1:k+11).eq.'hbtransfile') then
           inline(i)(k+12:80)=str(k+12:80)
           return

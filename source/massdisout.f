@@ -91,7 +91,7 @@ c
       do 210 ia=1,Atarget
         do 220 iz=1,Ztarget
           in=ia-iz
-          if (in.lt.1.or.in.gt.numneu) goto 220
+          if (in.lt.1.or.in.gt.Ninit) goto 220
           if (xsfpZApre(iz,in).lt.fpeps.and.
      +      xsfpZApost(iz,in).lt.fpeps.and..not.fpexist(iz,in))
      +      goto 220

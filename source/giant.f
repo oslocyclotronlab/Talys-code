@@ -9,9 +9,9 @@ c
 c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
-      integer l,i,nen,iang,Zix,Nix
+      integer l,i,nen,iang,Zix,Nix,iangd(0:numangcont)
       real    wscale,grwidth,fac1,fac2,sumgauss,edist,gauss(0:numen),
-     +        weight,diswidth
+     +        weight,diswidth,dang
 c
 c ************* Smearing of giant resonances into spectra **************
 c
@@ -96,6 +96,12 @@ c
       if (xscollconttot.eq.0.) return
       xsgrtot(k0)=xsgrtot(k0)+xscollconttot
       xsgrsum=xsgrsum+xscollconttot
+      if (flagddx) then
+        dang=180./nangle
+        do 105 iang=0,nanglecont
+          iangd(iang)=int(anglecont(iang)/dang)
+  105   continue
+      endif
       Zix=Zindex(0,0,k0)
       Nix=Nindex(0,0,k0)
       do 110 i=Nlast(Zix,Nix,0)+1,numlev2
@@ -119,7 +125,7 @@ c
             if (flagddx) then
               do 140 iang=0,nanglecont
                 collcontad(nen,iang)=collcontad(nen,iang)+
-     +            weight*directad(k0,i,iang)
+     +            weight*directad(k0,i,iangd(iang))
   140         continue
             endif
   130     continue

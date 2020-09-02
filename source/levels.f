@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 12, 2016
+c | Date  : May 18, 2019
 c | Task  : Discrete levels
 c +---------------------------------------------------------------------
 c
@@ -176,8 +176,8 @@ c
 c
 c Set highest discrete level equal to isomer if that exists
 c
-        if (i.gt.nlev(Zix,Nix).and.tau(Zix,Nix,i).ge.isomer)
-     +    nlev(Zix,Nix)=i
+ctest   if (i.gt.nlev(Zix,Nix).and.tau(Zix,Nix,i).ge.isomer)
+c    +    nlev(Zix,Nix)=i
    30 continue
 c
 c Lifetimes below the isomeric definition are set to zero.
@@ -280,7 +280,8 @@ c wasting too much memory we renumber the isomer in the continuum
 c to the last discrete level taken into account in the calculation.
 c
       Lis=Nisomer(Zix,Nix)+1
-      do 210 i=nlevmax2(Zix,Nix),nlev2+1,-1
+ctest do 210 i=nlevmax2(Zix,Nix),nlev2+1,-1
+      do 210 i=nlevmax2(Zix,Nix),nlev(Zix,Nix)+1,-1
         if (tau(Zix,Nix,i).ge.isomer) then
           Lis=Lis-1
           N=nlev(Zix,Nix)-Nisomer(Zix,Nix)+Lis
@@ -298,4 +299,4 @@ c
   210 continue
       return
       end
-Copyright (C)  2016 A.J. Koning, S. Hilaire and S. Goriely
+Copyright (C)  2019 A.J. Koning, S. Hilaire and S. Goriely

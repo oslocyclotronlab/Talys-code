@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : March 21, 2014
+c | Date  : December 23, 2019
 c | Task  : Write model parameters per nucleus to separate file
 c +---------------------------------------------------------------------
 c
@@ -87,10 +87,14 @@ c
      +   ibar
         write(51,'("s2adjust       ",2i4,f10.5,i4)') Z,A,
      +    s2adjust(Zix,Nix,ibar),ibar
-        write(51,'("ctable         ",2i4,f10.5)') Z,A,
-     +    ctable(Zix,Nix,ibar)
-        write(51,'("ptable         ",2i4,f10.5)') Z,A,
-     +    ptable(Zix,Nix,ibar)
+        write(51,'("ctable         ",2i4,f10.5,i4)') Z,A,
+     +    ctable(Zix,Nix,ibar),ibar
+        write(51,'("ptable         ",2i4,f10.5,i4)') Z,A,
+     +    ptable(Zix,Nix,ibar),ibar
+        write(51,'("ctableadjust   ",2i4,f10.5,i4)') Z,A,
+     +    ctableadjust(Zix,Nix,ibar),ibar
+        write(51,'("ptableadjust   ",2i4,f10.5,i4)') Z,A,
+     +    ptableadjust(Zix,Nix,ibar),ibar
         if (flagcolall) write(51,'("Krotconstant   ",2i4,f10.5,i4)')
      +    Z,A,Krotconstant(Zix,Nix,ibar),ibar
    10 continue
@@ -142,12 +146,22 @@ c
      +      etable(Zix,Nix,1,l),l
           write(51,'("ftable         ",2i4,f10.5," E",i1)') Z,A,
      +      ftable(Zix,Nix,1,l),l
+          write(51,'("wtable         ",2i4,f10.5," E",i1)') Z,A,
+     +      wtable(Zix,Nix,1,l),l
+          write(51,'("etableadjust   ",2i4,f10.5," E",i1)') Z,A,
+     +      etableadjust(Zix,Nix,1,l),l
+          write(51,'("ftableadjust   ",2i4,f10.5," E",i1)') Z,A,
+     +      ftableadjust(Zix,Nix,1,l),l
+          write(51,'("wtableadjust   ",2i4,f10.5," E",i1)') Z,A,
+     +      wtableadjust(Zix,Nix,1,l),l
         endif
-        if (strengthM1.eq.8) then
+        if (strengthM1.eq.8.or.strengthM1.eq.10) then
           write(51,'("etable         ",2i4,f10.5," M",i1)') Z,A,
      +      etable(Zix,Nix,0,l),l
           write(51,'("ftable         ",2i4,f10.5," M",i1)') Z,A,
      +      ftable(Zix,Nix,0,l),l
+          write(51,'("wtable         ",2i4,f10.5," M",i1)') Z,A,
+     +      wtable(Zix,Nix,0,l),l
         endif
         if (ngr(Zix,Nix,1,l).eq.2) then
           write(51,'("sgr            ",2i4,f8.3," E",i1," 2")') Z,A,
@@ -184,6 +198,7 @@ c nfisbar    : number of fission barrier parameters
 c fbarrier   : height of fission barrier
 c fbaradjust : adjustable factors for fission parameters
 c fwidth     : width of fission barrier
+c bdamp      : fission partial damping parameter
 c fismodelx  : fission model
 c widthc2    : width of class2 states
 c Rtransmom  : normalization constant for moment of inertia for
@@ -196,7 +211,18 @@ c
         write(51,'("## Fission parameters")')
         write(51,'("##")')
         do 210 ibar=1,nfisbar(Zix,Nix)
-          if (fismodelx(Zix,Nix).ne.5) then
+          if (fismodelx(Zix,Nix).eq.5) then
+            if (ibar.eq.1) then
+              write(51,'("betafiscor     ",2i4,f10.5)') Z,A,
+     +          betafiscor(Zix,Nix)
+              write(51,'("vfiscor        ",2i4,f10.5)') Z,A,
+     +          vfiscor(Zix,Nix)
+            endif
+            write(51,'("bdamp          ",2i4,f10.5,i3)') Z,A,
+     +        bdamp(Zix,Nix,ibar),ibar
+            write(51,'("bdampadjust    ",2i4,f10.5,i3)') Z,A,
+     +        bdampadjust(Zix,Nix,ibar),ibar
+          else
             write(51,'("fisbar         ",2i4,f10.5,i3)') Z,A,
      +        fbarrier(Zix,Nix,ibar),ibar
             write(51,'("fishw          ",2i4,f10.5,i3)') Z,A,
@@ -205,12 +231,6 @@ c
      +        fbaradjust(Zix,Nix,ibar),ibar
             write(51,'("fishwadjust    ",2i4,f10.5,i3)') Z,A,
      +        fwidthadjust(Zix,Nix,ibar),ibar
-          endif
-          if (fismodelx(Zix,Nix).eq.5.and.ibar.eq.1) then
-            write(51,'("betafiscor     ",2i4,f10.5)') Z,A,
-     +        betafiscor(Zix,Nix)
-            write(51,'("vfiscor        ",2i4,f10.5)') Z,A,
-     +        vfiscor(Zix,Nix)
           endif
           if (ibar.lt.nfisbar(Zix,Nix))
      +      write(51,'("class2width    ",2i4,f10.5,i3)') Z,A,
@@ -224,4 +244,4 @@ c
       write(51,'("##--------------------------------------------")')
       return
       end
-Copyright (C)  2013 A.J. Koning, S. Hilaire and S. Goriely
+Copyright (C)  2019 A.J. Koning, S. Hilaire and S. Goriely

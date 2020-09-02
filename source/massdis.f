@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 12, 2016
+c | Date  : December 18, 2019
 c | Task  : Fission fragment yields
 c +---------------------------------------------------------------------
 c
@@ -21,7 +21,7 @@ c
      +             popfpEx(numZff,numNff,0:numpop),
      +             popfpJ(numZff,numNff,0:numJ),Ebin(0:numpop),
      +             term,Etabtot(numZff,numNff,1000),partfisJ(0:numJ),
-     +             Jtabtot(numZff,numNff,100),sumJ,sumxs,sumE,
+     +             Jtabtot(numZff,numNff,100),sumJ,sumxs,sumE,sum,
      +             xsfisFF,Ytabtot(numZff,numNff)
       integer      iz,ia,in,i,j,gefwrite,Zcomp,Ncomp,Z,A,odd,Zix,Nix,
      +             nexend,iskip,istep,nex,nen,type,iza,
@@ -61,8 +61,7 @@ c
         yieldApre(ia)=0.
         yieldApost(ia)=0.
         do type=0,numpar
-          nupre(type,ia)=0.
-          nupost(type,ia)=0.
+          nuA(type,ia)=0.
         enddo
       enddo
       do in=1,numneu
@@ -363,17 +362,24 @@ c
               enddo
               do ia=1,A
                 if (anpre_sum(ia).gt.0.)
-     +            nupre(1,ia)=nupre(1,ia)+(Fmulti+anpre_sum(ia))/
-     +            xsfistot
-                if (anpost_sum(ia).gt.0.)
-     +            nupost(1,ia)=nupost(1,ia)+(Fmulti+anpost_sum(ia))/
-     +            xsfistot
+     +            nuA(1,ia)=nuA(1,ia)+(Fmulti+anpre_sum(ia))/xsfistot
               enddo
               nubar(1)=nubar(1)+(Fmulti+anMean_sum)/xsfistot
             endif
           endif
    25   continue
    20 continue
+      do type=0,6
+        sum=0.
+        do 90 i=1,numin
+          sum=sum+Pdisnu(type,i)
+   90   continue
+        if (sum.gt.0.) then
+          do 95 i=1,numin
+            Pdisnu(type,i)=Pdisnu(type,i)/sum
+   95     continue
+        endif
+      enddo
 c
 c GEF + TALYS evaporation
 c

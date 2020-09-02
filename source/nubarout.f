@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 17, 2016
+c | Date  : February 1, 2018
 c | Task  : Output of number of fission neutrons and spectra
 c +---------------------------------------------------------------------
 c
@@ -78,11 +78,11 @@ c
         write(1,'("# Mean value (nubar-prompt) = ",f10.5)') nubar(type)
         write(1,'("# ")')
         write(*,'(/"  nu(A)"/)')
-        write(*,'("  A      Pre-n nu       Post-n nu")')
-        write(1,'("# A      Pre-n nu       Post-n nu")')
+        write(*,'("  A        nu   ")')
+        write(1,'("# A        nu   ")')
         do 30 ia=1,Atarget
-          write(*,'(i3,2es15.4)') ia,nupre(type,ia),nupost(type,ia)
-          write(1,'(i3,2es15.4)') ia,nupre(type,ia),nupost(type,ia)
+          write(*,'(i3,es15.4)') ia,nuA(type,ia)
+          write(1,'(i3,es15.4)') ia,nuA(type,ia)
   30    continue
         close (unit=1)
 c

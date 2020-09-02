@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : October 11, 2013
+c | Date  : December 24, 2019
 c | Task  : Optical potential for neutrons and protons
 c +---------------------------------------------------------------------
 c
@@ -170,11 +170,11 @@ c    +      vcoul=-Vc*(V0(k)-Vinf)*logterm/fjoin*exp(f/fjoin*logterm)
         mw=2
         w1loc=Fw1*w1(Zix,Nix,k)
         w2loc=Fw2*w2(Zix,Nix,k)
+        w3loc=Fw3*w3(Zix,Nix,k)
+        w4loc=Fw4*w4(Zix,Nix,k)
         if (eopt.le.Ejoin(k)) then
           w=w1loc*f**mw/(f**mw+w2loc**mw)
         else
-          w3loc=Fw3*w3(Zix,Nix,k)
-          w4loc=Fw4*w4(Zix,Nix,k)
           w=Wjoin(k)-w3loc*fjoin**4/
      +      (fjoin**4+w4loc**4)+w3loc*f**4/(f**4+w4loc**4)
         endif
@@ -200,6 +200,23 @@ c    +      vcoul=-Vc*(V0(k)-Vinf)*logterm/fjoin*exp(f/fjoin*logterm)
         wso=wso1loc*f**2/(f**2+wso2loc**2)
         rwso=Frwso*rvso0(Zix,Nix,k)
         awso=Fawso*avso0(Zix,Nix,k)
+        if (flagoutkd) then
+          write(*,'(" KD03 OMP parameters for ",a8," E:",f12.5," Ef:",
+     +      f12.5)') parname(k),eopt,ef(Zix,Nix,k)
+          write(*,'("   rv:",f12.5,"   av:",f12.5,"   v1:",f12.5,
+     +      "   v2:",f12.5,"   v3:",es12.5,"   v4:",es12.5," Vcoul:",
+     +      f12.5)') rv,av,v1loc,v2loc,v3loc,v4loc,Vcoul
+          write(*,'("   rw:",f12.5,"   aw:",f12.5,"   w1:",f12.5,
+     +      "   w2:",f12.5,"   w3:",f12.5,"   w4:",f12.5)')
+     +      rw,aw,w1loc,w2loc,w3loc,w4loc
+          write(*,'("  rwd:",f12.5,"  awd:",f12.5,"   d1:",f12.5,
+     +      "   d2:",f12.5,"   d3:",f12.5)')
+     +      rwd,awd,d1loc,d2loc,d3loc
+          write(*,'(" rvso:",f12.5," avso:",f12.5," vso1:",f12.5,
+     +      " vso2:",f12.5)') rvso,avso,vso1loc,vso2loc
+          write(*,'(" rwso:",f12.5," awso:",f12.5," wso1:",f12.5,
+     +      " wso2:",f12.5)') rwso,awso,wso1loc,wso2loc
+        endif
       endif
 c
 c Possible additional energy-dependent adjustment of the geometry

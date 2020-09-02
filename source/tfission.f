@@ -2,21 +2,25 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Stephane Hilaire and Pascal Romain
-c | Date  : December 30, 2011
+c | Date  : October 11, 2019
 c | Task  : Fission transmission coefficients
 c +---------------------------------------------------------------------
 c
 c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
+      character*80     key
       integer          Zcomp,Ncomp,nex,J2,parity,J,iloop,ihill,ic2,jc2,
      +                 pc2
       real             Eex,term1,term2,damper,expo,ec2,wo2,diffnrj,
      +                 wo2damp,boost,boostmax,Ecut,Ecut1,Ecut2,term11,
      +                 term21,term12,term22,damper1,damper2,wo2damp1,
-     +                 wo2damp2
+     +                 wo2damp2,Twkbtransint
       double precision tf,tfb1,rnfb1,tfb2,rnfb2,tfb3,rnfb3,tfii,addnrj,
-     +                 tf12,tsum123,tfiii
+     +                 tf12,tsum123,tfiii,density,tdir,trans,rnorm,
+     +                 sumt2,sumt3,ta12,ta13,ta23,ta32,tdir12,tdir13,
+     +                 tdir21,tdir23,tgam2,tgam3,ti2,ti3,trans2,trans3
+      external Twkbtransint
 c
 c ********** Calculation of fission transmission coefficients **********
 c
@@ -53,6 +57,9 @@ c
         if (iloop.eq.2) then
           Eex=Exinc
           tfis(J,parity)=0.
+          gamfis(J,parity)=0.
+          taufis(J,parity)=0.
+          denfis(J,parity)=0.
           do 20 ihill=0,numhill
             tfisA(J,parity,ihill)=0.
             rhofisA(J,parity,ihill)=1.
@@ -86,13 +93,21 @@ c
 c 2. Two barriers
 c
 c transeps: absolute limit for transmission coefficient
+c flagfispartdamp: flag for fission partial damping
 c
         if (nfisbar(Zcomp,Ncomp).eq.2) then
+          if (flagfispartdamp) call tdirbarrier(Zcomp,Ncomp,J2,parity,
+     +      1,2,tdir,rnfb1,Eex,iloop)
           call t1barrier(Zcomp,Ncomp,J2,parity,1,tfb1,rnfb1,Eex,iloop)
           if (tfb1.lt.transeps) goto 30
           call t1barrier(Zcomp,Ncomp,J2,parity,2,tfb2,rnfb2,Eex,iloop)
           if (tfb2.lt.transeps) goto 30
-          tf=tfb1*tfb2/(tfb1+tfb2)
+          if (flagfispartdamp) then
+            trans=Twkbtransint(Eex,1,Zcomp,Ncomp)
+            tf=tfb1*tfb2/(tfb1+tfb2)*trans + tdir*(1.-trans)
+          else
+            tf=tfb1*tfb2/(tfb1+tfb2)
+          endif
 c
 c ****************** Special treatment for class2 states ***************
 c
@@ -156,9 +171,41 @@ c
           if (tfb2.lt.transeps) goto 30
           call t1barrier(Zcomp,Ncomp,J2,parity,3,tfb3,rnfb3,Eex,iloop)
           if (tfb3.lt.transeps) goto 30
-          tf12=tfb1*tfb2/(tfb1+tfb2)
-          tsum123=tf12+tfb3
-          tf=tf12*tfb3/tsum123
+          if (flagfispartdamp) then
+            call tdirbarrier(Zcomp,Ncomp,J2,parity,1,2,
+     +        tdir12,rnfb1,Eex,iloop)
+            call tdirbarrier(Zcomp,Ncomp,J2,parity,2,3,
+     +        tdir23,rnfb1,Eex,iloop)
+            call tdirbarrier(Zcomp,Ncomp,J2,parity,1,3,
+     +        tdir13,rnfb1,Eex,iloop)
+            trans2=Twkbtransint(Eex,1,Zcomp,Ncomp)
+            trans3=Twkbtransint(Eex,2,Zcomp,Ncomp)
+            tdir21=(1-trans2)*tdir12
+            tdir12=(1-trans2)*tdir12
+            tdir23=(1-trans3)*tdir23
+            tdir13=(1-trans2)*(1-trans3)*tdir13
+            Ta12=tfb1*trans2
+            Ta23=tfb2*trans3
+            Ta13=trans3*tdir12
+            Ta32=trans2*tfb2
+            tgam2=0.
+            tgam3=0.
+            sumT2= tfb1+tdir23+Ta23+Tgam2
+            sumT3= tdir21+tfb3+Ta32+Tgam3
+            Ti2=Ta12*(tdir23/sumT2+Ta23*tfb3/(sumT2*sumT3))
+            Ti3=Ta13*(tfb3/sumT3+Ta32*tdir23/(sumT2*sumT3))
+            if ( abs((Ta23*Ta32)/(sumT2*sumT3)-1) .le. 1e-8 )  then
+              Rnorm=  sumT2*sumT3/( (tfb1+tdir23+Tgam2)*sumT3
+     +          + Ta23*(tdir21+tfb3+Tgam3) )
+            else
+              Rnorm=1./(1.-(Ta23*Ta32)/(sumT2*sumT3))
+            endif
+            tf=tdir13+Rnorm*(Ti2+Ti3)
+          else
+            tf12=tfb1*tfb2/(tfb1+tfb2)
+            tsum123=tf12+tfb3
+            tf=tf12*tfb3/tsum123
+          endif
 c
 c *********** Special treatment for class2 and class3 states ***********
 c
@@ -246,10 +293,29 @@ c
             if (tfiii.gt.0.) tf=tfiii
           endif
         endif
-   30   if (iloop.eq.1) tfisdown(J,parity)=tf
+c
+c Optional adjustment factors
+c
+c Fnorm    : multiplication factor
+c
+   30   tf=tf*Fnorm(-1)
+        if (iloop.eq.1) tfisdown(J,parity)=tf
         if (iloop.eq.2) tfis(J,parity)=tf
         if (iloop.eq.3) tfisup(J,parity)=tf
    10 continue
+c
+c Partial fission widths and lifetimes
+c
+c gamfis  : fission width
+c taufis  : fission lifetime
+c denfis  : fission level density
+c
+      denfis(J,parity)=density(Zcomp,Ncomp,Exinc,real(J),parity,0,
+     +  ldmodel(Zcomp,Ncomp))
+      if (denfis(J,parity).gt.0.) 
+     +  gamfis(J,parity)=tfis(J,parity)/(twopi*denfis(J,parity))
+      if (gamfis(J,parity).gt.0.) 
+     +  taufis(J,parity)=hbar/gamfis(J,parity)
       return
       end
-Copyright (C)  2013 A.J. Koning, S. Hilaire and S. Goriely
+Copyright (C)  2019 A.J. Koning, S. Hilaire and S. Goriely

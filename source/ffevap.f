@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 16, 2016
+c | Date  : February 1, 2018
 c | Task  : Evaporation of fission fragments
 c +---------------------------------------------------------------------
 c
@@ -58,7 +58,9 @@ c
           do 110 Zix=0,maxZ
             do 120 Nix=0,maxN
               izp=iz-Zix
+              if (izp.lt.1) goto 120
               inp=in-Nix
+              if (inp.lt.1) goto 120
               iap=izp+inp
               xsfpZApost(izp,inp)=xsfpZApost(izp,inp)+xspopnuc(Zix,Nix)
               xsfpApost(iap)=xsfpApost(iap)+xspopnuc(Zix,Nix)
@@ -116,7 +118,7 @@ c
             do 210 type=0,6
               nubar(type)=nubar(type)+yZA*multiplicity(type)
               if (yA.gt.0.) then
-                nupre(type,ia)=nupre(type,ia)+yZA/yA*multiplicity(type)
+                nuA(type,ia)=nuA(type,ia)+yZA/yA*multiplicity(type)
                 do 220 npar=1,numin
                   Pdisnu(type,npar)=Pdisnu(type,npar)+
      +              xsexcpart(type,npar)/xsinitpop
@@ -146,6 +148,17 @@ c
           endif
    30   continue
    20 continue
+      do 285 type=0,6
+        sum=0.
+        do 287 npar=1,numin
+          sum=sum+Pdisnu(type,npar)
+  287   continue
+        if (sum.gt.0.) then
+          do 288 npar=1,numin
+            Pdisnu(type,npar)=Pdisnu(type,npar)/sum
+  288     continue
+        endif
+  285 continue
       write(*,'(/" ########## End of loop over fission fragments"/)')
 c
 c Average energy and relation to Maxwellian
