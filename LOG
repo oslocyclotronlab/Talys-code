@@ -91,3 +91,8 @@ but is applicable in general
 Included fission partial damping model constructed by Guillaume Scamps and Stephane Goriely. This should bring
 TALYS closer to the capabilities of EMPIRE for fission prediction. For this, the keywords, fispartdamp, 
 bdamp and bdampadjust were added.
+
+- September 3 2020
+
+Added a new keyword 'densfile' to allow the user to read tabulated level density files from other places than the 
+TALYS database.
