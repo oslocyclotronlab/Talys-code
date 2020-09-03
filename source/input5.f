@@ -1233,7 +1233,7 @@ c
             densfile(Zix,Nix)=cval
             ldmodel(Zix,Nix)=4
           endif
-          goto 100
+          goto 110
         endif
         if (key.eq.'hbtransfile') then
           class=11
