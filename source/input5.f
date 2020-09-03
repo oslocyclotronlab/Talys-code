@@ -1231,7 +1231,7 @@ c
      +      ibar,irad,lval,igr,val,ival,cval,flagassign)
           if (flagassign) then
             densfile(Zix,Nix)=cval
-            ldmodel(Zix,Nix)=4
+            if (ldmodel(Zix,Nix).le.3) ldmodel(Zix,Nix)=4
           endif
           goto 110
         endif
