@@ -143,6 +143,7 @@ c class2file    : file with class 2 transition states
 c levelfile     : discrete level file
 c deformfile    : deformation parameter file
 c Exlfile       : tabulated strength function file
+c densfile      : tabulated level density file
 c optmodfileN   : optical model parameter file for neutrons
 c optmodfileP   : optical model parameter file for protons
 c radialfile    : radial matter density file
@@ -441,6 +442,7 @@ c
           Rtransmom(Zix,Nix,1)=0.6
           hbtransfile(Zix,Nix)='                                       '
           clas2file(Zix,Nix)='                                         '
+          densfile(Zix,Nix)='                                          '
           do 55 irad=0,1
             do 57 l=1,numgam
               Exlfile(Zix,Nix,irad,l)='                                '
@@ -1222,6 +1224,16 @@ c
      +      ibar,irad,lval,igr,val,ival,cval,flagassign)
           if (flagassign) Exlfile(Zix,Nix,0,1)=cval
           goto 110
+        endif
+        if (key.eq.'densfile') then
+          class=11
+          call getvalues(class,word,Zix,Nix,type,
+     +      ibar,irad,lval,igr,val,ival,cval,flagassign)
+          if (flagassign) then
+            densfile(Zix,Nix)=cval
+            ldmodel(Zix,Nix)=4
+          endif
+          goto 100
         endif
         if (key.eq.'hbtransfile') then
           class=11

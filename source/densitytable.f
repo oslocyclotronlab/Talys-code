@@ -68,6 +68,9 @@ c
             denfile=trim(path)//'density/ground/hilaireD1M/'//
      +        trim(denchar)//'.tab'
           endif
+          if (densfile(Zix,Nix)(1:1).ne.' ') then
+            denfile = densfile(Zix,Nix)
+          endif
         endif
 c
 c First barrier

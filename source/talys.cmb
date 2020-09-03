@@ -286,6 +286,7 @@ c
      +                  adjustfile(numadj),clas2file(0:numZ,0:numN),
      +                  optmodfileN(0:numZ),optmodfileP(0:numZ),
      +                  Exlfile(0:numZ,0:numN,0:1,numgam),
+     +                  densfile(0:numZ,0:numN),
      +                  radialfile(0:numZ),ompenergyfile,
      +                  rescuefile(nummt,-1:numisom),unitTirrad(5),
      +                  unitTcool(5),radiounit,yieldunit,massdir
@@ -393,7 +394,7 @@ c
       character*80 adjustkey,adjustfile
       character*72 levelfile,deformfile,hbtransfile,clas2file,
      +             optmodfileN,optmodfileP,Exlfile,radialfile,
-     +             ompenergyfile,rescuefile,massdir
+     +             ompenergyfile,rescuefile,massdir,densfile
       character*3  radiounit,yieldunit
       character*1  unitTirrad,unitTcool
       integer      spincutmodel,shellmodel,kvibmodel,Nlow,Ntop,msdbins,

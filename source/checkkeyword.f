@@ -10,7 +10,7 @@ c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
       integer      numkey
-      parameter    (numkey=366)
+      parameter    (numkey=367)
       integer      i,j
       character*80 keyword(numkey),word(40),key
 c
@@ -49,7 +49,7 @@ c
      +  'endf', 'endfdetail', 'endfecis', 'energy', 'epr', 
      +  'epradjust', 'equidistant', 'estop', 'esurf', 'etable', 
      +  'etableadjust', 'exmatch', 'exmatchadjust', 'expmass',
-     +  'ffevaporation',
+     +  'ffevaporation', 'densfile',
      +  'ffspin', 'fileangle', 'filechannels', 'fileddxa', 'fileddxe', 
      +  'filedensity', 'filediscrete', 'fileelastic', 'filefission', 
      +  'filegamdis', 
