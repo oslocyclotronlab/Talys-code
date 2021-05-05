@@ -83,4 +83,7 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+# We do not want to include machine.f as it is made for each install
+source/machine.f
+
 # End of https://www.toptal.com/developers/gitignore/api/cmake,macos,fortran
