@@ -1,0 +1,57 @@
+### Input file for 86Kr + n ####
+
+# Information about target
+projectile n
+element kr
+mass 86
+
+# Energy and/or astro stuff.
+#astro y
+#astrogs n
+#energy 1
+energy energies.txt
+
+# Compound nucleus stuff
+#racap y
+#ldmodelracap 3
+#onestep y
+
+# Optical model + width fluctuation model
+#jlmomp y
+#widthmode 2
+preequilibrium y
+
+
+# Structure information about 87Kr
+
+# Level density parameters
+NLevels 36 87 15
+S2adjust 36 87 1.1
+#ldmodel 4
+#densfile 36 87 Kr.tab
+
+# Test a truncated file (including only the ld of nucleus of interest)
+densfile 36 87 Kr.tab_trunc
+
+# Test a file with different parities
+#ldmodel 5
+#densfile 36 87 Kr.tab_par
+
+# Gamma strength input
+gnorm 1.0
+gamgam 36 87 0.250
+D0 36 87 26.2
+strength 3
+E1file 36 87 talys_E1.txt
+M1file 36 87 talys_M1.txt
+
+# Output stuff
+outbasic y
+partable y
+outgamma y
+outdensity y
+filedensity y
+outlevels y
+outdirect y
+
+
