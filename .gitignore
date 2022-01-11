@@ -1,7 +1,3 @@
-
-# Created by https://www.toptal.com/developers/gitignore/api/cmake,macos,fortran
-# Edit at https://www.toptal.com/developers/gitignore?templates=cmake,macos,fortran
-
 ### CMake ###
 CMakeLists.txt.user
 CMakeCache.txt
@@ -14,7 +10,6 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 _deps
-CMakeUserPresets.json
 
 ### CMake Patch ###
 # External projects
@@ -82,8 +77,3 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
-
-# We do not want to include machine.f as it is made for each install
-source/machine.f
-
-# End of https://www.toptal.com/developers/gitignore/api/cmake,macos,fortran
