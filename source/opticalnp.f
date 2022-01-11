@@ -59,7 +59,7 @@ c
       call ompadjust(eopt,k)
       optmodfile='                                                     '
       if (Zix.le.numZph.and.Nix.le.numNph) optmodfile=optmod(Zix,Nix,k)
-      if (optmodfile(1:1).ne.' ') then
+      if (optmodfile(1:1).ne.' '.or.omplines(Zix,Nix,k).gt.0) then
         if (eopt.lt.eomp(Zix,Nix,k,1).or.
      +    eopt.gt.eomp(Zix,Nix,k,omplines(Zix,Nix,k))) goto 100
         do 10 nen=1,omplines(Zix,Nix,k)-1
@@ -117,7 +117,8 @@ c wso1,wso2    : components for Wso
 c
   100 Z=ZZ(Zix,Nix,0)
       A=AA(Zix,Nix,0)
-      if (Z.ge.90.and.ompglobal(Zix,Nix,k)) then
+      if (flagsoukhoinp.or.
+     +  (flagsoukho.and.Z.ge.90.and.ompglobal(Zix,Nix,k))) then
         call soukhovitskii(k,Z,A,eopt)
       else
         f=eopt-ef(Zix,Nix,k)

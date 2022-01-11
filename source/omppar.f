@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 12, 2016
+c | Date  : May 31, 2020
 c | Task  : Optical model parameters
 c +---------------------------------------------------------------------
 c
@@ -10,12 +10,14 @@ c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
       logical      lexist
-      character*1  omptype
+      character*1  omptype,Rpart
       character*8  ompchar
       character*72 optmodfile
-      character*90 ompfile
-      integer      Zix,Nix,Z,N,A,k,ia,i,nomp,ii,nen
-      real         e
+      character*132 ompfile
+      character*132 string
+      integer      Zix,Nix,Z,N,A,k,iz,ia,i,nomp,ii,nen,kk,j,NE,Zt,At,
+     +             Zbeg,Zend,Abeg,Aend,Rnum
+      real         e,eferm,dum,Er,Eeps,Eripl(numen),dEripl,Ebeg,Efin
 c
 c ************** Read optical model parameters from database ***********
 c
@@ -184,6 +186,118 @@ c
      +    d1(Zix,Nix,2)=0.85*d1(Zix,Nix,2)
       endif
 c
+c ************** Optical model parameters from RIPL ********************
+c
+      if (Zix.le.numZph.and.Nix.le.numNph) then
+        if (flagriplomp) then
+c
+c Copy RIPL parameter files to working directory
+c
+          ompfile=trim(path)//'optical/ripl/om-parameter-u.dat'
+          open (unit=41,file=ompfile,status='unknown')
+          open (unit=42,file='om-parameter-u.dat',status='unknown')
+  110     read(41,'(a)',end=120) string
+          write(42,'(a)') trim(string)
+          goto 110
+  120     close (unit=42)
+          close (unit=41)
+          ompfile=trim(path)//'optical/ripl/gs-mass-sp.dat'
+          open (unit=41,file=ompfile,status='unknown')
+          open (unit=42,file='gs-mass-sp.dat',status='unknown')
+  130     read(41,'(a)',end=140) string
+          write(42,'(a)') trim(string)
+          goto 130
+  140     close (unit=42)
+          close (unit=41)
+c
+c Set energy grid for OMP table
+c
+          Er=0.
+          nen=0
+          dEripl=0.001
+  150     Er=Er+dEripl
+          Eeps=Er+1.e-4
+          if (Er.gt.enincmax+12.) goto 160
+          if (nen.eq.numen) goto 160
+          nen=nen+1
+          Eripl(nen)=Er
+          if (Eeps.gt.0.01) dEripl=0.01
+          if (Eeps.gt.0.1) dEripl=0.1
+          if (Eeps.gt.4.) dEripl=0.2
+          if (Eeps.gt.10.) dEripl=0.5
+          if (Eeps.gt.30.) dEripl=1.
+          if (Eeps.gt.100.) dEripl=2.
+          goto 150
+  160     NE=nen
+          do 194 k=1,6
+            if (riplomp(k).gt.0.and.Zix.eq.parZ(k).and.Nix.eq.parN(k).
+     +        and.optmod(Zix,Nix,k).eq.' ') then
+c
+c Test if RIPL number is correct and inside mass and energy ranges 
+c
+              Zt=ZZ(0,0,k)
+              At=AA(0,0,k)
+              ompfile=trim(path)//'optical/ripl/om-index.txt'
+              open (unit=31,file=ompfile,status='old')
+              read(31,'(//)')
+  170         read(31,'(i4,3x,a1,23x,i2,1x,i2,2x,i3,1x,i3,1x,
+     +          f5.1,1x,f5.1)',end=180) 
+     +          Rnum,Rpart,Zbeg,Zend,Abeg,Aend,Ebeg,Efin
+              if (riplomp(k).eq.Rnum) then
+                if (parsym(k).eq.Rpart.and.Zt.ge.Zbeg.and.Zt.le.Zend.
+     +            and.At.ge.Abeg.and.At.le.Aend) then
+                  Eompbeg1(k,1)=Ebeg
+                  Eompend1(k,1)=Efin
+                  Eompbeg0(k,1)=Ebeg*0.8
+                  Eompend0(k,1)=Efin*1.2
+                  close (unit=31)
+                  goto 190
+                endif
+              endif
+              goto 170
+  180         close (unit=31)
+              write(*,'(" TALYS-warning: RIPL OMP ",i4," for ",i3,a2,
+     +          " out of range")') riplomp(k),At,nuc(Zt)
+              if (.not.flagriplrisk) stop
+c
+c Create input file for RIPL OMP retrieval code
+c
+  190         open (unit=42,file='ominput.inp',status='unknown')
+              write(42,*) NE
+              write(42,*) (Eripl(i),i=1,NE)
+              write(42,*) Zt,At,riplomp(k),-2
+              close (unit=42)
+c
+c Run RIPL OMP retrieval code
+c
+              write(*,*) "RIPL OMP for ",Zt,At
+              call riplomp_mod(NE,Zt,At,Eripl,riplomp(k),-2,0)
+              close (unit=35)
+c
+c Retrieve  RIPL OMP parameters on energy grid
+c
+              e=0.
+              open(42,file='omp-table.dat',status='unknown')
+  192         read(42,'(a)') string
+              kk=index(string,'Ef =')
+              if (kk > 0) read(string(kk+4:132),*) ef(Zix,Nix,k)
+              read(string(1:7),*,err=192,end=192) e
+              if (e.gt.0.) then
+                backspace 42
+                do i=1,NE 
+                  read(42,*) eomp(Zix,Nix,k,i),
+     +              (vomp(Zix,Nix,k,i,j),j=1,3),dum,
+     +              (vomp(Zix,Nix,k,i,j),j=4,18)
+                enddo
+                close(42)
+                omplines(Zix,Nix,k)=NE
+              else
+                goto 192
+              endif
+            endif
+  194     enddo
+        endif
+c
 c ************** Optical model file from user input file ***************
 c
 c numNph    : maximal number of neutrons away from the initial
@@ -197,12 +311,15 @@ c numomp    : maximum number of lines in optical model file
 c eomp      : energies on optical model file
 c vomp      : optical model parameters from file
 c
-      if (Zix.le.numZph.and.Nix.le.numNph) then
         do 210 k=1,6
           optmodfile=optmod(Zix,Nix,k)
           if (optmodfile(1:1).ne.' ') then
             open (unit=2,file=optmodfile,status='old')
-            read(2,*) omplines(Zix,Nix,k)
+            eferm=0.
+            read(2,'(a)',end=300,err=300) string
+            read(string,*,end=240,err=300) iz,ia,omplines(Zix,Nix,k),
+     +        eferm
+  240       if (eferm.gt.0.) ef(Zix,Nix,k)=eferm
             if (omplines(Zix,Nix,k).gt.numomp) then
               write(*,'(" TALYS-error: number of lines in OMP file > ",
      +          i4)') numomp
@@ -210,7 +327,7 @@ c
             endif
             eomp(Zix,Nix,k,0)=0.
             do 220 nen=1,omplines(Zix,Nix,k)
-              read(2,*,err=300) eomp(Zix,Nix,k,nen),
+              read(2,*,err=300,end=220) eomp(Zix,Nix,k,nen),
      +          (vomp(Zix,Nix,k,nen,ii),ii=1,19)
   220       continue
             close (unit=2)
@@ -253,12 +370,13 @@ c
 c
 c Set energy ranges of alternative optical models
 c
-c Eompbeg0: upper energy of KD03 OMP
+c Eompbeg0: lower energy of KD03 OMP
 c Eompbeg1: lower energy of alternative OMP
 c Eompend1: upper energy of alternative OMP
-c Eompend0: lower energy of KD03 OMP
+c Eompend0: upper energy of KD03 OMP
 c
 c Eompbeg0 <=  Eompbeg1 <=  Eompend1 <=  Eompend0
+c
 c
 c Deuteron OMPs
 c

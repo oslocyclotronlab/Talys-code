@@ -140,7 +140,7 @@ c
       return
  920  write(*,120)
       return
- 100  format(/,10x,'*  *  *  barfit called with  z  less than 19 or ',
+ 100  format(/,10x,'*  *  *  barfit called with  z  less than 19 or',
      1 ' greater than 111.  bfis is set to 0.0  *  *  *')
  110  format(/,10x,'*  *  *  barfit called with  z  greater than 102',
      1 ' and  l  not equal to zero.  bfis is set to 0.0,  *  *  *')

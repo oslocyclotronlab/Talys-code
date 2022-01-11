@@ -39,8 +39,7 @@ ${compiler} *.o -o talys
 #
 # 5. Check whether the setup procedure has been successful
 #
-if [ -e talys ] 
-then
+if [ -e talys ] ; then
   mv -f talys ${bindir}/talys
   echo ' '
   echo 'The TALYS setup has been completed.'

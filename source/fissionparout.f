@@ -58,6 +58,10 @@ c
      +    betafiscor(Zix,Nix)
         write(*,'(" Correction factor vfiscor   :",f8.3)')
      +    vfiscor(Zix,Nix)
+        write(*,'(" Adjustable factor betafiscoradjust:",f8.3)')
+     +    betafiscoradjust(Zix,Nix)
+        write(*,'(" Adjustable factor vfiscoradjust   :",f8.3)')
+     +    vfiscoradjust(Zix,Nix)
       endif
       do 10 i=1,nfisbar(Zix,Nix)
         write(*,'(/" Parameters for fission barrier",i3/)') i

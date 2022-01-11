@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : May 1, 2019
+c | Date  : December 21, 2020
 c | Task  : Output of exclusive reaction channels
 c +---------------------------------------------------------------------
 c
@@ -10,9 +10,10 @@ c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
       character*3  isostring
+      character*8  spstring
       character*12 isofile,gamfile
       character*16 xsfile
-      character*21 spfile,recfile
+      character*21 spfile
       integer      npart,ia,ih,it,id,ip,in,nex,ident,idc,Zcomp,Ncomp,NL,
      +             nen,Ngam,i1,i2,type
       real         emissum,xs
@@ -41,7 +42,8 @@ c
       write(*,'(/" 6. Exclusive cross sections"/)')
       write(*,'(" 6a. Total exclusive cross sections "/)')
       write(*,'("     Emitted particles     cross section reaction",
-     +  "         level    isomeric    isomeric    lifetime")')
+     +  "         level    isomeric    isomeric    lifetime",
+     +  " relative yield")')
       write(*,'("    n   p   d   t   h   a",40x,"cross section",
      +  "   ratio")')
       do 10 npart=0,maxchannel
@@ -57,8 +59,9 @@ c
         do 20 idc=0,idnum
           if (idchannel(idc).eq.ident) then
             if (xschannel(idc).lt.xseps) goto 16
-            write(*,'(1x,6i4,3x,es12.5,2x,a17)') in,ip,id,it,ih,ia,
-     +        xschannel(idc),reacstring(idc)
+            write(*,'(1x,6i4,3x,es12.5,2x,a17,40x,es12.5)') 
+     +        in,ip,id,it,ih,ia,xschannel(idc),reacstring(idc),
+     +        yieldchannel(idc)
             Zcomp=ip+id+it+2*ih+2*ia
             Ncomp=in+id+2*it+ih+2*ia
             NL=Nlast(Zcomp,Ncomp,0)
@@ -504,14 +507,26 @@ c
      +        (xschannelsp(idc,type,nen),type=0,6)
   640     continue
           if (filechannels) then
-            spfile='sp000000E0 00.000.tot'
-            write(spfile(3:8),'(6i1)') in,ip,id,it,ih,ia
-            write(spfile(10:17),'(f8.3)') Einc
-            write(spfile(10:13),'(i4.4)') int(Einc)
-            open (unit=1,file=spfile,status='unknown')
+            spstring='sp000000'
+            write(spstring(3:8),'(6i1)') in,ip,id,it,ih,ia
+            if (flagblock) then
+              spfile=spstring//'.tot'
+              if (.not.spchanexist(in,ip,id,it,ih,ia)) then
+                spchanexist(in,ip,id,it,ih,ia)=.true.
+                open (unit=1,file=spfile,status='unknown')
+              else
+                open (unit=1,file=spfile,status='unknown',
+     +            position='append')
+              endif
+            else
+              spfile = spstring//'E0000.000.tot'
+              write(spfile(10:17), '(f8.3)') Einc
+              write(spfile(10:13), '(i4.4)') int(Einc)
+              open (unit=1,file=spfile,status='unknown')
+            endif
             write(1,'("# ",a1," + ",i3,a2,a3,": ",a17," Spectra")')
      +        parsym(k0),Atarget,Starget,isostring,reacstring(idc)
-            write(1,'("# E-incident = ",f8.3)') Einc
+            write(1,'("# E-incident = ",f10.5)') Einc
             write(1,'("# ")')
             write(1,'("# # energies =",i6)') eendhigh-ebegin(0)+1
             write(1,'("#  E-out  ",7(2x,a8,2x))')
@@ -615,14 +630,26 @@ c
      +          (xsfischannelsp(idc,type,nen),type=0,6)
   760       continue
             if (filechannels) then
-              spfile='sp000000E0000.000.fis'
-              write(spfile(3:8),'(6i1)') in,ip,id,it,ih,ia
-              write(spfile(10:17),'(f8.3)') Einc
-              write(spfile(10:13),'(i4.4)') int(Einc)
-              open (unit=1,file=spfile,status='unknown')
+              spstring='sp000000'
+              write(spstring(3:8),'(6i1)') in,ip,id,it,ih,ia
+              if (flagblock) then
+                spfile=spstring//'.fis'
+                if (.not.spfischanexist(in,ip,id,it,ih,ia)) then
+                  spfischanexist(in,ip,id,it,ih,ia)=.true.
+                  open (unit=1,file=spfile,status='unknown')
+                else
+                  open (unit=1,file=spfile,status='unknown',
+     +              position='append')
+                endif
+              else
+                spfile = spstring//'E0000.000.fis'
+                write(spfile(10:17), '(f8.3)') Einc
+                write(spfile(10:13), '(i4.4)') int(Einc)
+                open (unit=1,file=spfile,status='unknown')
+              endif
               write(1,'("# ",a1," + ",i3,a2,a3,": ",a17," Spectra")')
      +          parsym(k0),Atarget,Starget,isostring,fisstring(idc)
-              write(1,'("# E-incident = ",f8.3)') Einc
+              write(1,'("# E-incident = ",f10.5)') Einc
               write(1,'("# ")')
               write(1,'("# # energies =",i6)') eendhigh-ebegin(0)+1
               write(1,'("#  E-out  ",7(2x,a8,2x))')
@@ -716,15 +743,27 @@ c
      +        specrecoil(Zcomp,Ncomp,nen)*xsratio(idc)
   940     continue
           if (filechannels.and.filerecoil) then
-            recfile='sp000000E0000.000.rec'
-            write(recfile(3:8),'(6i1)') in,ip,id,it,ih,ia
-            write(recfile(10:17),'(f8.3)') Einc
-            write(recfile(10:13),'(i4.4)') int(Einc)
-            open (unit=1,file=recfile,status='unknown')
+            spstring='sp000000'
+            write(spstring(3:8),'(6i1)') in,ip,id,it,ih,ia
+            if (flagblock) then
+              spfile=spstring//'.rec'
+              if (.not.recchanexist(in,ip,id,it,ih,ia)) then
+                recchanexist(in,ip,id,it,ih,ia)=.true.
+                open (unit=1,file=spfile,status='unknown')
+              else
+                open (unit=1,file=spfile,status='unknown',
+     +            position='append')
+              endif
+            else
+              spfile = spstring//'E0000.000.rec'
+              write(spfile(10:17), '(f8.3)') Einc
+              write(spfile(10:13), '(i4.4)') int(Einc)
+              open (unit=1,file=spfile,status='unknown')
+            endif
             write(1,'("# ",a1," + ",i3,a2,a3,": ",a17,
      +        " Recoil Spectrum")') parsym(k0),Atarget,Starget,
      +        isostring,reacstring(idc)
-            write(1,'("# E-incident = ",f8.3)') Einc
+            write(1,'("# E-incident = ",f10.5)') Einc
             write(1,'("# ")')
             write(1,'("# # energies =",i6)') maxenrec+1
             write(1,'("#  E-out Cross section")')

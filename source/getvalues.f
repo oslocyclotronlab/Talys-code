@@ -3,7 +3,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 23, 2019
+c | Date  : December 29, 2021
 c | Task  : Assign values to keywords
 c +---------------------------------------------------------------------
 c
@@ -11,7 +11,7 @@ c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
       integer      numEkey
-      parameter    (numEkey=68)
+      parameter    (numEkey=79)
       logical      flagassign,lexist
       character*1  ch
       character*80 keyword(numEkey),word(40),key,adfile,cval
@@ -24,19 +24,23 @@ c
       data (keyword(i),i=1,numEkey) /
      +  'adepthcor', 'aradialcor',
      +  'avadjust', 'avdadjust', 'avsoadjust', 'awadjust', 'awdadjust',
-     +  'awsoadjust', 'bdamp', 'bdampadjust', 'cbreak', 'cknock', 
-     +  'cstrip', 'ctable', 'd1adjust', 'd2adjust', 'd3adjust', 'egr', 
-     +  'egradjust', 'epr', 'epradjust', 'etable',
-     +  'fisbar', 'fisbaradjust', 'fishw', 'fishwadjust', 'ftable',
+     +  'awsoadjust', 'bdamp', 'bdampadjust',  'betafiscor', 
+     +  'betafiscoradjust', 'cbreak', 'cknock', 'cstrip', 'ctable', 
+     +  'ctableadjust', 'd1adjust', 'd2adjust', 
+     +  'd3adjust', 'egr', 'egradjust', 'epr', 'epradjust', 'etable',
+     +  'fisbar', 'fisbaradjust', 'fishw', 'fishwadjust', 'fsadjust',
+     +  'ftable', 'ftableadjust',
      +  'ggr', 'ggradjust', 'gnorm', 'gpr', 'gpradjust', 'krotconstant',
      +  'lv1adjust', 'lvadjust', 'lvsoadjust', 'lw1adjust',
-     +  'lwadjust', 'lwsoadjust', 'm2constant', 'ptable', 'rcadjust',
-     +  'rspincut', 'rvadjust', 'rvdadjust', 'rvsoadjust', 'rwadjust',
+     +  'lwadjust', 'lwsoadjust', 'm2constant', 'ptable', 
+     +  'ptableadjust', 'rcadjust', 'rspincut', 'rspincutff',
+     +  'rvadjust', 'rvdadjust', 'rvsoadjust', 'rwadjust',
      +  'rwdadjust', 'rwsoadjust', 's2adjust', 'sgr', 'sgradjust',
-     +  'spr', 'spradjust', 'tjadjust', 'v1adjust', 'v2adjust',
-     +  'v3adjust', 'v4adjust', 'vso1adjust', 'vso2adjust', 'w1adjust',
-     +  'w2adjust', 'w3adjust', 'w4adjust', 'wso1adjust', 'wso2adjust',
-     +  'wtable'/
+     +  'spr', 'spradjust', 'tjadjust', 'tmadjust', 'v1adjust', 
+     +  'v2adjust', 'v3adjust', 'v4adjust', 'vfiscor', 'vfiscoradjust', 
+     +  'vso1adjust', 'vso2adjust', 
+     +  'w1adjust', 'w2adjust', 'w3adjust', 'w4adjust', 'wso1adjust', 
+     +  'wso2adjust', 'wtable', 'wtableadjust'/
 c
 c ************************ Read values for keywords ********************
 c
@@ -95,8 +99,14 @@ c
         else
           read(word(4),*,end=100,err=100) val
         endif
-        Zix=Zinit-iz
-        Nix=Ninit-ia+iz
+        if (iz.le.2.and.ia.le.4) then
+          Zix=iz
+          Nix=ia-iz
+        else
+          in=ia-iz
+          Zix=Zinit-iz
+          Nix=Ninit-in
+        endif
         if (Zix.lt.0.or.Zix.gt.numZ.or.Nix.lt.0.or.Nix.gt.numN) goto 200
         i=4
 c

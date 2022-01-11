@@ -148,6 +148,7 @@ c eaddel     : on-set incident energy for addition of elastic peak
 c              to spectra
 c flagadd    : flag for addition of discrete states to spectra
 c flagaddel  : flag for addition of elastic peak to spectra
+c flagffruns : flag to denote that run is for fission fragment
 c numZ       : maximal number of protons away from initial compound
 c              nucleus
 c numN       : maximal number of neutrons away from initial compound
@@ -194,6 +195,10 @@ c
         flagaddel=.false.
       else
         flagaddel=.true.
+      endif
+      if (flagffruns) then
+        flagaddel=.false.
+        flagadd=.false.
       endif
       do 210 Zix=0,numZ
         do 210 Nix=0,numN

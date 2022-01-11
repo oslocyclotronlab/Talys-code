@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 15, 2016
+c | Date  : November 4, 2021
 c | Task  : Initialization of arrays for various structure parameters
 c +---------------------------------------------------------------------
 c
@@ -14,7 +14,8 @@ c
       character*4  phstring2(72)
       character*90 denfile
       integer      Zix,Nix,Z,N,A,type,i,k,l,irad,nen,nex,ipar,j,in,ip,
-     +             id,it,ih,ia,is
+     +             id,it,ih,ia,is,type2
+      real         Eout,degrid,Eeps
 c
 c *********** Initialization of nuclear structure arrays ***************
 c
@@ -323,6 +324,7 @@ c
             disp(Zix,Nix,k)=.false.
             jlmexist(Zix,Nix,k)=.false.
             normjlm(Zix,Nix,k)=1.
+            omplines(Zix,Nix,k)=0
   410 continue
       do 420 i=1,19
         do 420 nen=0,numomp
@@ -690,6 +692,7 @@ c               section
 c gamexist    : flag for existence of gamma production cross section
 c numin,....  : maximal number of ejectile in channel description
 c chanexist   : flag for existence of exclusive cross section
+c spchanexist : flag for existence of exclusive spectra
 c gamchanexist: flag for existence of exclusive discrete gamma-rays
 c chanfisexist: flag for existence of exclusive fission cross section
 c chanisoexist: flag for existence of exclusive isomeric cross section
@@ -704,6 +707,7 @@ c
         do 1010 Zix=0,numZ
           rpexist(Zix,Nix)=.false.
           fisexist(Zix,Nix)=.false.
+          recexist(Zix,Nix)=.false.
           do 1020 nex=0,numlev
             rpisoexist(Zix,Nix,nex)=.false.
  1020     continue
@@ -719,12 +723,28 @@ c
               do 1040 ih=0,numih
                 do 1040 ia=0,numia
                   chanexist(in,ip,id,it,ih,ia)=.false.
+                  spchanexist(in,ip,id,it,ih,ia)=.false.
+                  recchanexist(in,ip,id,it,ih,ia)=.false.
+                  spfischanexist(in,ip,id,it,ih,ia)=.false.
                   gamchanexist(in,ip,id,it,ih,ia)=.false.
                   chanfisexist(in,ip,id,it,ih,ia)=.false.
                   do 1050 nex=0,numlev
                     chanisoexist(in,ip,id,it,ih,ia,nex)=.false.
  1050             continue
  1040 continue
+      do 1055 type=0,numpar
+        spexist1(type)=.false.
+        spexist2(type)=.false.
+        ddxexist1(type)=.false.
+        ddxexist2(type)=.false.
+        ddxexist3(type)=.false.
+        ddxexist4(type)=.false.
+        do 1055 type2=0,numpar
+          do 1055 i=0,numlev
+            legexist(type,type2,i)=.false.
+            angexist(type,type2,i)=.false.
+ 1055 continue
+      breakupexist=.false.
       if (nin0.eq.0) then
         do 1060 i=1,numelem
           do 1060 j=1,numneu
@@ -752,6 +772,33 @@ c
           Nrescue(i,is)=0
  1100   continue
  1090 continue
+c
+c PFNS energy grid
+c
+      Eout=0.
+      degrid=0.001
+      Epfns=0.
+      NEpfns=0
+      nen=0
+ 1110 Eout=Eout+degrid
+      Eeps=Eout+1.e-4
+      if (Eeps.gt.50.) goto 1120
+      if (nen.eq.numpfns) goto 1120
+      nen=nen+1
+      Epfns(nen)=Eout
+      if (Eeps.gt.0.01) degrid=0.01
+      if (Eeps.gt.0.2) degrid=0.02
+      if (Eeps.gt.0.5) degrid=0.05
+      if (Eeps.gt.3.) degrid=0.1
+      if (Eeps.gt.10.) degrid=0.5
+      goto 1110
+ 1120 NEpfns=nen
+      dEpfns=0.
+      dEpfns(1)=Epfns(1)
+      do nen=2,NEpfns-1
+        dEpfns(nen)=0.5*(Epfns(nen+1)-Epfns(nen-1))
+      enddo
+      dEpfns(NEpfns)=0.5*(Epfns(NEpfns)-Epfns(NEpfns-1))
       return
       end
 Copyright (C)  2016 A.J. Koning, S. Hilaire and S. Goriely

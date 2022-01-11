@@ -1,9 +1,9 @@
 c
-c                      MOM.CMB for TALYS-1.913
+c                      MOM.CMB for TALYS-1.96
 c
 c +---------------------------------------------------------------------
 c | Author: Eric Bauge and Arjan Koning
-c | Date  : December 31, 2018
+c | Date  : December 30, 2021
 c | Task  : File with common blocks for JLM mom routines
 c +---------------------------------------------------------------------
 c

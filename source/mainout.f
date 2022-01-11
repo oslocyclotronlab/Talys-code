@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 28, 2019
+c | Date  : December 30, 2021
 c | Task  : Main output
 c +---------------------------------------------------------------------
 c
@@ -13,9 +13,9 @@ c
 c
 c *************************** Code and version *************************
 c
-      write(*,'(/"    TALYS-1.95 (Version: December 28, 2019)"/)')
-      write(*,'(" Copyright (C) 2019  A.J. Koning, S. Hilaire ",
-     +  "and S. Goriely      "/)')
+      write(*,'(/"    TALYS-1.96 (Version: December 30, 2021)"/)')
+      write(*,'(" Copyright (C) 2021  A.J. Koning, S. Hilaire ",
+     +  "and S. Goriely"/)')
       write(*,'(" Dimensions - Cross sections: mb, Energies: MeV, ",
      +  "Angles: degrees")')
 c
@@ -101,7 +101,7 @@ c Pdistex : population distribution, spin-independent
 c Pdist   : population distribution per spin and parity
 c
 
-        write(*,'(/," Initial population distribution - Bins: ",i3,
+        write(*,'(/," Initial population distribution - Bins: ",i4,
      +    " Spins: ",i3," Maximum excitation energy:",f12.5/)')
      +    npopE,npopJ,eninc(1)
         if (npopJ.eq.0) then
@@ -150,4 +150,4 @@ c
       endif
       return
       end
-Copyright (C)  2019 A.J. Koning, S. Hilaire and S. Goriely
+Copyright (C)  2021 A.J. Koning, S. Hilaire and S. Goriely

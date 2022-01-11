@@ -67,7 +67,7 @@ c
             nonfile='nonelastic.tot'//natstring(iso)
             inquire (file=nonfile,exist=lexist)
             if (.not.lexist) then
-              write(*,'(" TALYS-error: non-elastic cross section file ",
+              write(*,'(" TALYS-error: non-elastic cross section file",
      +          " nonelastic.tot does not exist")')
               stop
             endif

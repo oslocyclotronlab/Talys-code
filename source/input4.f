@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 24, 2019
+c | Date  : April 19, 2020
 c | Task  : Read input for fourth set of variables
 c +---------------------------------------------------------------------
 c
@@ -64,6 +64,7 @@ c flagelectron: flag for application of electron conversion coefficient
 c flagrot     : flag for use of rotational optical model per
 c               outgoing particle, if available
 c flagspher   : flag to force spherical optical model
+c flagsoukho  : flag for Soukhovitskii OMP for actinides
 c flagcoulomb : flag for Coulomb excitation calculation with ECIS
 c flagcolldamp: flag for damping of collective effects in effective
 c               level density (without explicit collective enhancement)
@@ -80,11 +81,11 @@ c               3=Bojowald, 4=Han-Shi-Shen, 5=An-Cai)
 c altomp      : flag for alternative optical model
 c soswitch    : switch for deformed spin-orbit calculation and sequential
 c               iterations in ECIS
+c Rspincutff  : adjustable parameter (global) for FF spin cutoff factor
 c flagpartable: flag for output of model parameters on separate file
 c maxchannel  : maximal number of outgoing particles in individual
 c               channel description (e.g. this is 3 for (n,2np))
 c Ztarget     : charge number of target nucleus
-c massmodel   : model for theoretical nuclear mass
 c pairmodel   : model for preequilibrium pairing energy
 c flagmicro   : flag for completely microscopic Talys calculation
 c fismodel    : fission model
@@ -132,7 +133,7 @@ c
       if (flagrecoil) flagspec=.true.
       flagres=.false.
       flaggroup=.false.
-      reslib='default'
+      reslib='tendl.2021'
       flagddx=.false.
       flagoutdwba=.false.
       flaggamdis=.false.
@@ -162,6 +163,8 @@ c
       else
         flagspher=.true.
       endif
+      flagsoukho=.true.
+      flagsoukhoinp=.false.
       flagcoulomb=.true.
       flagpartable=.false.
       maxchannel=4
@@ -171,12 +174,18 @@ c
       else
         fismodel=1
       endif
-      fismodelalt=4
+      if (k0.le.1.and.Atarget.gt.fislim) then
+        fismodelalt=4
+      else
+        fismodel=3
+        fismodelalt=3
+      endif
       flagcolldamp=.false.
       flagfispartdamp=.false.
       flagctmglob=.false.
       cglobal=1.e-20
       pglobal=1.e-20
+      Rspincutff=9.
       alphaomp=6
       deuteronomp=1
       do 5 type=1,6
@@ -467,6 +476,13 @@ c
           if (ch.ne.'y'.and.ch.ne.'n') goto 200
           goto 10
         endif
+        if (key.eq.'soukho') then
+          if (ch.eq.'n') flagsoukho=.false.
+          if (ch.eq.'y') flagsoukho=.true.
+          flagsoukhoinp=flagsoukho
+          if (ch.ne.'y'.and.ch.ne.'n') goto 200
+          goto 10
+        endif
         if (key.eq.'coulomb') then
           if (ch.eq.'n') flagcoulomb=.false.
           if (ch.eq.'y') flagcoulomb=.true.
@@ -580,6 +596,10 @@ c
         endif
         if (key.eq.'soswitch') then
           read(value,*,end=200,err=200) soswitch
+          goto 10
+        endif
+        if (key.eq.'rspincutff') then
+          read(value,*,end=200,err=200) Rspincutff
           goto 10
         endif
         if (key.eq.'gefran') then

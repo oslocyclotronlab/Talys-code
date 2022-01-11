@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 16, 2019
+c | Date  : November 2, 2021
 c | Task  : Output of final results
 c +---------------------------------------------------------------------
 c
@@ -17,7 +17,7 @@ c
       character*19  gamfile
       character*80  string
       character*126 stringtot
-      integer       istat,nen,type,l,Acomp,Zcomp,Ncomp,Z,A,nex,Zix,Nix,
+      integer       istat,nen,type,Acomp,Zcomp,Ncomp,Z,A,nex,Zix,Nix,
      +              npart,ia,ih,it,id,ip,in,ident,idc,i1,i2
       real          Egam
 c
@@ -32,6 +32,7 @@ c gammashell2   : gamma-constant for asymptotic level density parameter
 c pairconstant  : constant for pairing energy systematics
 c Pshiftconstant: global constant for pairing shift
 c Rspincut      : adjustable constant (global) for spin cutoff factor
+c Rspincutff    : parameter (global) for FF spin cutoff factor
 c cglobal,...   : global constant to adjust tabulated level densities
 c flagcolall    : flag for collective enhancement of level density
 c                 for all nuclides
@@ -64,6 +65,10 @@ c                 breakup
 c Cstrip        : adjustable parameter for stripping/pick-up reactions
 c Cknock        : adjustable parameter for knockout reactions
 c Cbreak        : adjustable parameter for breakup reactions
+c Cnubar1       : adjustable parameter for nubar constant value
+c Cnubar2       : adjustable parameter for nubar energy slope
+c Tmadjust      : adjustable parameter for PFNS temperature
+c Fsadjust      : adjustable parameter for PFNS scission fraction
 c flagjlm       : flag for using semi-microscopic JLM OMP
 c alphaomp      : alpha optical model (1=normal, 2= McFadden-Satchler,
 c                 3-5= folding potential, 6,8= Avrigeanu, 7=Nolte)
@@ -92,6 +97,7 @@ c
           write(51,'("pshiftconstant ",f10.5)') Pshiftconstant(0,0)
           write(51,'("Rspincut       ",f10.5)') Rspincut
         endif
+        write(51,'("Rspincutff     ",f10.5)') Rspincutff
         write(51,'("cglobal        ",es12.5)') cglobal
         write(51,'("pglobal        ",es12.5)') pglobal
         if (flagcolall) then
@@ -126,6 +132,13 @@ c
           write(51,'("Cbreak        ",a1,f10.5)') parsym(type),
      +      Cbreak(type)
         enddo
+        write(51,'("##")')
+        write(51,'("## Fission")')
+        write(51,'("##")')
+        write(51,'("Cnubar1        ",f10.5)') Cnubar1
+        write(51,'("Cnubar2        ",f10.5)') Cnubar2
+        write(51,'("Tmadjust       ",f10.5)') Tmadjust
+        write(51,'("Fsadjust       ",f10.5)') Fsadjust
         write(51,'("##")')
         write(51,'("## Optical model")')
         write(51,'("##")')

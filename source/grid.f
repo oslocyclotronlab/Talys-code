@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning and Stephane Hilaire
-c | Date  : December 13, 2016
+c | Date  : December 11, 2021
 c | Task  : Energy and angle grid
 c +---------------------------------------------------------------------
 c
@@ -10,7 +10,7 @@ c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
       logical lexist
-      integer nen,nen0,type,iang,mt,is
+      integer nen,nen0,type,iang,mt,is,mhalf
       real    Eout,degrid,Eeps,coulfactor,dang,angval,angmin,angmax,val
 c
 c ************************ Basic outgoing energy grid ******************
@@ -53,8 +53,8 @@ c
       if (Eeps.gt.0.01) degrid=0.01
       if (Eeps.gt.0.02) degrid=0.03
       if (Eeps.gt.0.05) degrid=0.05
-      if (Eeps.gt.0.1) degrid=0.1
-      if (Eeps.gt.2.) degrid=0.2
+      if (Eeps.gt.0.1) degrid=0.1/segment
+      if (Eeps.gt.2.) degrid=0.2/segment
       if (Eeps.gt.4.) degrid=0.5/segment
       if (Eeps.gt.20.) degrid=1./segment
       if (Eeps.gt.40.) degrid=2./segment
@@ -66,6 +66,22 @@ c
         write(*,'(" TALYS-error: number of energies too large - ",
      +    "increase numen in talys.cmb or lower Emaxtalys")')
         stop
+      endif
+c
+c Equidistant energy grid for two spectrum regions e.g. for PFNS
+c
+c flagequispec: flag to use equidistant bins for emission spectra
+c
+      if (flagequispec) then
+        maxen=numen-2
+        mhalf=numen/2
+        do nen=1,mhalf
+          egrid(nen)=0.1*nen
+        enddo
+        dEgrid=(enincmax+12.-egrid(mhalf))/mhalf
+        do nen=mhalf+1,numen
+          egrid(nen)=egrid(mhalf)+dEgrid*(nen-mhalf)
+        enddo
       endif
 c
 c The widths of the bins around the emission energies are set.

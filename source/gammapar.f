@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 23, 2019
+c | Date  : September 28, 2021
 c | Task  : Gamma ray parameters
 c +---------------------------------------------------------------------
 c
@@ -11,12 +11,13 @@ c
       include "talys.cmb"
       logical      lexist
       character*6  gamchar
+      character*20 wtablechar
       character*80 key
       character*90 gamfile
-      integer      Zix,Nix,Z,A,N,ia,irad,l,nen,it
+      integer      Zix,Nix,Z,A,N,ia,irad,l,nen,it,i
       real         eg1,sg1,gg1,eg2,sg2,gg2,egamref,enum,denom,ee,et,ft,
      +             factor,fe1(numTqrpa),fstrength,temp,dtemp,fe1t,fm1,
-     +             fmax,dE,Eq,Emid,wt
+     +             fmax,dE,Eq,Emid,wt,wtld(6)
 c
 c ***************** Default giant resonance parameters *****************
 c
@@ -346,6 +347,28 @@ c
           endif
   420   continue
   410 continue
+c
+c Reading of width of tabulated PSF
+c
+      if (flagngfit.and.k0.eq.1.and..not.flagpsfglobal.and.
+     +  (strength.eq.8.or.strength.eq.9)) then
+        if (.not.gamadjust(Zix,Nix)) then
+          wtablechar=trim(nuc(Z))//'.wtable'
+          if (strength.eq.8) then
+            gamfile=trim(path)//'gamma/gogny/'//wtablechar
+          else
+            gamfile=trim(path)//'gamma/smlo2019/'//wtablechar
+          endif
+          inquire (file=gamfile,exist=lexist)
+          if (.not.lexist) goto 480
+          open (unit=2,file=gamfile,status='old')
+  460     read(2,'(4x,i4,6f10.5)',end=480) ia,(wtld(i),i=1,6)
+          if (A.ne.ia) goto 460
+          wt=wtld(ldmodel(Zix,Nix))
+          if (wt.gt.0.) wtable(Zix,Nix,1,1)=wt
+  480     close (unit=2)
+        endif
+      endif
 c
 c Adjustment of width of tabulated PSF
 c

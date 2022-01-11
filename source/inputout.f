@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 24, 2019
+c | Date  : September 28, 2021
 c | Task  : Write input parameters
 c +---------------------------------------------------------------------
 c
@@ -65,6 +65,7 @@ c               compound nucleus
 c nbins0      : number of continuum excitation energy bins
 c flagequi    : flag to use equidistant excitation bins instead of
 c               logarithmic bins
+c flagequispec: flag to use equidistant bins for emission spectra
 c flagpopMeV  : flag to use initial population per MeV instead of
 c               histograms
 c segment     : number of segments to divide emission energy grid
@@ -100,6 +101,10 @@ c flaglabddx  : flag for calculation of DDX in LAB system
 c flagrecoilav: flag for average velocity in recoil calculation
 c flagEchannel: flag for channel energy for emission spectrum
 c flagreaction: flag for calculation of nuclear reactions
+c flagngfit   : flag for using fitted (n,g) nuclear model parameters
+c flagnnfit   : flag for using fitted (n,n'), (n,2n) and (n,p) 
+c               nuclear model parameters
+c flagngfit   : flag for using fitted (n,a) nuclear model parameters
 c flagastro   : flag for calculation of astrophysics reaction rate
 c flagastrogs : flag for calculation of astrophysics reaction rate with
 c               target in ground state only
@@ -135,6 +140,9 @@ c
       write(*,'(" equidistant         ",a1,"     flagequi    ",
      +  " flag to use equidistant excitation bins instead of ",
      +  "logarithmic bins")') yesno(flagequi)
+      write(*,'(" equispec            ",a1,"     flagequispec",
+     +  " flag to use equidistant bins for emission spectra")')
+     +  yesno(flagequispec)
       write(*,'(" popmev              ",a1,"     flagpopmev  ",
      +  " flag to use initial population per MeV instead of ",
      +  "histograms")') yesno(flagpopmev)
@@ -204,6 +212,15 @@ c
      +  " channel energy for emission spectrum")') yesno(flagEchannel)
       write(*,'(" reaction            ",a1,"     flagreaction flag",
      +  " for calculation of nuclear reactions")') yesno(flagreaction)
+      write(*,'(" ngfit               ",a1,"     flagngfit    flag for",
+     +  " using fitted (n,g) nuclear model parameters")') 
+     +  yesno(flagngfit)
+      write(*,'(" nnfit               ",a1,"     flagnnfit    flag for",
+     +  " using fitted (n,n), (n,2n) and (n,p) nuclear model",
+     +  " parameters")') yesno(flagnnfit)
+      write(*,'(" nafit               ",a1,"     flagnafit    flag for",
+     +  " using fitted (n,a) nuclear model parameters")') 
+     +  yesno(flagnafit)
       write(*,'(" astro               ",a1,"     flagastro    flag for",
      +  " calculation of astrophysics reaction rate")') yesno(flagastro)
       write(*,'(" astrogs             ",a1,"     flagastrogs  flag for",
@@ -238,7 +255,7 @@ c
      +  "maximal number of protons away from the initial",
      +  " compound nucleus before residual evaporation")') maxZrp
       write(*,'(" maxNrp            ",i3,"     maxNrp       ",
-     +  "maximal number of neutons away from the initial",
+     +  "maximal number of neutrons away from the initial",
      +  " compound nucleus before residual evaporation")') maxNrp
 c
 c Isotope production
@@ -263,7 +280,7 @@ c
      +    "     incident energy in MeV for isotope production")') Ebeam
         write(*,'(" Eback            ",f8.3," Eback  ",
      +    "      lower end of energy range in MeV for isotope",
-     +    "  production")') Eback
+     +    " production")') Eback
         write(*,'(" radiounit             ",a3," radiounit ",
      +    "   unit for radioactivity")') radiounit
         write(*,'(" yieldunit             ",a3," yieldunit ",
@@ -290,6 +307,8 @@ c
 c flaglocalomp: flag for local (y) or global (n) optical model
 c flagdisp    : flag for dispersive optical model
 c flagjlm     : flag for using semi-microscopic JLM OMP
+c flagriplrisk: flag for going outside RIPL mass validity range
+c flagriplomp : flag for RIPL OMP
 c flagompall  : flag for new optical model calculation for all residual
 c               nuclei
 c flagincadj  : flag for OMP adjustment on incident channel also
@@ -297,6 +316,7 @@ c flagomponly : flag to execute ONLY an optical model calculation
 c flagautorot : flag for automatic rotational coupled channels
 c               calculations for A > 150
 c flagspher   : flag to force spherical optical model
+c flagsoukho  : flag for Soukhovitskii OMP for actinides
 c flagcoulomb : flag for Coulomb excitation calculation with ECIS
 c flagstate   : flag for optical model potential for each excited state
 c maxband     : highest vibrational level added to rotational model
@@ -326,6 +346,10 @@ c
      +  " flag for dispersive optical model")') yesno(flagdisp)
       write(*,'(" jlmomp              ",a1,"     flagjlm      flag for",
      +  " using semi-microscopic JLM OMP")') yesno(flagjlm)
+      write(*,'(" riplomp             ",a1,"     flagriplomp  flag for",
+     +  " RIPL OMP")') yesno(flagriplomp)
+      write(*,'(" riplrisk            ",a1,"     flagriplrisk flag for",
+     +  " going outside RIPL mass validity range")') yesno(flagriplrisk)
       write(*,'(" optmodall           ",a1,"     flagompall   flag for",
      +  " new optical model calculation for all residual nuclei")')
      +  yesno(flagompall)
@@ -339,6 +363,9 @@ c
      +  "calculations for A > 150")') yesno(flagautorot)
       write(*,'(" spherical           ",a1,"     flagspher   ",
      +  " flag to force spherical optical model")') yesno(flagspher)
+      write(*,'(" soukho              ",a1,"     flagsoukho  ",
+     +  " flag for Soukhovitskii OMP for actinides")')
+     +  yesno(flagsoukho)
       write(*,'(" coulomb             ",a1,"     flagcoulomb ",
      +  " flag for Coulomb excitation calculation with ECIS")')
      +  yesno(flagcoulomb)
@@ -553,6 +580,7 @@ c
 c 7. Level densities
 c
 c ldmodelall  : level density model for all nuclides
+c ldmodelCN   : level density model for compound nucleus
 c spincutmodel: model for spin cutoff factor for ground state
 c shellmodel  : model for shell correction energies
 c kvibmodel   : model for vibrational enhancement
@@ -568,6 +596,8 @@ c
       write(*,'(" #"/" # Level densities"/" #")')
       write(*,'(" ldmodel            ",i2,"     ldmodelall ",
      +  "  level density model")') ldmodelall
+      write(*,'(" ldmodelCN          ",i2,"     ldmodelCN  ",
+     +  "  level density model for compound nucleus")') ldmodelCN
       write(*,'(" shellmodel         ",i2,"     shellmodel  ",
      +  " model for shell correction energies")') shellmodel
       write(*,'(" kvibmodel          ",i2,"     kvibmodel   ",
@@ -589,7 +619,7 @@ c
      +  " flag for energy dependence of single particle",
      +  " level density parameter g")') yesno(flaggshell)
       write(*,'(" colldamp            ",a1,"     flagcolldamp",
-     +  " flag for damping of collective effects in effective ",
+     +  " flag for damping of collective effects in effective",
      +  " level density")') yesno(flagcolldamp)
 c
 c 8. Fission
@@ -604,6 +634,8 @@ c flagffevap : flag for calculation of particle evaporation from
 c              fission fragment mass yields
 c flagfisfeed: flag for output of fission per excitation bin
 c fymodel    : fission yield model, 1: Brosa 2: GEF
+c ffmodel    : fission fragment model, 1: GEF 2: HF3D (Okumura) 3: SPY
+c pfnsmodel  : PFNS  model, 1: Iwamoto 2: from FF decay
 c flagffspin : flag to use spin distribution in initial FF population
 c
       write(*,'(" #"/" # Fission"/" #")')
@@ -630,6 +662,11 @@ c
      +  yesno(flagfisfeed)
       write(*,'(" fymodel             ",i1,"     fymodel    ",
      +  "  fission yield model, 1: Brosa 2: GEF")') fymodel
+      write(*,'(" ffmodel             ",i1,"     ffmodel    ",
+     +  "  fission fragment model, 1: GEF 2: HF3D (Okumura) 3: SPY")') 
+     +  ffmodel
+      write(*,'(" pfnsmodel           ",i1,"     pfnsmodel  ",
+     +  "  PFNS model, 1: Iwamoto 2: from FF decay")') pfnsmodel
       write(*,'(" ffspin              ",a1,"     flagffspin ",
      +  "  flag to use spin distribution in initial FF population")')
      +  yesno(flagffspin)
@@ -677,6 +714,7 @@ c flagendf    : flag for information for ENDF-6 file
 c flagendfdet : flag for detailed ENDF-6 information per channel
 c flagsacs    : statistical analysis of cross sections
 c flagpartable: flag for output of model parameters on separate file
+c flagblock   : flag to block spectra, angle and gamma files
 c
       write(*,'(" #"/" # Output"/" #")')
       write(*,'(" outmain             ",a1,"     flagmain     ",
@@ -780,6 +818,9 @@ c
       write(*,'(" partable            ",a1,"     flagpartable",
      +  " flag for output of model parameters on separate file")')
      +  yesno(flagpartable)
+      write(*,'(" block               ",a1,"     flagblock   ",
+     +  " flag to block spectra, angle and gamma files")')
+     +  yesno(flagblock)
       return
       end
-Copyright (C)  2013 A.J. Koning, S. Hilaire and S. Goriely
+Copyright (C)  2020 A.J. Koning, S. Hilaire and S. Goriely

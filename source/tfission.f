@@ -9,7 +9,6 @@ c
 c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
-      character*80     key
       integer          Zcomp,Ncomp,nex,J2,parity,J,iloop,ihill,ic2,jc2,
      +                 pc2
       real             Eex,term1,term2,damper,expo,ec2,wo2,diffnrj,
@@ -194,7 +193,7 @@ c
             sumT3= tdir21+tfb3+Ta32+Tgam3
             Ti2=Ta12*(tdir23/sumT2+Ta23*tfb3/(sumT2*sumT3))
             Ti3=Ta13*(tfb3/sumT3+Ta32*tdir23/(sumT2*sumT3))
-            if ( abs((Ta23*Ta32)/(sumT2*sumT3)-1) .le. 1e-8 )  then
+            if (abs((Ta23*Ta32)/(sumT2*sumT3)-1.).le.1.e-8 )  then
               Rnorm=  sumT2*sumT3/( (tfb1+tdir23+Tgam2)*sumT3
      +          + Ta23*(tdir21+tfb3+Tgam3) )
             else

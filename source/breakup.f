@@ -37,6 +37,12 @@ c
     5 continue
       Nab(3,1)=3.6
       Nab(3,2)=3.6
+c
+c Extra adjustment for (d,n) and (d,p) cross sections, TENDL-2021
+c
+      Nab(3,1)=Nab(3,1)*max(3.-Atarget/125.,1.)
+      Nab(3,2)=Nab(3,2)*max(6.-Atarget/50.,1.)
+c
       Nab(4,1)=4.1
       Nab(4,2)=2.0
       Nab(4,3)=1.3

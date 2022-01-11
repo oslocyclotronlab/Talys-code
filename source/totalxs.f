@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : October 15, 2015
+c | Date  : September 12, 2021
 c | Task  : Total cross sections
 c +---------------------------------------------------------------------
 c
@@ -10,6 +10,7 @@ c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
       integer type,ident,idc,Zcomp,Ncomp
+      real    nubarWahl
 c
 c *********************** Specific cross sections **********************
 c
@@ -91,6 +92,8 @@ c
   210   continue
         if (.not.flagffruns) xsfistot0=xsfistot
         if (flagastro) xsastrofis(nin)=xsfistot
+        if (.not.(flagmassdis.and.fymodel.ge.3)) 
+     +    nubar(1)=nubarWahl(Einc)
       endif
       return
       end

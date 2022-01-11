@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : April 9, 2019
+c | Date  : September 27, 2020
 c | Task  : Output of level density
 c +---------------------------------------------------------------------
 c
@@ -13,12 +13,13 @@ c
       character*12     ldfile,ldstring
       character*13     ldfileout
       character*25     model
+      character*30     collstring
       integer          Zix,Nix,Z,N,A,ldmod,ibar,odd,J,ploop,parity,nex,
      +                 NL,NT,i
       real             aldmatch,SS,P,Eex,ignatyuk,spincut,ald,Krot,Kvib,
      +                 Kcoll,chi2D0,Dratio,dEx,sigma,Tnuc
-      double precision densitytot,density,dens,Ncum,chi2,avdev,ldtot,
-     +                 ldtotP
+      double precision densitytot,densitytotP,density,dens,Ncum,chi2,
+     +                 avdev,ldtot,ldtotP
 c
 c ********************** Level density parameters **********************
 c
@@ -177,7 +178,7 @@ c
         write(*,'(" (Total level density also per parity)"/)')
         if (flagcol(Zix,Nix).and..not.ldexist(Zix,Nix,ibar)) then
           write(*,'("    Ex     a    sigma   total ",
-     +      9("  JP= ",f4.1),"      Krot       Kvib       Kcoll")')
+     +      9("  JP= ",f4.1),"    Krot      Kvib      Kcoll")')
      +      (real(J+0.5*odd),J=0,8)
         else
           write(*,'("    Ex     a    sigma   total ",
@@ -190,8 +191,7 @@ c ploop      : help variable
 c parity     : parity
 c flagparity : flag for non-equal parity distribution
 c edens      : energy grid for tabulated level densities
-c ldtottableP: total level density per parity from table
-c ldtable    : level density from table
+c densitytotP: total level density per parity
 c nendens    : number of energies for level density grid
 c ctable     : constant to adjust tabulated level densities
 c ptable     : constant to adjust tabulated level densities
@@ -209,8 +209,9 @@ c
             do 130 nex=1,nendens(Zix,Nix)
               Eex=edens(nex)
               write(*,'(1x,f6.2,14x,11es10.3)') Eex,
-     +          ldtottableP(Zix,Nix,nex,parity,ibar),
-     +          (ldtable(Zix,Nix,nex,J,parity,ibar),J=0,8)
+     +          densitytotP(Zix,Nix,Eex,parity,ibar,ldmod),
+     +          (density(Zix,Nix,Eex,real(J+0.5*odd),parity,ibar,ldmod),
+     +          J=0,8)
   130     continue
   120     continue
           write(*,'(/" Normalization:")')
@@ -236,20 +237,17 @@ c
             ald=ignatyuk(Zix,Nix,Eex,ibar)
             if (ldmod.eq.3.and.Eex.lt.Ucrit(Zix,Nix,ibar)-
      +        P-Pshift(Zix,Nix,ibar)) ald=aldcrit(Zix,Nix,ibar)
-            call colenhance(Zix,Nix,Eex,ald,ibar,Krot,Kvib,Kcoll)
             if (flagcol(Zix,Nix).and..not.ldexist(Zix,Nix,ibar)) then
-              write(*,'(1x,f6.2,2f7.3,13es10.3)') Eex,ald,
-     +          sqrt(spincut(Zix,Nix,ald,Eex,ibar)),
-     +          densitytot(Zix,Nix,Eex,ibar,ldmod)*pardis,
-     +          (density(Zix,Nix,Eex,real(J+0.5*odd),1,ibar,ldmod),
-     +          J=0,8),Krot,Kvib,Kcoll
+              call colenhance(Zix,Nix,Eex,ald,ibar,Krot,Kvib,Kcoll)
+              write(collstring,'(3es10.3)') Krot,Kvib,Kcoll
             else
-              write(*,'(1x,f6.2,2f7.3,10es10.3)') Eex,ald,
-     +          sqrt(spincut(Zix,Nix,ald,Eex,ibar)),
-     +          densitytot(Zix,Nix,Eex,ibar,ldmod)*pardis,
-     +          (density(Zix,Nix,Eex,real(J+0.5*odd),1,ibar,ldmod),
-     +          J=0,8)
+              collstring=' '
             endif
+            write(*,'(1x,f6.2,2f7.3,10es10.3,a30)') Eex,ald,
+     +        sqrt(spincut(Zix,Nix,ald,Eex,ibar)),
+     +        densitytotP(Zix,Nix,Eex,1,ibar,ldmod),
+     +        (density(Zix,Nix,Eex,real(J+0.5*odd),1,ibar,ldmod),
+     +        J=0,8),collstring
   140     continue
         endif
   110 continue
@@ -428,18 +426,14 @@ c
             Eex=edens(nex)
             Tnuc=sqrt(Eex/alev(Zix,Nix))
             if (nex.gt.1) dEx=Eex-edens(nex-1)
-            dens=densitytot(Zix,Nix,Eex,ibar,ldmod)
+            dens=densitytotP(Zix,Nix,Eex,parity,ibar,ldmod)
             Ncum=Ncum+dens*dEx
             ldtot=0.
             do 330 J=0,29
               ldtot=ldtot+(2.*J+1)*
      +          density(Zix,Nix,Eex,real(J+0.5*odd),parity,ibar,ldmod)
   330       continue
-            if (ldmod.le.4) then
-              ldtotP=densitytot(Zix,Nix,Eex,ibar,ldmod)*pardis
-            else
-              ldtotP=ldtottableP(Zix,Nix,nex,parity,ibar)
-            endif
+            ldtotP=densitytotP(Zix,Nix,Eex,parity,ibar,ldmod)
             write(1,'(1x,f6.2,f7.3,1x,1p,33e9.2)') Eex,Tnuc,Ncum,
      +        ldtotP,ldtot,
      +        (density(Zix,Nix,Eex,real(J+0.5*odd),1,ibar,ldmod),J=0,29)

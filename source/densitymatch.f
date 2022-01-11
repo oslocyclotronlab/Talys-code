@@ -2,15 +2,17 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning and Stephane Hilaire
-c | Date  : December 15, 2016
+c | Date  : October 28, 2021
 c | Task  : Level density matching solution
 c +---------------------------------------------------------------------
 c
 c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
-      integer          Zix,Nix,ibar,i,A,nEx,j,Nstart
-      real             ald,Tm,Exm,E0m,ignatyuk,logrholoc(-1:1),
+      character*7      key
+      character*90     denfile
+      integer          Zix,Nix,ibar,i,A,nEx,j,Nstart,iz,ia,Z
+      real             ald,Tm,Exm,E0m,ignatyuk,logrholoc(-1:1),val,
      +                 Exend,dEx,Eex,U,Krot,Kvib,Kcoll,P,logrhomatch
       double precision fermi,rhomatch
 c
@@ -129,7 +131,22 @@ c pol1       : subroutine for interpolation of first order
 c rhomatch   : level density at matching point
 c Tadjust....: adjustable factors for level density parameters
 c
-   60   Tm=T(Zix,Nix,ibar)
+c Light nuclides
+c
+   60   if (A.le.18) then
+          Z=ZZ(Zix,Nix,0)
+          denfile=trim(path)//'density/ground/ctm/ctm.light'
+          open(unit=1,file=denfile,status='unknown')
+   70     read(1,*,end=80) key,iz,ia,val
+          if (Z.eq.iz.and.ia.eq.A) then
+            if (trim(key).eq.'T') T(Zix,Nix,0)=val
+            if (trim(key).eq.'E0') E0(Zix,Nix,0)=val
+            if (trim(key).eq.'Exmatch') Exmatch(Zix,Nix,0)=val
+          endif
+          goto 70
+   80     close(1)
+        endif
+        Tm=T(Zix,Nix,ibar)
         Exm=Exmatchadjust(Zix,Nix,ibar)*Exmatch(Zix,Nix,ibar)
         E0m=E0(Zix,Nix,ibar)
         E0save=E0m

@@ -1,5 +1,5 @@
       subroutine tdirbarrier(Zcomp,Ncomp,J2,parity,ibar,ibar2,trfis,
-     +  rhof,Eex,iloop)
+     +  rhof,Eex)
 c
 c +---------------------------------------------------------------------
 c | Author: Stephane Hilaire and Marieke Duijvestijn
@@ -10,12 +10,12 @@ c
 c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
-      integer          Zcomp,Ncomp,J2,parity,ibar,iloop,J,itr,j2trans,
-     +                 pitrans,ihill,i,ibar2,ibar3
-      real             Eex,bfis,wfis,etrans,Eeff,twkbint,thill,elow,
-     +                 emid,eup,dE1,dE2,test,Twkbphaseint
+      integer          Zcomp,Ncomp,J2,parity,ibar,J,itr,j2trans,
+     +                 pitrans,i,ibar2,ibar3
+      real             Eex,etrans,Eeff,twkbint,elow,
+     +                 emid,eup,dE1,dE2,Twkbphaseint
       double precision trfis,rhof,trfisone,rho1,rho2,rho3,r1log,r2log,
-     +                 r3log,rho,rhotr,trfisonetwo,trfistwo,trfisthree
+     +                 r3log,rho,trfisonetwo,trfistwo,trfisthree
       external Twkbphaseint
 c
 c ********** Fission transmission coefficient for one barrier **********
@@ -37,7 +37,6 @@ c Correct LDM barrier height with ground state shell correction
 c
 c fismodelx: fission model
 c nfisbar  : number of fission barrier parameters
-c bfis,wfis: help variables
 c fbarrier : height of fission barrier
 c deltaW   : shell correction in nuclear mass
 c fwidth   : width of fission barrier
@@ -52,11 +51,9 @@ c efistrrot     : energy of rotational transition states
 c jfistrrot     : spin of rotational transition states
 c pitrans,Eeff  : help variables
 c pfistrrot     : parity of rotational transition states
-c thill         : Hill-Wheeler penetrability
 c primary       : flag to designate primary (binary) reaction
 c trfisone      : help variable
 c twkbint       : WKB penetrability
-c ihill         : counter for Hill-Wheeler magnitude
 c numhill       : maximum number of Hill-Wheeler points
 c tfisA         : transmission coefficient for Hill-Wheeler magnitude
 c rhofisA       : integrated level density corresponding to tfisA

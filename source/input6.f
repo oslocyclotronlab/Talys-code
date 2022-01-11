@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : March 13, 2019
+c | Date  : December 15, 2020
 c | Task  : Read input for sixth set of variables
 c +---------------------------------------------------------------------
 c
@@ -43,6 +43,7 @@ c filechannels: flag for exclusive channel cross sections on
 c               separate file
 c filefission : flag for fission cross sections on separate file
 c filegamdis  : flag for gamma-ray intensities on separate file
+c flagblock   : flag to block spectra, angle and gamma files
 c flagexc     : flag for output of excitation functions
 c flagendf    : flag for information for ENDF-6 file
 c flagendfdet : flag for detailed ENDF-6 information per channel
@@ -63,18 +64,24 @@ c xsfluxfile  : TALYS cross section file for integral data
 c fluxname    : name of integral spectrum
 c integralexp : experimental effective cross section
 c
+      transpower=5
+      transeps=1.e-8
+      xseps=1.e-7
+      popeps=1.e-3
+      Rfiseps=1.e-3
+      if (flagmassdis) then
+        transpower=10
+        transeps=1.e-12
+        xseps=1.e-12
+        popeps=1.e-10
+        Rfiseps=1.e-9
+      endif
       if (flagastro) then
         transpower=15
         transeps=1.e-18
         xseps=1.e-17
         popeps=1.e-13
         Rfiseps=1.e-6
-      else
-        transpower=5
-        transeps=1.e-8
-        xseps=1.e-7
-        popeps=1.e-3
-        Rfiseps=1.e-3
       endif
       fileelastic=.false.
       do 10 type=0,6
@@ -108,6 +115,7 @@ c
         fileangle(i)=.false.
         filediscrete(i)=.false.
    60 continue
+      flagblock=.false.
       filetotal=.false.
       fileresidual=.false.
       flagcompo=.false.
@@ -120,6 +128,7 @@ c If the results of TALYS are used to create ENDF-6 data files,
 c several output flags are automatically set.
 c
       if (flagendf) then
+        flagblock=.true.
         fileelastic=.true.
         filetotal=.true.
         fileresidual=.true.
@@ -291,19 +300,29 @@ c
           goto 110
         endif
         if (key.eq.'integral') then
-          Nflux=Nflux+1
-          if (k0.gt.1) goto 350
-          if (Nflux.gt.numflux) goto 360
-          xsfluxfile(Nflux)=value
-          fluxname(Nflux)=word(3)
-          flagintegral=.true.
-          read(word(4),*,iostat=istat) integralexp(Nflux)
-          if (istat.ne.0) goto 110
+          if (ch.eq.'n') flagintegral=.false.
+          if (ch.eq.'y') flagintegral=.true.
+          if (ch.ne.'y'.and.ch.ne.'n') then
+            Nflux=Nflux+1
+            if (k0.gt.1) goto 350
+            if (Nflux.gt.numflux) goto 360
+            xsfluxfile(Nflux)=value
+            fluxname(Nflux)=word(3)
+            flagintegral=.true.
+            read(word(4),*,iostat=istat) integralexp(Nflux)
+            if (istat.ne.0) goto 110
+          endif
           goto 110
         endif
         if (key.eq.'sacs') then
           if (ch.eq.'n') flagsacs=.false.
           if (ch.eq.'y') flagsacs=.true.
+          if (ch.ne.'y'.and.ch.ne.'n') goto 300
+          goto 110
+        endif
+        if (key.eq.'block') then
+          if (ch.eq.'n') flagblock=.false.
+          if (ch.eq.'y') flagblock=.true.
           if (ch.ne.'y'.and.ch.ne.'n') goto 300
           goto 110
         endif

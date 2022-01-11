@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : September 27, 2019
+c | Date  : December 19, 2020
 c | Task  : Info for ENDF-6 file
 c +---------------------------------------------------------------------
 c
@@ -65,6 +65,7 @@ c
      + " in normalization")') yesno(flagel)
       write(1,'(a1,"         : recoils")') yesno(flagrecoil)
       write(1,'(a1,"         : urr")') yesno(flagurrendf)
+      write(1,'(a1,"         : block")') yesno(flagblock)
       close (unit=1)
       return
       end

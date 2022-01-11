@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : April 13, 2015
+c | Date  : February 4, 2021
 c | Task  : Pre-equilibrium complex particle emission
 c +---------------------------------------------------------------------
 c
@@ -26,10 +26,9 @@ c
       call stripping
       call knockout
       if (k0.gt.2) then
-        if (breakupmodel.eq.1) then
+        if (breakupmodel.eq.1.or.k0.ne.3) then
           call breakup
         else
-ctest     call BUinitial
           call breakupAVR
         endif
       endif

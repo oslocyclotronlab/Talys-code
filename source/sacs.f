@@ -9,6 +9,8 @@ c
 c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
+      integer numP
+      parameter (numP=1000000)
       character*16 xsfile
       integer       npart,ia,ih,it,id,ip,in,ident,idc,nen,istat,Nxs
       real          Exs(0:numP),xs(0:numP),Emax,xsmax,Ea,Eb,xsa,xsb,

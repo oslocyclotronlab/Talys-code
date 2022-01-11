@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning and Stephane Hilaire
-c | Date  : March 13, 2019
+c | Date  : January 5, 2020
 c | Task  : Level density parameters
 c +---------------------------------------------------------------------
 c
@@ -14,7 +14,7 @@ c
       character*22     denformat
       character*90     denfile
       integer          Zix,Nix,Z,N,A,ldmod,ia,Nlow0,Ntop0,ibar,imax,
-     +                 imin,i,oddZ,oddN
+     +                 imin,i,oddZ,oddN,iloop
       real             ald0,pshift0,scutoffsys,sigsum,denom,rj,sd,ald,
      +                 Spair,expo,fU,difprev,factor,argum
       double precision mldm,mliquid1,mliquid2
@@ -327,14 +327,17 @@ c
         ald=alimit(Zix,Nix)
         difprev=0.
         do 90 ibar=0,nfisbar(Zix,Nix)
+          iloop=0
   100     factor=(1.-exp(-gammald(Zix,Nix)*ald*Tcrit(Zix,Nix)**2))/
      +      (ald*(Tcrit(Zix,Nix)**2))
           aldcrit(Zix,Nix,ibar)=alimit(Zix,Nix)*
      +      (1.+deltaW(Zix,Nix,ibar)*factor)
           if (abs(aldcrit(Zix,Nix,ibar)-ald).gt.0.001.and.
-     +      abs(aldcrit(Zix,Nix,ibar)-ald).ne.difprev) then
+     +      abs(aldcrit(Zix,Nix,ibar)-ald).ne.difprev.and.
+     +      iloop.le.1000) then
             difprev=abs(aldcrit(Zix,Nix,ibar)-ald)
             ald=aldcrit(Zix,Nix,ibar)
+            iloop=iloop+1
             if (ald.gt.1.) goto 100
           endif
           if (aldcrit(Zix,Nix,ibar).lt.alimit(Zix,Nix)/3.) then
@@ -433,13 +436,14 @@ c
 c One component
 c
       if (g(Zix,Nix).eq.0.) g(Zix,Nix)=A/Kph
+      g(Zix,Nix)=gadjust(Zix,Nix)*g(Zix,Nix)
 c
 c Two component
 c
       if (gp(Zix,Nix).eq.0.) gp(Zix,Nix)=Z/Kph
       if (gn(Zix,Nix).eq.0.) gn(Zix,Nix)=N/Kph
-      gn(Zix,Nix)=gnadjust(Zix,Nix)*gn(Zix,Nix)
-      gp(Zix,Nix)=gpadjust(Zix,Nix)*gp(Zix,Nix)
+      gn(Zix,Nix)=gadjust(Zix,Nix)*gnadjust(Zix,Nix)*gn(Zix,Nix)
+      gp(Zix,Nix)=gadjust(Zix,Nix)*gpadjust(Zix,Nix)*gp(Zix,Nix)
       return
       end
 Copyright (C)  2016 A.J. Koning, S. Hilaire and S. Goriely

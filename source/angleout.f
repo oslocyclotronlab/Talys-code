@@ -2,14 +2,14 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : November 16, 2016
+c | Date  : December 21, 2020
 c | Task  : Output of discrete angular distributions
 c +---------------------------------------------------------------------
 c
 c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
-      character*21 discfile
+      character*21 discfile,legfile
       integer      LL,iang,Zix,Nix,i,type
 c
 c **************** Elastic scattering angular distribution *************
@@ -48,16 +48,29 @@ c
 c Write results to separate file
 c
         if (fileelastic) then
-          discfile='          leg.L00'
-          write(discfile(1:2),'(2a1)') parsym(k0),parsym(k0)
-          write(discfile(3:10),'(f8.3)') Einc
-          write(discfile(3:6),'(i4.4)') int(Einc)
-          write(discfile(16:17),'(i2.2)') Ltarget
-          open (unit=1,file=discfile,status='replace')
+          if (flagblock) then
+            legfile='  leg.L00'
+            write(legfile(1:2),'(2a1)') parsym(k0),parsym(k0)
+            write(legfile(8:9),'(i2.2)') Ltarget
+            if (.not.legexist(k0,k0,Ltarget)) then
+              legexist(k0,k0,Ltarget)=.true.
+              open (unit=1,file=legfile,status='unknown')
+            else
+              open (unit=1,file=legfile,status='unknown',
+     +          position='append')
+            endif
+          else
+            legfile='          leg.L00'
+            write(legfile(1:2),'(2a1)') parsym(k0),parsym(k0)
+            write(legfile(3:10),'(f8.3)') Einc
+            write(legfile(3:6),'(i4.4)') int(Einc)
+            write(legfile(16:17),'(i2.2)') Ltarget
+            open (unit=1,file=legfile,status='unknown')
+          endif
           write(1,'("# ",a1," + ",i3,a2,
      +      " Elastic scattering Legendre coefficients")') parsym(k0),
      +      Atarget,Starget
-          write(1,'("# E-incident = ",f8.3)') Einc
+          write(1,'("# E-incident = ",f10.5)') Einc
           write(1,'("# ")')
           write(1,'("# # coeff.   =",i4)') J2end+1
           write(1,'("#  L       Total           Direct",
@@ -95,15 +108,27 @@ c
 c Write results to separate file
 c
         if (fileelastic) then
-          discfile='nn        ang.L00'//natstring(iso)
-          write(discfile(3:10),'(f8.3)') Einc
-          write(discfile(3:6),'(i4.4)') int(Einc)
-          write(discfile(16:17),'(i2.2)') Ltarget
-          open (unit=1,file=discfile,status='replace')
+          if (flagblock) then
+            discfile='nnang.L00'
+            write(discfile(8:9),'(i2.2)') Ltarget
+            if (.not.angexist(k0,k0,Ltarget)) then
+              angexist(k0,k0,Ltarget)=.true.
+              open (unit=1,file=discfile,status='unknown')
+            else
+              open (unit=1,file=discfile,status='unknown',
+     +          position='append')
+            endif
+          else
+            discfile='nn        ang.L00'
+            write(discfile(3:10),'(f8.3)') Einc
+            write(discfile(3:6),'(i4.4)') int(Einc)
+            write(discfile(16:17),'(i2.2)') Ltarget
+            open (unit=1,file=discfile,status='unknown')
+          endif
           write(1,'("# ",a1," + ",i3,a2,
      +      " Elastic scattering angular distribution")') parsym(k0),
      +      Atarget,Starget
-          write(1,'("# E-incident = ",f8.3)') Einc
+          write(1,'("# E-incident = ",f10.5)') Einc
           write(1,'("# ")')
           write(1,'("# # angles   =",i4)') nangle+1
           write(1,'("# Angle       xs            Direct",
@@ -127,16 +152,29 @@ c
 c Write results to separate file
 c
         if (fileelastic) then
-          discfile='          ang.L00'//natstring(iso)
-          write(discfile(1:2),'(2a1)') parsym(k0),parsym(k0)
-          write(discfile(3:10),'(f8.3)') Einc
-          write(discfile(3:6),'(i4.4)') int(Einc)
-          write(discfile(16:17),'(i2.2)') Ltarget
-          open (unit=1,file=discfile,status='replace')
+          if (flagblock) then
+            discfile='  ang.L00'
+            write(discfile(1:2),'(2a1)') parsym(k0),parsym(k0)
+            write(discfile(8:9),'(i2.2)') Ltarget
+            if (.not.angexist(k0,k0,Ltarget)) then
+              angexist(k0,k0,Ltarget)=.true.
+              open (unit=1,file=discfile,status='unknown')
+            else
+              open (unit=1,file=discfile,status='unknown',
+     +          position='append')
+            endif
+          else
+            discfile='          ang.L00'
+            write(discfile(1:2),'(2a1)') parsym(k0),parsym(k0)
+            write(discfile(3:10),'(f8.3)') Einc
+            write(discfile(3:6),'(i4.4)') int(Einc)
+            write(discfile(16:17),'(i2.2)') Ltarget
+            open (unit=1,file=discfile,status='unknown')
+          endif
           write(1,'("# ",a1," + ",i3,a2,
      +      " Elastic scattering angular distribution")') parsym(k0),
      +      Atarget,Starget
-          write(1,'("# E-incident = ",f8.3)') Einc
+          write(1,'("# E-incident = ",f10.5)') Einc
           write(1,'("# ")')
           write(1,'("# # angles   =",i4)') nangle+1
           write(1,'("# Angle       xs            Direct",
@@ -181,16 +219,29 @@ c
 c Write results to separate file
 c
           if (fileangle(i)) then
-            discfile='          leg.L00'
-            write(discfile(1:2),'(2a1)') parsym(k0),parsym(k0)
-            write(discfile(3:10),'(f8.3)') Einc
-            write(discfile(3:6),'(i4.4)') int(Einc)
-            write(discfile(16:17),'(i2.2)') i
-            open (unit=1,file=discfile,status='replace')
+            if (flagblock) then
+              legfile='  leg.L00'
+              write(legfile(1:2),'(2a1)') parsym(k0),parsym(k0)
+              write(legfile(8:9),'(i2.2)') i
+              if (.not.legexist(k0,k0,i)) then
+                legexist(k0,k0,i)=.true.
+                open (unit=1,file=legfile,status='unknown')
+              else
+                open (unit=1,file=legfile,status='unknown',
+     +            position='append')
+              endif
+            else
+              legfile='          leg.L00'
+              write(legfile(1:2),'(2a1)') parsym(k0),parsym(k0)
+              write(legfile(3:10),'(f8.3)') Einc
+              write(legfile(3:6),'(i4.4)') int(Einc)
+              write(legfile(16:17),'(i2.2)') i
+              open (unit=1,file=legfile,status='unknown')
+            endif
             write(1,'("# ",a1," + ",i3,a2,
      +        " Inelastic scattering Legendre coefficients"," - Level",
      +        i3)')  parsym(k0),Atarget,Starget,i
-            write(1,'("# E-incident = ",f8.3)') Einc
+            write(1,'("# E-incident = ",f10.5)') Einc
             write(1,'("# ")')
             write(1,'("# # coeff.   =",i4)') J2end+1
             write(1,'("#  L       Total           Direct",
@@ -220,16 +271,29 @@ c
 c Write results to separate file
 c
         if (fileangle(i)) then
-          discfile='          ang.L00'
-          write(discfile(1:2),'(2a1)') parsym(k0),parsym(k0)
-          write(discfile(3:10),'(f8.3)') Einc
-          write(discfile(3:6),'(i4.4)') int(Einc)
-          write(discfile(16:17),'(i2.2)') i
-          open (unit=1,file=discfile,status='replace')
+          if (flagblock) then
+            discfile='  ang.L00'
+            write(discfile(1:2),'(2a1)') parsym(k0),parsym(k0)
+            write(discfile(8:9),'(i2.2)') i
+            if (.not.angexist(k0,k0,i)) then
+              angexist(k0,k0,i)=.true.
+              open (unit=1,file=discfile,status='unknown')
+            else
+              open (unit=1,file=discfile,status='unknown',
+     +          position='append')
+            endif
+          else
+            discfile='          ang.L00'
+            write(discfile(1:2),'(2a1)') parsym(k0),parsym(k0)
+            write(discfile(3:10),'(f8.3)') Einc
+            write(discfile(3:6),'(i4.4)') int(Einc)
+            write(discfile(16:17),'(i2.2)') i
+            open (unit=1,file=discfile,status='unknown')
+          endif
           write(1,'("# ",a1," + ",i3,a2,
      +      " Inelastic scattering angular distribution",
      +      " - Level",i3)') parsym(k0),Atarget,Starget,i
-          write(1,'("# E-incident = ",f8.3)') Einc
+          write(1,'("# E-incident = ",f10.5)') Einc
           write(1,'("# ")')
           write(1,'("# # angles   =",i4)') nangle+1
           write(1,'("# Angle      xs           Direct       Compound")')
@@ -272,16 +336,29 @@ c
 c Write results to separate file
 c
             if (fileangle(i)) then
-              discfile='          leg.L00'
-              write(discfile(1:2),'(2a1)') parsym(k0),parsym(type)
-              write(discfile(3:10),'(f8.3)') Einc
-              write(discfile(3:6),'(i4.4)') int(Einc)
-              write(discfile(16:17),'(i2.2)') i
-              open (unit=1,file=discfile,status='replace')
+              if (flagblock) then
+                legfile='  leg.L00'
+                write(legfile(1:2),'(2a1)') parsym(k0),parsym(type)
+                write(legfile(8:9),'(i2.2)') i
+                if (.not.legexist(k0,type,i)) then
+                  legexist(k0,type,i)=.true.
+                  open (unit=1,file=legfile,status='unknown')
+                else
+                  open (unit=1,file=legfile,status='unknown',
+     +              position='append')
+                endif
+              else
+                legfile='          leg.L00'
+                write(legfile(1:2),'(2a1)') parsym(k0),parsym(type)
+                write(legfile(3:10),'(f8.3)') Einc
+                write(legfile(3:6),'(i4.4)') int(Einc)
+                write(legfile(16:17),'(i2.2)') i
+                open (unit=1,file=legfile,status='unknown')
+              endif
               write(1,'("# ",a1," + ",i3,a2," (",a1,",",a1,
      +          ") Legendre coefficients"," - Level",i3)') parsym(k0),
      +          Atarget,Starget,parsym(k0),parsym(type),i
-              write(1,'("# E-incident = ",f8.3)') Einc
+              write(1,'("# E-incident = ",f10.5)') Einc
               write(1,'("# ")')
               write(1,'("# # coeff.   =",i4)') J2end+1
               write(1,'("#  L       Total           Direct",
@@ -314,16 +391,29 @@ c
 c Write results to separate file
 c
           if (fileangle(i)) then
-            discfile='          ang.L00'
-            write(discfile(1:2),'(2a1)') parsym(k0),parsym(type)
-            write(discfile(3:10),'(f8.3)') Einc
-            write(discfile(3:6),'(i4.4)') int(Einc)
-            write(discfile(16:17),'(i2.2)') i
-            open (unit=1,file=discfile,status='replace')
+            if (flagblock) then
+              discfile='  ang.L00'
+              write(discfile(1:2),'(2a1)') parsym(k0),parsym(type)
+              write(discfile(8:9),'(i2.2)') i
+              if (.not.angexist(k0,type,i)) then
+                angexist(k0,type,i)=.true.
+                open (unit=1,file=discfile,status='unknown')
+              else
+                open (unit=1,file=discfile,status='unknown',
+     +            position='append')
+              endif
+            else
+              discfile='          ang.L00'
+              write(discfile(1:2),'(2a1)') parsym(k0),parsym(type)
+              write(discfile(3:10),'(f8.3)') Einc
+              write(discfile(3:6),'(i4.4)') int(Einc)
+              write(discfile(16:17),'(i2.2)') i
+              open (unit=1,file=discfile,status='unknown')
+            endif
             write(1,'("# ",a1," + ",i3,a2," (",a1,",",a1,
      +        ") angular distributions - Level",i3)') parsym(k0),
      +        Atarget,Starget,parsym(k0),parsym(type),i
-            write(1,'("# E-incident = ",f8.3)') Einc
+            write(1,'("# E-incident = ",f10.5)') Einc
             write(1,'("# ")')
             write(1,'("# # angles   =",i4)') nangle+1
             write(1,'("# Angle      xs           Direct",

@@ -440,6 +440,9 @@ c              to the same residual nucleus, (Z,N), populated by the
 c              deuteron interaction process
 c xspopnucT  : total population cross section per nucleus including the
 c              inelastic breakup enhancement
+c xspopex    : population cross section summed over spin and parity
+c xsisoBU    : population cross section summed over spin and parity
+c              including inelastic breakup enhancemeny            
 c ENHratio   : breakup nucleons enhancing reaction cross
 c              sections, PRC 89,044613 Eq. (7),
 c              n + Atarget  sig(n,Z,A,Eout)/sig_Total(n,Enout);
@@ -505,17 +508,12 @@ c
         do 514 J=0,numJ
           CNterm(parity,J)=0.
   514 continue
-      do 515 nen=0,numen
-        do 515 Nix=0,numN
-          do 515 Zix=0,numZ
-            do 515 type=0,numpar
-              ENHratio(type,Zix,Nix,nen)=0.
-  515 continue
       do 520 nex=0,numex
         xsracappopex(nex)=0.
         do 520 Nix=0,numN
           do 520 Zix=0,numZ
             xspopex(Zix,Nix,nex)=0.
+            xsisoBU(Zix,Nix,nex)=0.
             preeqpopex(Zix,Nix,nex)=0.
             maxJ(Zix,Nix,nex)=numJ
             do 522 parity=-1,1,2
@@ -754,6 +752,8 @@ c maxN         : maximal number of protons away from the initial
 c                compound nucleus
 c xsresprod    : total residual production (= reaction) cross section
 c xsmassprod   : residual production cross section per mass unit
+c xsmassprodT  : residual production cross section per mass unit
+c                including inelastic breakup enhancement
 c xstot6       : total cross section (neutrons only) for ENDF-6 file
 c xsreac6      : reaction cross section for ENDF-6 file
 c xsnon6       : non-elastic cross section for ENDF-6 file
@@ -774,6 +774,8 @@ c fxsdirdisc   : direct cross section for discrete state
 c fxscompdisc  : compound cross section for discrete state
 c fxspopnuc    : population cross section per nucleus
 c fxspopex     : population cross section summed over spin and parity
+c fxsisoBU     : population cross section summed over spin and parity
+c                including inelastic breakup enhancement
 c fxsbranch    : branching ratio for isomeric cross section
 c idchannel    : identifier for exclusive channel
 c fxschannel   : channel cross section
@@ -820,6 +822,7 @@ c
       xsresprod=0.
       do 920 ia=0,numA
         xsmassprod(ia)=0.
+        xsmassprodT(ia)=0.
   920 continue
       if (nin.eq.1) then
         do 930 nen=1,numen6
@@ -863,6 +866,7 @@ c
               fxspopnuc(nen,Zix,Nix)=0.
               do 980 n1=0,numlev
                 fxspopex(nen,Zix,Nix,n1)=0.
+                fxsisoBU(nen,Zix,Nix,n1)=0.
                 fxsbranch(nen,Zix,Nix,n1)=0.
   980         continue
   970     continue

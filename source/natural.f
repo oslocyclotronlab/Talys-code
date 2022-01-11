@@ -356,7 +356,7 @@ c
   470           continue
   460         continue
   450       continue
-            open (3,file=specfile(1:16),status='replace')
+            open (3,file=specfile(1:17),status='replace')
             write(3,'("# ",a1," + nat-",a2,": ",a8," spectrum")')
      +        parsym(k0),Starget,parname(type)
             write(3,'("# E-incident = ",f8.3)') eninc(k)

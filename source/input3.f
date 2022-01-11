@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning and Marieke Duijvestijn
-c | Date  : July 8, 2018
+c | Date  : September 28, 2021
 c | Task  : Read input for third set of variables
 c +---------------------------------------------------------------------
 c
@@ -83,7 +83,9 @@ c flagupbend  : flag for low-energy upbend of photon strength function
 c flagmassdis : flag for calculation of fission fragment mass yields
 c flagffevap  : flag for calculation of particle evaporation from
 c               fission fragment mass yields
-c fymodel     : fission yield model, 1: Brosa 2: GEF
+c fymodel     : fission yield model, 1: Brosa 2: GEF 3: GEF+TALYS 4:Okumura
+c ffmodel     : fission fragment model, 1: GEF 2: HF3D (Okumura) 3: SPY
+c pfnsmodel   : PFNS  model, 1: Iwamoto 2: from FF decay
 c flagffspin  : flag to use spin distribution in initial FF population
 c flagfisfeed : flag for output of fission per excitation bin
 c flagendf    : flag for information for ENDF-6 file
@@ -100,6 +102,11 @@ c               to final long-lived excited states
 c nonthermlev : non-thermalized level in the calculation of astrophysics rate
 c flagexpmass : flag for using experimental nuclear mass if available
 c flagjlm     : flag for using semi-microscopic JLM OMP
+c flagriplrisk: flag for going outside RIPL mass validity range
+c flagngfit   : flag for using fitted (n,g) nuclear model parameters
+c flagnnfit   : flag for using fitted (n,n'), (n,p) and (n,2n) 
+c               nuclear model parameters
+c flagnafit   : flag for using fitted (n,a) nuclear model parameters
 c flagomponly : flag to execute ONLY an optical model calculation
 c flagmicro   : flag for completely microscopic Talys calculation
 c flagffruns  : flag to denote that run is for fission fragment
@@ -126,15 +133,14 @@ c
       maxband=0
       maxrot=2
       if (k0.ge.1) then
-        strength=1
         flagpecomp=.true.
         flagsurface=.true.
       else
-        strength=2
         flagpecomp=.false.
         flagsurface=.false.
       endif
-      strengthM1=2
+      strength=9
+      strengthM1=3
       if (k0.eq.1.or.k0.eq.2) then
         flaggiant0=.true.
       else
@@ -180,11 +186,20 @@ c
    30 continue
       if (k0.eq.1.or.k0.eq.2) flagrot(k0)=.true.
       flagasys=.false.
-      flagupbend=.false.
+      if (k0.ge.1) then
+        flagupbend=.true.
+      else
+        flagupbend=.false.
+      endif
       flaggshell=.false.
-      flagmassdis=.false.
       flagffevap=.true.
       fymodel=2
+      ffmodel=1
+      if (flagmassdis) then
+        pfnsmodel=2
+      else
+        pfnsmodel=1
+      endif
       flagfisfeed=.false.
       flagffspin=.false.
       flagendf=.false.
@@ -203,6 +218,10 @@ c
       flagastroex=.false.
       flagexpmass=.true.
       flagjlm=.false.
+      flagriplrisk=.false.
+      flagngfit=flagbest
+      flagnnfit=.false.
+      flagnafit=.false.
       if (flagomponly) then
         flagcomp=.false.
         epreeq=Emaxtalys
@@ -210,7 +229,8 @@ c
         flaggiant0=.false.
       endif
       if (flagmicro) then
-        strength=4
+        strength=8
+        strengthM1=8
         flagautorot=.true.
         flagjlm=.true.
       endif
@@ -518,12 +538,6 @@ c
           if (ch.ne.'y'.and.ch.ne.'n') goto 300
           goto 110
         endif
-        if (key.eq.'massdis') then
-          if (ch.eq.'n') flagmassdis=.false.
-          if (ch.eq.'y') flagmassdis=.true.
-          if (ch.ne.'y'.and.ch.ne.'n') goto 300
-          goto 110
-        endif
         if (key.eq.'ffevaporation') then
           if (ch.eq.'n') flagffevap=.false.
           if (ch.eq.'y') flagffevap=.true.
@@ -544,6 +558,14 @@ c
         endif
         if (key.eq.'fymodel') then
           read(value,*,end=300,err=300) fymodel
+          goto 110
+        endif
+        if (key.eq.'ffmodel') then
+          read(value,*,end=300,err=300) ffmodel
+          goto 110
+        endif
+        if (key.eq.'pfnsmodel') then
+          read(value,*,end=300,err=300) pfnsmodel
           goto 110
         endif
         if (key.eq.'endf') then
@@ -631,6 +653,30 @@ c
         if (key.eq.'jlmomp') then
           if (ch.eq.'n') flagjlm=.false.
           if (ch.eq.'y') flagjlm=.true.
+          if (ch.ne.'y'.and.ch.ne.'n') goto 300
+          goto 110
+        endif
+        if (key.eq.'riplrisk') then
+          if (ch.eq.'n') flagriplrisk=.false.
+          if (ch.eq.'y') flagriplrisk=.true.
+          if (ch.ne.'y'.and.ch.ne.'n') goto 300
+          goto 110
+        endif
+        if (key.eq.'ngfit') then
+          if (ch.eq.'n') flagngfit=.false.
+          if (ch.eq.'y') flagngfit=.true.
+          if (ch.ne.'y'.and.ch.ne.'n') goto 300
+          goto 110
+        endif
+        if (key.eq.'nnfit') then
+          if (ch.eq.'n') flagnnfit=.false.
+          if (ch.eq.'y') flagnnfit=.true.
+          if (ch.ne.'y'.and.ch.ne.'n') goto 300
+          goto 110
+        endif
+        if (key.eq.'nafit') then
+          if (ch.eq.'n') flagnafit=.false.
+          if (ch.eq.'y') flagnafit=.true.
           if (ch.ne.'y'.and.ch.ne.'n') goto 300
           goto 110
         endif

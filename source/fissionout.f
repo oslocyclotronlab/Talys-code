@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : August 31, 2014
+c | Date  : November 3, 2021
 c | Task  : Output of fission cross sections
 c +---------------------------------------------------------------------
 c
@@ -11,6 +11,7 @@ c
       include "talys.cmb"
       character*12 rpfile
       integer      Acomp,Zcomp,Ncomp,Z,A,nen
+      real         x1(numpfns),x2(numpfns),x3(numpfns)
 c
 c *********************** Fission cross sections ***********************
 c
@@ -93,6 +94,22 @@ c
             close (unit=1)
   120     continue
   110   continue
+      endif
+c
+c Phenomenological PFNS (Iwamoto model)
+c
+c Tmadjust      : adjustable parameter for PFNS temperature
+c Fsadjust      : adjustable parameter for PFNS scission fraction
+c
+      if (pfnsmodel.eq.1) then
+        call iwamoto(Zinit, Ainit, S(0,0,1), Einc, Tmadjust, Fsadjust, 
+     +    Epfns, NEpfns, x1, x2, x3, Eavpfns(1))
+        do nen=1,NEpfns
+          pfns(1,nen)=x1(nen)
+          maxpfns(1,nen)=x2(nen)
+          pfnscm(1,nen)=x3(nen)
+        enddo
+        call pfnsout
       endif
       return
       end

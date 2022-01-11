@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning and Marieke Duijvestijn
-c | Date  : December 12, 2016
+c | Date  : December 3, 2021
 c | Task  : Tabulated level densities
 c +---------------------------------------------------------------------
 c
@@ -68,6 +68,7 @@ c
             denfile=trim(path)//'density/ground/hilaireD1M/'//
      +        trim(denchar)//'.tab'
           endif
+          if (densfile(Zix,Nix)(1:1).ne.' ') denfile=densfile(Zix,Nix)
         endif
 c
 c First barrier
@@ -114,7 +115,7 @@ c
    30       read(2,'(/31x,i3//)',end=80) ia
             if (A.ne.ia) then
               do 40 nex=1,nendens(Zix,Nix)+1
-                read(2,'()')
+                read(2,'()',err=100)
    40         continue
               goto 30
             else
@@ -164,7 +165,7 @@ c
    70             continue
                 endif
    50         continue
-              read(2,'()')
+              read(2,'()',err=100)
             endif
    20     continue
    80     close (unit=2)

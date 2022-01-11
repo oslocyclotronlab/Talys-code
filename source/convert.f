@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : May 26, 2016
+c | Date  : February 5, 2020
 c | Task  : Convert input line from upper case to lowercase
 c +---------------------------------------------------------------------
 c
@@ -100,6 +100,10 @@ c
         endif
         if (inline(i)(k+1:k+13).eq.'ompenergyfile') then
           inline(i)(k+14:80)=str(k+14:80)
+          return
+        endif
+        if (inline(i)(k+1:k+9).eq.'yieldfile') then
+          inline(i)(k+10:80)=str(k+10:80)
           return
         endif
    20 continue

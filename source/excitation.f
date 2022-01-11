@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning and Stephane Hilaire
-c | Date  : October 15, 2015
+c | Date  : October 19, 2020
 c | Task  : Excitation energy population
 c +---------------------------------------------------------------------
 c
@@ -12,8 +12,9 @@ c
       integer Zcomp,Ncomp,A,odd,NL,nex0,nex,nen,parity,J
       real    Eex,dEx,Exlow,Exup,Pex(0:numex),Edlow,Edup,dElow,dEup,
      +        PexJP(0:numex,0:numJ,-1:1),dE,Eexmin,frac,ald,ignatyuk,
-     +        Ea,Eb,Pa,Pb,Rspin,Probex,Prob,spindis,xsinputpop,
-     +        Edistlow(0:numpop),Eexlow(0:numex)
+     +        Ea,Eb,Pa,Pb,Rspin,Probex,Prob,spindis,xsinputpop,Eexmax,
+     +        Edistlow(0:numpop),Edistup(0:numpop),Eexlow(0:numex),
+     +        Eexup(0:numex),sumPex,factor,sumJP,normJ
 c
 c ******************** Fill energy bins with population ****************
 c
@@ -72,6 +73,7 @@ c
         endif
         write(*,'(/" Total population of input excitation energy grid:",
      +    es12.5/)') xsinputpop
+        if (xsinputpop.eq.0.) return
       endif
 c
 c Set population bins on basis of input
@@ -100,7 +102,10 @@ c
       endif
       do 70 nen=0,npopE
         Edistlow(nen)=0.5*(EdistE(nen)+EdistE(max(nen-1,0)))
+        Edistup(nen)=0.5*(EdistE(nen)+EdistE(min(npopE,nen+1)))
    70 continue
+      Edistlow(0)=0.
+      Edistup(npopE)=EdistE(npopE)
       Zcomp=0
       Ncomp=0
 c
@@ -113,10 +118,18 @@ c Exlow: lower bound excitation energy
 c Eexlow: lower bound excitation energy
 c Exup : upper bound excitation energy
 c
+      NL=Nlast(Zcomp,Ncomp,0)
       do 80 nex=0,maxex(Zcomp,Ncomp)
         Eex=Ex(Zcomp,Ncomp,nex)
-        Eexmin=Ex(Zcomp,Ncomp,max(nex-1,0))
-        Eexlow(nex)=0.5*(Eex+Eexmin)
+        if (nex.le.NL) then
+          Eexmin=Ex(Zcomp,Ncomp,max(nex-1,0))
+          Eexlow(nex)=0.5*(Eex+Eexmin)
+          Eexmax=Ex(Zcomp,Ncomp,min(nex+1,maxex(Zcomp,Ncomp)))
+          Eexup(nex)=0.5*(Eex+Eexmax)
+        else
+          Eexlow(nex)=Eex-0.5*deltaEx(Zcomp,Ncomp,nex)
+          Eexup(nex)=Eex+0.5*deltaEx(Zcomp,Ncomp,nex)
+        endif
    80 continue
 c
 c Redistribute bins
@@ -132,8 +145,8 @@ c Probex : probability
 c
       A=AA(Zcomp,Ncomp,0)
       odd=mod(A,2)
-      NL=Nlast(Zcomp,Ncomp,0)
       nex0=maxex(Zcomp,Ncomp)+1
+      sumPex=0.
       do 110 nex=0,maxex(Zcomp,Ncomp)
         Eex=Ex(Zcomp,Ncomp,nex)
         dEx=deltaEx(Zcomp,Ncomp,nex)
@@ -145,10 +158,10 @@ c
   130       continue
   120     continue
           Exlow=Eexlow(nex)
-          Exup=Eexlow(min(nex+1,maxex(Zcomp,Ncomp)))
+          Exup=Eexup(nex)
           do 140 nen=0,npopE-1
             Edlow=Edistlow(nen)
-            Edup=Edistlow(nen+1)
+            Edup=Edistup(nen)
             if (Edlow.ge.Exup) goto 140
             if (Edup.le.Exlow) goto 140
             dE=Edup-Edlow
@@ -173,21 +186,20 @@ c
             if (npopJ.eq.0) then
               ald=ignatyuk(Zcomp,Ncomp,Eex,0)
               do 210 parity=-1,1,2
+                normJ=0.
+                do 215 J=0,maxJ(Zcomp,Ncomp,nex)
+                  Rspin=real(J)+0.5*odd
+                  normJ=normJ+spindis(Zcomp,Ncomp,Eex,ald,Rspin,0)
+  215           continue
                 do 220 J=0,maxJ(Zcomp,Ncomp,nex)
                   Rspin=real(J)+0.5*odd
-                  PexJP(nex,J,parity)=Pex(nex)*
-     +              spindis(Zcomp,Ncomp,Eex,ald,Rspin,0)*pardis
+                  PexJP(nex,J,parity)=Pex(nex)*pardis*
+     +              spindis(Zcomp,Ncomp,Eex,ald,Rspin,0)/normJ
   220           continue
   210         continue
             endif
           endif
-          do 230 parity=-1,1,2
-            do 240 J=0,maxJ(Zcomp,Ncomp,nex)
-              xspop(Zcomp,Ncomp,nex,J,parity)=PexJP(nex,J,parity)
-              xspopex(Zcomp,Ncomp,nex)=xspopex(Zcomp,Ncomp,nex)+
-     +          PexJP(nex,J,parity)
-  240       continue
-  230     continue
+          sumPex=sumPex+Pex(nex)
         else
           call locate(EdistE,0,npopE,Eex,nen)
           nen=max(0,nen)
@@ -215,13 +227,74 @@ c
               xspop(Zcomp,Ncomp,nex,J,parity)=Prob*dEx
               xspopex(Zcomp,Ncomp,nex)=xspopex(Zcomp,Ncomp,nex)+
      +          xspop(Zcomp,Ncomp,nex,J,parity)
+              xspopexP(Zcomp,Ncomp,nex,parity)=
+     +          xspopexP(Zcomp,Ncomp,nex,parity)+
+     +          xspop(Zcomp,Ncomp,nex,J,parity)
   320       continue
+            xspopnucP(Zcomp,Ncomp,parity)=xspopnucP(Zcomp,Ncomp,parity)+
+     +        xspopexP(Zcomp,Ncomp,nex,parity)
   310     continue
+          xspopnuc(Zcomp,Ncomp)=xspopnuc(Zcomp,Ncomp)+
+     +      xspopex(Zcomp,Ncomp,nex)
+          feedexcl(Zcomp,Ncomp,0,nex0,nex)=xspopex(Zcomp,Ncomp,nex)
         endif
+  110 continue
+      if (.not.flagpopMeV.and.sumPex.gt.0.) then
+        factor=sumPex/xsinputpop
+        sumJP=0.
+        do 410 nex=0,maxex(Zcomp,Ncomp)
+          do 420 parity=-1,1,2
+            do 430 J=0,maxJ(Zcomp,Ncomp,nex)
+              xspop(Zcomp,Ncomp,nex,J,parity)=PexJP(nex,J,parity)/factor
+              sumJP=sumJP+xspop(Zcomp,Ncomp,nex,J,parity)
+  430       continue
+  420     continue
+  410   continue
+        do 440 nex=0,maxex(Zcomp,Ncomp)
+          factor=sumJP/xsinputpop
+          do 450 parity=-1,1,2
+            do 460 J=0,maxJ(Zcomp,Ncomp,nex)
+              xspopex(Zcomp,Ncomp,nex)=xspopex(Zcomp,Ncomp,nex)+
+     +          xspop(Zcomp,Ncomp,nex,J,parity)/factor
+              xspopexP(Zcomp,Ncomp,nex,parity)=
+     +          xspopexP(Zcomp,Ncomp,nex,parity)+
+     +          xspop(Zcomp,Ncomp,nex,J,parity)/factor
+  460       continue
+            xspopnucP(Zcomp,Ncomp,parity)=xspopnucP(Zcomp,Ncomp,parity)+
+     +        xspopexP(Zcomp,Ncomp,nex,parity)
+  450     continue
+          xspopnuc(Zcomp,Ncomp)=xspopnuc(Zcomp,Ncomp)+
+     +      xspopex(Zcomp,Ncomp,nex)
+          feedexcl(Zcomp,Ncomp,0,nex0,nex)=xspopex(Zcomp,Ncomp,nex)
+  440   continue
+      endif
+c
+c Special case for one population energy
+c
+      if (npopE.eq.1) then
+        Eex=EdistE(1)
+        nex=maxex(Zcomp,Ncomp)
+        ald=ignatyuk(Zcomp,Ncomp,Eex,0)
+        do 510 parity=-1,1,2
+          do 520 J=0,maxJ(Zcomp,Ncomp,nex)
+            if (npopJ.eq.0) then
+              Rspin=real(J)+0.5*odd
+              xspop(Zcomp,Ncomp,nex,J,parity)=PdistE(1)*
+     +          spindis(Zcomp,Ncomp,Eex,ald,Rspin,0)*pardis
+            else
+              xspop(Zcomp,Ncomp,nex,J,parity)=PdistJP(1,J,parity)
+            endif
+            xspopex(Zcomp,Ncomp,nex)=xspopex(Zcomp,Ncomp,nex)+
+     +        xspop(Zcomp,Ncomp,nex,J,parity)
+            xspopexP(Zcomp,Ncomp,nex,parity)=
+     +        xspopexP(Zcomp,Ncomp,nex,parity)+
+     +        xspop(Zcomp,Ncomp,nex,J,parity)
+  520     continue
+  510   continue
         xspopnuc(Zcomp,Ncomp)=xspopnuc(Zcomp,Ncomp)+
      +    xspopex(Zcomp,Ncomp,nex)
         feedexcl(Zcomp,Ncomp,0,nex0,nex)=xspopex(Zcomp,Ncomp,nex)
-  110 continue
+      endif
       xsinitpop=xspopnuc(Zcomp,Ncomp)
       popexcl(Zcomp,Ncomp,nex0)=xsinitpop
       return

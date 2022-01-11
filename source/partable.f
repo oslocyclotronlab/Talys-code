@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 23, 2019
+c | Date  : August 24, 2021
 c | Task  : Write model parameters per nucleus to separate file
 c +---------------------------------------------------------------------
 c
@@ -107,6 +107,7 @@ c
         write(51,'("gn             ",2i4,f10.5)') Z,A,gn(Zix,Nix)
         write(51,'("gnadjust       ",2i4,f10.5)') Z,A,gnadjust(Zix,Nix)
         write(51,'("gpadjust       ",2i4,f10.5)') Z,A,gpadjust(Zix,Nix)
+        write(51,'("gadjust        ",2i4,f10.5)') Z,A,gadjust(Zix,Nix)
       endif
 c
 c ************************ Gamma-ray parameters ************************
@@ -162,6 +163,16 @@ c
      +      ftable(Zix,Nix,0,l),l
           write(51,'("wtable         ",2i4,f10.5," M",i1)') Z,A,
      +      wtable(Zix,Nix,0,l),l
+          write(51,'("etableadjust   ",2i4,f10.5," M",i1)') Z,A,
+     +      etableadjust(Zix,Nix,0,l),l
+          write(51,'("ftableadjust   ",2i4,f10.5," M",i1)') Z,A,
+     +      ftableadjust(Zix,Nix,0,l),l
+          write(51,'("wtableadjust   ",2i4,f10.5," M",i1)') Z,A,
+     +      wtableadjust(Zix,Nix,0,l),l
+        endif
+        if (strengthM1.ge.3) then
+          write(51,'("upbendc        ",2i4,es12.5," M",i1)') Z,A,
+     +      upbend(Zix,Nix,0,l,1),l
         endif
         if (ngr(Zix,Nix,1,l).eq.2) then
           write(51,'("sgr            ",2i4,f8.3," E",i1," 2")') Z,A,
@@ -217,6 +228,10 @@ c
      +          betafiscor(Zix,Nix)
               write(51,'("vfiscor        ",2i4,f10.5)') Z,A,
      +          vfiscor(Zix,Nix)
+              write(51,'("betafiscoradjust ",2i4,f10.5)') Z,A,
+     +          betafiscoradjust(Zix,Nix)
+              write(51,'("vfiscoradjust  ",2i4,f10.5)') Z,A,
+     +          vfiscoradjust(Zix,Nix)
             endif
             write(51,'("bdamp          ",2i4,f10.5,i3)') Z,A,
      +        bdamp(Zix,Nix,ibar),ibar

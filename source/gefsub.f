@@ -375,6 +375,12 @@ C     '
 C     '
 C     '
       I_N_CN = I_A_CN - I_Z_CN
+CAK
+      if (I_N_CN.gt.203) then
+        write(*,'(" TALYS-error: GEF Z=",i3," N=",i3," A=",i3,
+     +    " out of bounds")') I_Z_CN, I_N_CN, I_A_CN
+        stop
+      endif
 C     /' Mean deformation at scission as a function of mass '/
 C     '
 C     /' Mode 0: liquid drop and mode 4: Z = 38 '/
@@ -2021,6 +2027,13 @@ C     ' This is the value above the yrast line. Erot must be added!
 C     ' 100 keV bins up to 100 MeV
       Etab(K,I) = exp(-(0.1*REAL(I)-Eexc_mean)**2/(2.0 * Eexc_sigma))
       END DO
+CAK
+      Emean(K)=Eexc_mean
+      dEmean(K)=Eexc_sigma
+CAK   print*,Z_index,A_index,Eexc_mean,Eexc_sigma,
+CAK  +  Eexc_intr,Lypair(Z_index,A_index),Eexc_coll,
+CAK  +  0.5 * E_coll_saddle(M_index),Ytab(K),M_index
+CAK end
 C     '
 C     ' Normalize excitation-energy distribution
 C     '   Scope

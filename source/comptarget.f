@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning and Stephane Hilaire
-c | Date  : July 8, 2018
+c | Date  : May 31, 2020
 c | Task  : Compound reaction for initial compound nucleus
 c +---------------------------------------------------------------------
 c
@@ -70,11 +70,20 @@ c
 c
 c Optional adjustment factors
 c
+c isotrans: subroutine for correction factors for isospin forbidden 
+c           transitions
 c adjustTJ: logical for energy-dependent TJ adjustment
 c adjust  : subroutine for energy-dependent parameter adjustment
 c Fnorm   : multiplication factor
 c fiso    : correction factor for isospin forbidden transitions
 c
+      call isotrans(Zinit,Ninit)
+      if (flagpop) then
+        write(*,'(/" Isospin factors to reduce emission "/)')
+        do type=0,6
+          write(*,'(1x,a8,1x,f8.5)') parname(type),fiso(type)
+        enddo
+      endif
       do type=-1,6
         if (adjustTJ(Zcomp,Ncomp,type)) then
           key='tjadjust'

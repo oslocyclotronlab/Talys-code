@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Marieke Duijvestijn and Arjan Koning
-c | Date  : September 2, 2019
+c | Date  : April 19, 2020
 c | Task  : Exclusive reaction channels
 c +---------------------------------------------------------------------
 c
@@ -142,6 +142,7 @@ c below a threshold, the various exclusive channel arrays need to be
 c initialized to zero here.
 c
 c xschannel     : channel cross section
+c yieldchannel  : relative yield
 c xsgamchannel  : gamma channel cross section
 c xsfischannel  : fission channel cross section
 c xschancheck   : integrated channel spectra
@@ -166,6 +167,7 @@ c xsfischannelsp: fission channel cross section spectra
 c specexcl      : exclusive spectra per excitation energy
 c
             xschannel(idnum)=0.
+            yieldchannel(idnum)=0.
             xsgamchannel(idnum)=0.
             xsfischannel(idnum)=0.
             xschancheck(idnum)=0.
@@ -658,15 +660,23 @@ c
   120   continue
   110 continue
 c
+c Calculate relative yield per channel
+c
+      if (channelsum.gt.0.) then
+        do 710 idc=0,idnum
+          yieldchannel(idc)=xschannel(idc)/channelsum
+  710   continue
+      endif
+c
 c Set threshold energy for inelastic scattering to that of first
 c excited state.
 c
-      do 710 idc=0,idnum
+      do 810 idc=0,idnum
         if (k0.eq.1.and.idchannel(idc).eq.100000) then
           Ethrexcl(idc,0)=Ethrexcl(idc,1)
-          goto 720
+          goto 820
         endif
-  710 continue
-  720 return
+  810 continue
+  820 return
       end
 Copyright (C)  2013 A.J. Koning, S. Hilaire and S. Goriely

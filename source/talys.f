@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning, Stephane Hilaire and Stephane Goriely
-c | Date  : December 28, 2019
+c | Date  : December 30, 2021
 c | Task  : Main program
 c +---------------------------------------------------------------------
 c
@@ -10,9 +10,9 @@ c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
 c
-c                            TALYS-1.95
+c                            TALYS-1.96
 c
-c                   (Version: December 28, 2019)
+c                   (Version: December 30, 2021)
 c
 c             Nuclear reactions from 1 keV to 200 MeV.
 c
@@ -66,4 +66,4 @@ c
       call talysreaction
       if (flagnatural) call natural
       end
-Copyright (C)  2019 A.J. Koning, S. Hilaire and S. Goriely
+Copyright (C)  2021 A.J. Koning, S. Hilaire and S. Goriely

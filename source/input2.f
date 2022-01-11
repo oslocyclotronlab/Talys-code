@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : September 6, 2018
+c | Date  : December 11, 2021
 c | Task  : Read input for second set of variables
 c +---------------------------------------------------------------------
 c
@@ -43,6 +43,7 @@ c massmodel   : model for theoretical nuclear mass
 c disctable   : table with discrete levels
 c flagmicro   : flag for completely microscopic Talys calculation
 c ldmodelall  : level density model for all nuclides
+c ldmodelCN   : level density model for compound nucleus
 c flagcolall  : flag for collective enhancement of level density for all
 c               nuclides
 c fislim      : mass above which nuclide fissions
@@ -59,8 +60,10 @@ c numlev      : maximum number of included discrete levels
 c flagomponly : flag to execute ONLY an optical model calculation
 c flagequi    : flag to use equidistant excitation bins instead of
 c               logarithmic bins
+c flagequispec: flag to use equidistant bins for emission spectra
 c flagpopMeV  : flag to use initial population per MeV instead of
 c               histograms
+c flagmassdis : flag for calculation of fission fragment mass yields
 c flagracap   : flag for radiative capture model
 c ldmodelracap: level density model for direct radiative capture
 c spectfacexp : experimental spectroscopic factor
@@ -76,7 +79,13 @@ c
       maxZ=numZ-2
       maxN=numN-2
       nbins0=40
-      segment=1
+      if (flagffruns.or.flagrpruns) then
+        segment=2
+        flagequispec=.true.
+      else
+        segment=1
+        flagequispec=.false.
+      endif
       nlevmax=max(30,Ltarget)
       nlevmaxres=10
       do 20 type=0,6
@@ -102,13 +111,18 @@ c
       else
         ldmodelall=1
       endif
-      flagcolall=.false.
-      if (Atarget.gt.fislim) flagcolall=.true.
+      ldmodelCN=0
+      if (Atarget.gt.fislim) then
+        flagcolall=.true.
+      else
+        flagcolall=.false.
+      endif
       preeqmode=2
       wmode=1
       mpreeqmode=2
-      sfthall=0.5
+      sfthall=1.
       sfexpall=0.347
+      if (mod(Atarget,2).ne.0) sfexpall=1.
       do 30 Nix=0,numN
         do 30 Zix=0,numZ
           nlev(Zix,Nix)=0
@@ -121,8 +135,9 @@ c
             spectfacexp(Zix,Nix,nex)=0.
    30 continue
       flagomponly=.false.
-      flagequi=.false.
+      flagequi=.true.
       flagpopMeV=.false.
+      flagmassdis=.false.
       flagracap=.false.
       ldmodelracap=1
       maxZrp=numZ-2
@@ -255,6 +270,10 @@ c
           endif
           goto 110
         endif
+        if (key.eq.'ldmodelcn') then
+          read(value,*,end=300,err=300) ldmodelCN
+          goto 110
+        endif
         if (key.eq.'colenhance') then
           if (ch.eq.'n') fcol=.false.
           if (ch.eq.'y') fcol=.true.
@@ -329,9 +348,21 @@ c
           if (ch.ne.'y'.and.ch.ne.'n') goto 300
           goto 110
         endif
+        if (key.eq.'equispec') then
+          if (ch.eq.'n') flagequispec=.false.
+          if (ch.eq.'y') flagequispec=.true.
+          if (ch.ne.'y'.and.ch.ne.'n') goto 300
+          goto 110
+        endif
         if (key.eq.'popmev') then
           if (ch.eq.'n') flagpopMeV=.false.
           if (ch.eq.'y') flagpopMeV=.true.
+          if (ch.ne.'y'.and.ch.ne.'n') goto 300
+          goto 110
+        endif
+        if (key.eq.'massdis') then
+          if (ch.eq.'n') flagmassdis=.false.
+          if (ch.eq.'y') flagmassdis=.true.
           if (ch.ne.'y'.and.ch.ne.'n') goto 300
           goto 110
         endif
@@ -407,6 +438,11 @@ c
 c
 c Set level density models and spectroscopic factors per nucleus
 c
+      if (ldmodelCN.gt.0) then
+        ldmodel(0,0)=ldmodelCN
+      else
+        ldmodelCN=ldmodelall
+      endif
       do 310 Nix=0,numN
         do 310 Zix=0,numZ
           if (ldmodel(Zix,Nix).eq.0) ldmodel(Zix,Nix)=ldmodelall

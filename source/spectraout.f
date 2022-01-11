@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : April 7, 2019
+c | Date  : December 21, 2020
 c | Task  : Output of particle spectra
 c +---------------------------------------------------------------------
 c
@@ -82,15 +82,27 @@ c parsym      : symbol of particle
 c preeqratio  : pre-equilibrium ratio
 c
         if (filespectrum(type)) then
-          specfile=' spec0000.000.tot'//natstring(iso)
-          write(specfile(1:1),'(a1)') parsym(type)
-          write(specfile(6:13),'(f8.3)') Einc
-          write(specfile(6:9),'(i4.4)') int(Einc)
-          open (unit=1,file=specfile,status='replace')
+          if (flagblock) then
+            specfile=' spec.tot'//natstring(iso)
+            write(specfile(1:1),'(a1)') parsym(type)
+            if (.not.spexist1(type)) then
+              spexist1(type)=.true.
+              open (unit=1,file=specfile,status='unknown')
+            else
+              open (unit=1,file=specfile,status='unknown',
+     +          position='append')
+            endif
+          else
+            specfile=' spec0000.000.tot'//natstring(iso)
+            write(specfile(1:1),'(a1)') parsym(type)
+            write(specfile(6:13),'(f8.3)') Einc
+            write(specfile(6:9),'(i4.4)') int(Einc)
+            open (unit=1,file=specfile,status='unknown')
+          endif
           write(1,'("# ",a1," + ",i3,a2,": ",a8," spectrum")')
      +      parsym(k0),Atarget,Starget,parname(type)
-          write(1,'("# E-incident = ",f8.3)') Einc
-          write(1,'("# ")')
+          write(1,'("# E-incident = ",f10.5)') Einc
+          write(1,'("# E-average  = ",f8.3)') Eaverage(type)
           write(1,'("# # energies =",i6)') eendout(type)-ebegin(type)+1
           if (k0.le.2.and.type.le.2) then
             write(1,'("# E-out    Total       Direct    Pre-equil.",
@@ -116,12 +128,27 @@ c
           endif
           close (unit=1)
           if (flagrecoil.and.flaglabddx) then
-            specfile(14:16)='lab'
-            open (unit=1,file=specfile,status='replace')
+            if (flagblock) then
+              specfile=' spec.lab'//natstring(iso)
+              write(specfile(1:1),'(a1)') parsym(type)
+              if (.not.spexist2(type)) then
+                spexist2(type)=.true.
+                open (unit=1,file=specfile,status='unknown')
+              else
+                open (unit=1,file=specfile,status='unknown',
+     +            position='append')
+              endif
+            else
+              specfile=' spec0000.000.lab'//natstring(iso)
+              write(specfile(1:1),'(a1)') parsym(type)
+              write(specfile(6:13),'(f8.3)') Einc
+              write(specfile(6:9),'(i4.4)') int(Einc)
+              open (unit=1,file=specfile,status='unknown')
+            endif
             write(1,'("# ",a1," + ",i3,a2,": ",a8,
      +        " spectrum in LAB frame")') parsym(k0),Atarget,
      +        Starget,parname(type)
-            write(1,'("# E-incident = ",f8.3)') Einc
+            write(1,'("# E-incident = ",f10.5)') Einc
             write(1,'("# ")')
             write(1,'("# # energies =",i6)') iejlab(type)
             write(1,'("# E-out    Total")')
@@ -137,27 +164,29 @@ c
       do 110 type=0,6
         if (parskip(type)) goto 110
         write(*,'(1x,a8,4x,f8.3)') parname(type),Eaverage(type)
-        Efile='Eaverage.'//parsym(type)
-        if (nin.eq.numinclow+1) then
-          open (unit=1,file=Efile,status='replace')
-          write(1,'("# ",a1," + ",i3,a2," Average ",a8,
-     +      " emission energy")') parsym(k0),Atarget,Starget,
-     +      parname(type)
-          write(1,'("# Q-value    =",es12.5)') Q(type)
-          write(1,'("# ")')
-          write(1,'("# # energies =",i6)') numinc
-          write(1,'("#    E     E-average")')
-          do 210 nen=1,numinclow
-            write(1,'(3es12.5)') eninc(nen),0.,0.
-  210     continue
-        else
-          open (unit=1,file=Efile,status='old')
-          do 230 nen=1,nin+4
-            read(1,*,end=240,err=240)
-  230     continue
+        if (filespectrum(type)) then
+          Efile='Eaverage.'//parsym(type)
+          if (nin.eq.numinclow+1) then
+            open (unit=1,file=Efile,status='replace')
+            write(1,'("# ",a1," + ",i3,a2," Average ",a8,
+     +        " emission energy")') parsym(k0),Atarget,Starget,
+     +        parname(type)
+            write(1,'("# Q-value    =",es12.5)') Q(type)
+            write(1,'("# ")')
+            write(1,'("# # energies =",i6)') numinc
+            write(1,'("#    E       E-average")')
+            do 210 nen=1,numinclow
+              write(1,'(3es12.5)') eninc(nen),0.,0.
+  210       continue
+          else
+            open (unit=1,file=Efile,status='old')
+            do 230 nen=1,nin+4
+              read(1,*,end=240,err=240)
+  230       continue
+          endif
+          write(1,'(2es12.5)') Einc,Eaverage(type)
+  240     close (unit=1)
         endif
-        write(1,'(2es12.5)') Einc,Eaverage(type)
-  240   close (unit=1)
   110 continue
       return
       end

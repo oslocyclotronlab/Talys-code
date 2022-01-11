@@ -417,15 +417,15 @@ C     '
 C     '
 C     /' Masses etc. '/
 C     '
-      REAL*4 , DIMENSION(0:203,0:136) :: BEldmTF
+CAK   REAL*4 , DIMENSION(0:203,0:136) :: BEldmTF
 C     '
-      REAL*4 , DIMENSION(0:203,0:136) :: BEexp
+CAK   REAL*4 , DIMENSION(0:203,0:136) :: BEexp
 C     '
-      REAL*4 , DIMENSION(0:203,0:136) :: DEFOtab
+CAK   REAL*4 , DIMENSION(0:203,0:136) :: DEFOtab
 C     '
-      REAL*4 , DIMENSION(0:203,0:136) :: ShellMO
+CAK   REAL*4 , DIMENSION(0:203,0:136) :: ShellMO
 C     '
-      REAL*4 , DIMENSION(0:203,0:136) :: EVOD
+CAK   REAL*4 , DIMENSION(0:203,0:136) :: EVOD
 C     '
 C     '
       REAL*4 , DIMENSION(0:200,0:150) :: NZPRE

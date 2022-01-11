@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 23, 2019
+c | Date  : January 20, 2021
 c | Task  : Read input for fifth set of variables
 c +---------------------------------------------------------------------
 c
@@ -14,9 +14,9 @@ c
       character*80 word(40),key,value,cval
       integer      Zix,Nix,ibar,irad,Z,N,oddZ,oddN,lval,type,mt,is,igr,
      +             i,class,iz,ia,ival,type2,omptype,nr,k,l,iword,ilev0,
-     +             nbr,ilev1,istat
+     +             nbr,ilev1,istat,A,Aact
       real         alphaldall,betaldall,gammashell1all,br,sum,val,
-     +             Pshiftconstantall
+     +             Pshiftconstantall,Vf0,rfiscor
 c
 c ************** Defaults for fifth set of input variables *************
 c
@@ -26,10 +26,16 @@ c eninclow      : minimal incident energy for nuclear model calculations
 c Atarget       : mass number of target nucleus
 c strength      : model for E1 gamma-ray strength function
 c gnorm         : gamma normalization factor
+c flagffruns    : flag to denote that run is for fission fragment
 c Rspincut      : adjustable constant (global) for spin cutoff factor
+c Rspincutff    : parameter (global) for FF spin cutoff factor
 c spincutmodel  : model for spin cutoff factor for ground state
 c shellmodel    : model for shell correction energies
 c kvibmodel     : model for vibrational enhancement
+c Cnubar1       : adjustable parameter for nubar constant value
+c Cnubar2       : adjustable parameter for nubar energy slope
+c Tmadjust      : adjustable parameter for PFNS temperature
+c Fsadjust      : adjustable parameter for PFNS scission fraction
 c gammashell2   : gamma-constant for asymptotic level density parameter
 c flagcol       : flag for collective enhancement of level density
 c flagcolldamp  : flag for damping of collective effects in effective
@@ -114,6 +120,9 @@ c egradjust.....: adjustable factors for giant resonance parameters
 c                 (default 1.)
 c upbend        : properties of the low-energy upbend of given multipolarity
 c fiso          : correction factor for isospin forbidden transitions
+c fisom         : correction factor for isospin forbidden transitions
+c                 in multiple emission
+c fisominit     : initial value for fisom
 c aadjust,...   : adjustable factors for level density parameters
 c                 (default 1.)
 c axtype        : type of axiality of barrier
@@ -130,6 +139,11 @@ c                 (default 1.)
 c betafiscor    : adjustable factor for fission path width
 c Zinit         : charge number of initial compound nucleus
 c Ninit         : neutron number of initial compound nucleus
+c Aact          : mass number for actinide
+c Vf0           : vfiscor at mass 240
+c vfiscoradjust : adjustable correction to vfiscor
+c betafiscoradjust: adjustable correction to betafiscor
+c rfiscor       : slope of mass dependence
 c vfiscor       : adjustable factor for fission path height
 c fismodel      : fission model
 c Rtransmom     : normalization constant for moment of inertia for
@@ -143,11 +157,13 @@ c class2file    : file with class 2 transition states
 c levelfile     : discrete level file
 c deformfile    : deformation parameter file
 c Exlfile       : tabulated strength function file
+c densfile      : tabulated level density file
 c optmodfileN   : optical model parameter file for neutrons
 c optmodfileP   : optical model parameter file for protons
 c radialfile    : radial matter density file
 c ompenergyfile : file with energies for OMP calculation (ENDF files
 c                 only)
+c yieldfile     : file with fission fragment yields
 c radialmodel   : model for radial matter densities (JLM OMP only)
 c breakupmodel  : model for break-up reaction: 1. Kalbach 2. Avrigeanu
 c massnucleus   : mass of nucleus in amu as read from user input file
@@ -211,6 +227,8 @@ c unitTirrad    : irradiation time unit (y,d,h,m,s)
 c Tcool         : cooling time per unit
 c unitTcool     : cooling time unit (y,d,h,m,s)
 c rhotarget     : target material density
+c flagriplomp   : flag for RIPL OMP
+c riplomp       : RIPL OMP number
 c
       if (k0.eq.1.and.flagendf) then
         eninclow=0.
@@ -226,7 +244,11 @@ c
       else
         gnorm=-1.
       endif
-      Rspincut=1.
+      if (flagffruns) then
+        Rspincut=Rspincutff
+      else
+        Rspincut=1.
+      endif
       spincutmodel=1
       shellmodel=1
       kvibmodel=2
@@ -256,6 +278,10 @@ c
       betaldall=-99.
       gammashell1all=-99.
       Pshiftconstantall=-99.
+      Cnubar1=1.
+      Cnubar2=1.
+      Tmadjust=1.
+      Fsadjust=1.
       do 10 Zix=0,numZ
         do 20 Nix=0,numN
           if (ldmodel(Zix,Nix).eq.1.or.ldmodel(Zix,Nix).ge.4) then
@@ -363,9 +389,25 @@ c
                 gpradjust(Zix,Nix,irad,lval,igr)=1.
                 tpradjust(Zix,Nix,irad,lval,igr)=1.
    40     continue
-          upbend(Zix,Nix,0,1,1)=0.
-          upbend(Zix,Nix,0,1,3)=0.
-          if (strengthm1.eq.8) then
+          if (k0.eq.1) then
+            if (strength.eq.8) then
+              if (ldmodel(Zix,Nix).eq.1) wtable(Zix,Nix,1,1)=1.067
+              if (ldmodel(Zix,Nix).eq.2) wtable(Zix,Nix,1,1)=1.011
+              if (ldmodel(Zix,Nix).eq.3) wtable(Zix,Nix,1,1)=0.978
+              if (ldmodel(Zix,Nix).eq.4) wtable(Zix,Nix,1,1)=0.913
+              if (ldmodel(Zix,Nix).eq.5) wtable(Zix,Nix,1,1)=0.996
+              if (ldmodel(Zix,Nix).eq.6) wtable(Zix,Nix,1,1)=0.952
+            endif
+            if (strength.eq.9) then
+              if (ldmodel(Zix,Nix).eq.1) wtable(Zix,Nix,1,1)=1.069
+              if (ldmodel(Zix,Nix).eq.2) wtable(Zix,Nix,1,1)=1.013
+              if (ldmodel(Zix,Nix).eq.3) wtable(Zix,Nix,1,1)=0.976
+              if (ldmodel(Zix,Nix).eq.4) wtable(Zix,Nix,1,1)=0.892
+              if (ldmodel(Zix,Nix).eq.5) wtable(Zix,Nix,1,1)=0.994
+              if (ldmodel(Zix,Nix).eq.6) wtable(Zix,Nix,1,1)=0.914
+            endif
+          endif
+          if (strengthM1.eq.8) then
             if (Ainit.ge.105) then
               upbend(Zix,Nix,0,1,1)=1.e-8
               upbend(Zix,Nix,0,1,3)=0.
@@ -374,7 +416,7 @@ c
               upbend(Zix,Nix,0,1,3)=4.
             endif
           endif
-          if (strengthm1.eq.3) then
+          if (strengthM1.eq.3) then
             upbend(Zix,Nix,0,1,1)=3.5e-8
             upbend(Zix,Nix,0,1,3)=6.
           endif
@@ -387,31 +429,14 @@ c
             upbend(Zix,Nix,1,1,2)=0.
           endif
           do type=-1,6
-            fiso(type)=1.
+            fiso(type)=-1.
+            fisom(type)=-1.
+            fisominit(type)=1.
           enddo
-          if (Zinit.eq.Ninit) then
-            if (k0.eq.0) then
-              fiso(1)=2.
-              fiso(2)=2.
-              fiso(6)=5.
-            endif
-            if (k0.eq.1) fiso(0)=2.
-            if (k0.eq.2) fiso(0)=2.
-            if (k0.eq.6) fiso(0)=5.
-          endif
-          if (Zinit.eq.Ninit-1.or.Zinit.eq.Ninit+1) then
-            if (k0.eq.0) then
-              fiso(1)=1.5
-              fiso(2)=1.5
-              fiso(6)=1.5
-            endif
-            if (k0.eq.1) fiso(0)=1.5
-            if (k0.eq.2) fiso(0)=1.5
-            if (k0.eq.6) fiso(0)=1.5
-          endif
           aadjust(Zix,Nix)=1.
           gnadjust(Zix,Nix)=1.
           gpadjust(Zix,Nix)=1.
+          gadjust(Zix,Nix)=1.
           gamgamadjust(Zix,Nix)=1.
           do 50 ibar=1,numbar
             axtype(Zix,Nix,ibar)=1
@@ -430,17 +455,24 @@ c
           N=Ninit-Nix
           oddZ=mod(Z,2)
           oddN=mod(N,2)
-          vfiscor(Zix,Nix)=1.
-          if (oddZ.eq.0.and.oddN.eq.0) vfiscor(Zix,Nix)=0.86
-          if (oddZ.eq.1.and.oddN.eq.0) vfiscor(Zix,Nix)=0.94
-          if (oddZ.eq.0.and.oddN.eq.1) vfiscor(Zix,Nix)=0.89
-          if (oddZ.eq.1.and.oddN.eq.1) vfiscor(Zix,Nix)=1.02
+          Vf0=0.86
+          if (oddZ.eq.0.and.oddN.eq.0) Vf0=0.83
+          if (oddZ.eq.1.and.oddN.eq.0) Vf0=0.91
+          if (oddZ.eq.0.and.oddN.eq.1) Vf0=0.86
+          if (oddZ.eq.1.and.oddN.eq.1) Vf0=0.85
+          A=Z+N
+          Aact=max(min(A,255),225)
+          rfiscor=0.005
+          vfiscor(Zix,Nix)=Vf0-rfiscor*(Aact-240)
+          betafiscoradjust(Zix,Nix)=1.
+          vfiscoradjust(Zix,Nix)=1.
           fismodelx(Zix,Nix)=fismodel
           if (Ninit-Nix.gt.144.or.fismodel.eq.5) axtype(Zix,Nix,1)=3
           if (fismodel.lt.5) axtype(Zix,Nix,2)=2
           Rtransmom(Zix,Nix,1)=0.6
           hbtransfile(Zix,Nix)='                                       '
           clas2file(Zix,Nix)='                                         '
+          densfile(Zix,Nix)='                                          '
           do 55 irad=0,1
             do 57 l=1,numgam
               Exlfile(Zix,Nix,irad,l)='                                '
@@ -454,6 +486,7 @@ c
         radialfile(Zix)='                                              '
    10 continue
       ompenergyfile='                                            '
+      yieldfile='                                            '
       radialmodel=2
       breakupmodel=1
       massdir='                                                        '
@@ -536,6 +569,7 @@ c
    80 continue
       do 81 type=1,6
         Ejoin(type)=200.
+        riplomp(type)=0
    81 continue
       preeqadjust=.false.
       Nadjust=0
@@ -594,6 +628,16 @@ c
         unitTcool(k)=' '
   108 continue
       rhotarget=-1.
+      flagriplomp=.false.
+      if (.not.flagsoukhoinp.and.Atarget.gt.fislim) then
+        if ((Ztarget.ge.90.and.Ztarget.le.97.and.Atarget.ge.228.and.
+     +    Atarget.le.249).or.flagriplrisk) then
+          flagriplrisk=.true.
+          flagriplomp=.true.
+          flagsoukho=.false.
+          riplomp(1)=2408
+        endif
+      endif
 c
 c **************** Read fifth set of input variables *******************
 c
@@ -982,6 +1026,16 @@ c
           if (flagassign) fiso(type)=val
           goto 110
         endif
+        if (key.eq.'fisom') then
+          class=6
+          call getvalues(class,word,Zix,Nix,type,
+     +      ibar,irad,lval,igr,val,ival,cval,flagassign)
+          if (flagassign) then
+            fisom(type)=val
+            fisominit(type)=val
+          endif
+          goto 110
+        endif
         if (key.eq.'gamgam') then
           class=1
           call getvalues(class,word,Zix,Nix,type,
@@ -1036,6 +1090,13 @@ c
           call getvalues(class,word,Zix,Nix,type,
      +      ibar,irad,lval,igr,val,ival,cval,flagassign)
           if (flagassign) gpadjust(Zix,Nix)=val
+          goto 110
+        endif
+        if (key.eq.'gadjust') then
+          class=1
+          call getvalues(class,word,Zix,Nix,type,
+     +      ibar,irad,lval,igr,val,ival,cval,flagassign)
+          if (flagassign) gadjust(Zix,Nix)=val
           goto 110
         endif
         if (key.eq.'gamgamadjust') then
@@ -1223,6 +1284,13 @@ c
           if (flagassign) Exlfile(Zix,Nix,0,1)=cval
           goto 110
         endif
+        if (key.eq.'densfile') then
+          class=11
+          call getvalues(class,word,Zix,Nix,type,
+     +      ibar,irad,lval,igr,val,ival,cval,flagassign)
+          if (flagassign) densfile(Zix,Nix)=cval
+          goto 110
+        endif
         if (key.eq.'hbtransfile') then
           class=11
           call getvalues(class,word,Zix,Nix,type,
@@ -1262,6 +1330,10 @@ c
           ompenergyfile=value
           goto 110
         endif
+        if (key.eq.'yieldfile') then
+          yieldfile=value
+          goto 110
+        endif
         if (key.eq.'beta2') then
           class=3
           call getvalues(class,word,Zix,Nix,type,
@@ -1284,11 +1356,25 @@ c
           if (flagassign) vfiscor(Zix,Nix)=val
           goto 110
         endif
+        if (key.eq.'vfiscoradjust') then
+          class=1
+          call getvalues(class,word,Zix,Nix,type,
+     +      ibar,irad,lval,igr,val,ival,cval,flagassign)
+          if (flagassign) vfiscoradjust(Zix,Nix)=val
+          goto 110
+        endif
         if (key.eq.'betafiscor') then
           class=1
           call getvalues(class,word,Zix,Nix,type,
      +      ibar,irad,lval,igr,val,ival,cval,flagassign)
           if (flagassign) betafiscor(Zix,Nix)=val
+          goto 110
+        endif
+        if (key.eq.'betafiscoradjust') then
+          class=1
+          call getvalues(class,word,Zix,Nix,type,
+     +      ibar,irad,lval,igr,val,ival,cval,flagassign)
+          if (flagassign) betafiscoradjust(Zix,Nix)=val
           goto 110
         endif
         if (key.eq.'branch') then
@@ -1854,11 +1940,23 @@ c
           read(value,*,end=1000,err=1000) breakupmodel
           goto 110
         endif
+        if (key.eq.'riplomp') then
+          if (ch.eq.'n'.and.trim(word(3)).eq.'') then
+            flagriplomp=.false.
+          else
+            class=7
+            call getvalues(class,word,Zix,Nix,type,
+     +        ibar,irad,lval,igr,val,ival,cval,flagassign)
+            if (flagassign) riplomp(type)=ival
+          endif
+          goto 110
+        endif
         if (key.eq.'rspincut') then
           class=9
           call getvalues(class,word,Zix,Nix,type,
      +      ibar,irad,lval,igr,val,ival,cval,flagassign)
           if (flagassign) Rspincut=val
+          if (flagffruns) Rspincut=Rspincutff
           goto 110
         endif
         if (key.eq.'alphald') then
@@ -1945,6 +2043,28 @@ c
         endif
         if (key.eq.'rgamma') then
           read(value,*,end=1000,err=1000) Rgamma
+          goto 110
+        endif
+        if (key.eq.'tmadjust') then
+          class=9
+          call getvalues(class,word,Zix,Nix,type,
+     +      ibar,irad,lval,igr,val,ival,cval,flagassign)
+          if (flagassign) Tmadjust=val
+          goto 110
+        endif
+        if (key.eq.'fsadjust') then
+          class=9
+          call getvalues(class,word,Zix,Nix,type,
+     +      ibar,irad,lval,igr,val,ival,cval,flagassign)
+          if (flagassign) Fsadjust=val
+          goto 110
+        endif
+        if (key.eq.'cnubar1') then
+          read(value,*,end=1000,err=1000) Cnubar1
+          goto 110
+        endif
+        if (key.eq.'cnubar2') then
+          read(value,*,end=1000,err=1000) Cnubar2
           goto 110
         endif
         if (key.eq.'msdbins')  then
@@ -2117,4 +2237,4 @@ c
      +  ", br index out of range: ",a80)') inline(i)
       stop
       end
-Copyright (C)  2013 A.J. Koning, S. Hilaire and S. Goriely
+Copyright (C)  2021 A.J. Koning, S. Hilaire and S. Goriely

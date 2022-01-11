@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : November 8, 2016
+c | Date  : January 11, 2021
 c | Task  : Residual production cross sections
 c +---------------------------------------------------------------------
 c
@@ -76,4 +76,4 @@ c
    10 continue
       return
       end
-Copyright (C)  2013 A.J. Koning, S. Hilaire and S. Goriely
+Copyright (C)  2021 A.J. Koning, S. Hilaire and S. Goriely

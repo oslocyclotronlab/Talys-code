@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 1, 2013
+c | Date  : October 23, 2020
 c | Task  : Read ECIS results for incident particle on ENDF-6 energy
 c |         grid
 c +---------------------------------------------------------------------
@@ -11,7 +11,7 @@ c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
       character*72     line
-      integer          infileendf,nen,Z,A,nend,mt,nen2
+      integer          infileendf,nen,Z,A,nend,mt,nen2,Nxs
       real             tripathi,e,Ea,Eb,xsa,xsb,xsc,xsd,Efac,xsdift,
      +                 xsdife,enuc
       double precision xs
@@ -45,15 +45,15 @@ c
       do 30 nen=1,nen6
         e=real(e6(nen))
         if (k0.gt.1.and.e.lt.coullimit(k0)) goto 30
-        read(infileendf,'()')
-        if (k0.eq.1) then
+        read(infileendf,'(57x,i3)') Nxs
+        if (Nxs.gt.1) then
           read(infileendf,*) xs
           xstot6(nen)=max(real(xs),0.)
         endif
         read(infileendf,*) xs
         xsreac6(nen)=max(real(xs),0.)
         xsopt6(nen)=xsreac6(nen)
-        if (k0.eq.1) then
+        if (Nxs.eq.3) then
           read(infileendf,*) xs
           xselassh6(nen)=max(real(xs),0.)
         endif

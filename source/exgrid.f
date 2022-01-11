@@ -220,7 +220,7 @@ c sigma is the square root of the spin cut-off parameter of the level
 c density.
 c
          maxJ(Zix,Nix,nex)=
-     +     max(3.*sqrt(spincut(Zix,Nix,ald,Exout,0.)),5.)
+     +     max(3.*sqrt(spincut(Zix,Nix,ald,Exout,0)),5.)
          maxJ(Zix,Nix,nex)=min(maxJ(Zix,Nix,nex),numJ)
 c
 c In the compound nucleus subroutines, the particle widths are

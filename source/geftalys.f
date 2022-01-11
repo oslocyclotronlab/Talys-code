@@ -80,7 +80,7 @@ c   MODEC=2 - Monte Carlo calculations
           anpost_sum(i)=0.0
         end do
 
-         do i=1,50
+         do i=0,50
           ann_sum(i)=0.0
          end do
 

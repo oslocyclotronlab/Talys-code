@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 12, 2016
+c | Date  : March 2, 2020
 c | Task  : Read input for first set of variables
 c +---------------------------------------------------------------------
 c
@@ -547,8 +547,8 @@ c
         endif
         open (unit=2,file=energyfile,status='old')
         read(2,*,end=510,err=510) npopE,npopJ,npopP
-        if (npopE.lt.2.or.npopE.gt.numpop) then
-          write(*,'(" TALYS-error: 2 <= bins <=",i4," in population ",
+        if (npopE.lt.1.or.npopE.gt.numpop) then
+          write(*,'(" TALYS-error: 1 <= bins <=",i4," in population ",
      +      "distribution file")') numpop
           stop
         endif

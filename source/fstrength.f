@@ -183,49 +183,53 @@ c
           do 130 nen=0,numgamqrpa
             Eq(nen)=eqrpa(Zcomp,Ncomp,nen,irad,1)
   130     continue
-          do 140 it=1,itemp
-            jt=nT
-            if (it.eq.2) jt=nT+1
-            if (jt.gt.nT0) jt=nT0
-            if (Egamma.le.Eq(numgamqrpa)) then
-              call locate(Eq,0,numgamqrpa,Egamma,nen)
-              eb=Eq(nen)
-              ee=Eq(nen+1)
-              gamb=fqrpa(Zcomp,Ncomp,nen,jt,irad,1)
-              game=fqrpa(Zcomp,Ncomp,nen+1,jt,irad,1)
-              if (gamb.gt.0..and.game.gt.0.) then
-                f1=log10(gamb)+(Egamma-eb)/(ee-eb)*
-     +            (log10(game)-log10(gamb))
+          if (Egamma.lt.Eq(1)) then
+            fstrength=0.
+          else
+            do 140 it=1,itemp
+              jt=nT
+              if (it.eq.2) jt=nT+1
+              if (jt.gt.nT0) jt=nT0
+              if (Egamma.le.Eq(numgamqrpa)) then
+                call locate(Eq,0,numgamqrpa,Egamma,nen)
+                eb=Eq(nen)
+                ee=Eq(nen+1)
+                gamb=fqrpa(Zcomp,Ncomp,nen,jt,irad,1)
+                game=fqrpa(Zcomp,Ncomp,nen+1,jt,irad,1)
+                if (gamb.gt.0..and.game.gt.0.) then
+                  f1=log10(gamb)+(Egamma-eb)/(ee-eb)*
+     +              (log10(game)-log10(gamb))
+                  f2=10.**f1
+                else
+                  f2=gamb+(Egamma-eb)/(ee-eb)*(game-gamb)
+                endif
+              else
+                eb=Eq(numgamqrpa-1)
+                ee=Eq(numgamqrpa)
+                gamb=fqrpa(Zcomp,Ncomp,numgamqrpa-1,jt,irad,1)
+                game=fqrpa(Zcomp,Ncomp,numgamqrpa,jt,irad,1)
+                if (gamb.gt.0..and.game.gt.0.) then
+                  f1=log10(gamb)+(Egamma-eb)/(ee-eb)*
+     +              (log10(game)-log10(gamb))
+                  f2=10.**f1
+                else
+                  f2=gamb+(Egamma-eb)/(ee-eb)*(game-gamb)
+                endif
+              endif
+              if (it.eq.1) fb=f2
+              if (it.eq.2) fe=f2
+  140       continue
+            if (nT0.gt.1.and.Tb.ne.Te) then
+              if (fb.gt.0..and.fe.gt.0.) then
+                f1=log10(fb)+(Tnuc-Tb)/(Te-Tb)*
+     +            (log10(fe)-log10(fb))
                 f2=10.**f1
               else
-                f2=gamb+(Egamma-eb)/(ee-eb)*(game-gamb)
-              endif
-            else
-              eb=Eq(numgamqrpa-1)
-              ee=Eq(numgamqrpa)
-              gamb=fqrpa(Zcomp,Ncomp,numgamqrpa-1,jt,irad,1)
-              game=fqrpa(Zcomp,Ncomp,numgamqrpa,jt,irad,1)
-              if (gamb.gt.0..and.game.gt.0.) then
-                f1=log10(gamb)+(Egamma-eb)/(ee-eb)*
-     +            (log10(game)-log10(gamb))
-                f2=10.**f1
-              else
-                f2=gamb+(Egamma-eb)/(ee-eb)*(game-gamb)
+                f2=fb+(Tnuc-Tb)/(Te-Tb)*(fe-fb)
               endif
             endif
-            if (it.eq.1) fb=f2
-            if (it.eq.2) fe=f2
-  140     continue
-          if (nT0.gt.1.and.Tb.ne.Te) then
-            if (fb.gt.0..and.fe.gt.0.) then
-              f1=log10(fb)+(Tnuc-Tb)/(Te-Tb)*
-     +          (log10(fe)-log10(fb))
-              f2=10.**f1
-            else
-              f2=fb+(Tnuc-Tb)/(Te-Tb)*(fe-fb)
-            endif
+            fstrength=f2
           endif
-          fstrength=f2
         endif
 c
 c 5. Goriely Hybrid model

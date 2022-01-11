@@ -1,7 +1,6 @@
-     TALYS-1.95 (Version: December 28, 2019)
+     TALYS-1.96 (Version: December 30, 2021)
 
- Copyright (C) 2019  A.J. Koning, S. Hilaire and S. Goriely        
-                         IAEA         CEA              ULB
+ Copyright (C) 2021  A.J. Koning, S. Hilaire and S. Goriely        
 
 The TALYS package
 -----------------
@@ -14,7 +13,7 @@ contains the following directories and files:
 
 - talys.setup is a script that takes care of the installation.
 
-- source/ contains the source code of TALYS: 327 Fortran subroutines, and the 
+- source/ contains the source code of TALYS: Fortran subroutines, and the 
   file talys.cmb, which contains all variable declarations and common blocks.
   This includes the file ecis06t.f. This is basically Jacques Raynal's code 
   ECIS-06, which we have transformed into a subroutine and slightly modified 
@@ -22,12 +21,12 @@ contains the following directories and files:
 
 - structure/ contains the nuclear structure database in various subdirectories. 
 
-- doc/ contains the documentation: this manual in postscript and pdf format and 
+- doc/ contains the documentation: this manual in pdf format and 
   the description of ECIS-06.
 
 - samples/ contains the input and output files of the sample cases.
 
-In total, you will need about 6 Gb of free disk space to install TALYS.
+In total, you will need about 4 Gb of free disk space to install TALYS.
 
 Installation
 ------------
@@ -45,10 +44,6 @@ If this does not work for some reason, we here provide the necessary steps to
 do the installation manually. For a Unix/Linux system, the following steps 
 should be taken:
 
-- chmod -R u+rwX talys 
-  (to ensure that all directories and files have read and write permission and 
-  the directories have execute permission. 
-
 - cd talys/source
 
 - Ensure that TALYS can read the nuclear structure database. This is done
@@ -57,18 +52,13 @@ should be taken:
   machine dependence of TALYS. Apart from a few trivial warning messages for 
   ecis06t.f, we expect no complaints from the compiler. 
 
-- f95 -c *.f
+- gfortran -c *.f
 
-- f95 *.o -o talys
+- gfortran *.o -o talys
 
 - mv talys /bin 
   (assuming you have a /bin directory which contains all executables that can 
   be called from any working directory)
-
-After you or talys.setup has completed this, type
-
-- rehash
-  (to update your table with commands)
 
 Verification
 ------------
@@ -88,7 +78,7 @@ memorypar.
 Your own calculations
 ---------------------
 
-- talys < input > output
+- talys < talys.inp > talys.out
 
 where you can make your own input file starting from the many sample cases
 we provide.

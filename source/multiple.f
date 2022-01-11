@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning and Stephane Hilaire
-c | Date  : June 25, 2019
+c | Date  : May 31, 2020
 c | Task  : Multiple emission
 c +---------------------------------------------------------------------
 c
@@ -207,10 +207,16 @@ c
 c
 c Optional adjustment factors
 c
-c adjustTJ: logical for energy-dependent TJ adjustment
-c adjust  : subroutine for energy-dependent parameter adjustment
-c Fnorm   : multiplication factor
+c isotrans : subroutine for correction factors for isospin forbidden
+c            transitions
+c adjustTJ : logical for energy-dependent TJ adjustment
+c adjust   : subroutine for energy-dependent parameter adjustment
+c Fnorm    : multiplication factor
+c fisom    : correction factor for isospin forbidden transitions
+c            in multiple emission
+c fisominit: initial value for fisom
 c
+          call isotrans(Z,N)
           do type=-1,6
             if (adjustTJ(Zcomp,Ncomp,type)) then
               key='tjadjust'
@@ -218,7 +224,18 @@ c
             else
               factor=1.
             endif
-            Fnorm(type)=factor
+            Fnorm(type)=factor/fisom(type)
+          enddo
+          if (flagpop) then
+            write(*,'(/" Isospin factors to reduce emission for ",
+     +        "multiple emission for Z=",i3," N=",i3," (",i3,a2,")",/)') 
+     +        Z,N,A,nuc(Z)
+            do type=0,6
+              write(*,'(1x,a8,1x,f8.5)') parname(type),fisom(type)
+            enddo
+          endif
+          do type=0,6
+            fisom(type)=fisominit(type)
           enddo
 c
 c Loop 110: De-excitation of nucleus, starting at the highest excitation

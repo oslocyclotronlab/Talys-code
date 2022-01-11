@@ -2,7 +2,7 @@
 c
 c +---------------------------------------------------------------------
 c | Author: Arjan Koning
-c | Date  : December 23, 2019
+c | Date  : December 29, 2021
 c | Task  : Check for errors in values
 c +---------------------------------------------------------------------
 c
@@ -14,7 +14,7 @@ c
       character*72 massdir0
       integer      type,i,Zix,Nix,mt,is,l,omptype,nr,nr2,A,irad,lval,
      +             igr,ibar,fax0,n,m,k
-      real         tl0,egr0,ggr0,sgr0,epr0,gpr0,tpr0,value,fbar0,fhw0,
+      real         egr0,ggr0,sgr0,epr0,gpr0,tpr0,value,fbar0,fhw0,
      +             fR0,Ea,Eb,Em,D,Ea2,Eb2,upbendc,upbende,upbendf,tf0,
      +             b0
 c
@@ -159,6 +159,14 @@ c
       endif
       if (maxN.lt.0.or.maxN.gt.numN-2) then
         write(*,'(" TALYS-error: 0 <= maxN <=",i3)') numN-2
+        stop
+      endif
+      if (maxZrp.lt.0.or.maxZrp.gt.numZ-2) then
+        write(*,'(" TALYS-error: 0 <= maxZrp <=",i3)') numZ-2
+        stop
+      endif
+      if (maxNrp.lt.0.or.maxNrp.gt.numN-2) then
+        write(*,'(" TALYS-error: 0 <= maxNrp <=",i3)') numN-2
         stop
       endif
       if (nbins0.ne.0.and.(nbins0.lt.2.or.nbins0.gt.numbins)) then
@@ -490,6 +498,7 @@ c hbtransfile  : file with head band transition states
 c clas2file    : file with class 2 transition states
 c ompenergyfile: file with energies for OMP calculation (ENDF files
 c                only)
+c yieldfile    : file with fission fragment yields
 c rescuefile   : file with incident energy dependent adjustment factors
 c grescue      : global multiplication factor for incident energy
 c                dependent adjustment factors
@@ -529,6 +538,23 @@ c
               endif
   144       continue
   142     continue
+          if (densfile(Zix,Nix)(1:1).ne.' ') then
+            inquire (file=densfile(Zix,Nix),exist=lexist)
+            if (.not.lexist) then
+              write(*,'(" TALYS-error: Non-existent level density ",
+     +          "file: ",a72)') densfile(Zix,Nix)
+              stop
+            endif
+            if (ctable(Zix,Nix,0).eq.1.e-20) ctable(Zix,Nix,0)=0.
+            if (ptable(Zix,Nix,0).eq.1.e-20) ptable(Zix,Nix,0)=0.
+            if (ldmodel(Zix,Nix).le.3) then
+              if (flagparity) then
+                ldmodel(Zix,Nix)=5
+              else
+                ldmodel(Zix,Nix)=4
+              endif
+            endif
+          endif
           if (hbtransfile(Zix,Nix)(1:1).ne.' ') then
             inquire (file=hbtransfile(Zix,Nix),exist=lexist)
             if (.not.lexist) then
@@ -553,6 +579,14 @@ c
         if (.not.lexist) then
           write(*,'(" TALYS-error: Non-existent ompenergyfile: ",a72)')
      +      ompenergyfile
+          stop
+        endif
+      endif
+      if (yieldfile(1:1).ne.' ') then
+        inquire (file=yieldfile,exist=lexist)
+        if (.not.lexist) then
+          write(*,'(" TALYS-error: Non-existent yieldfile: ",a72)')
+     +      yieldfile
           stop
         endif
       endif
@@ -1094,8 +1128,14 @@ c
   220   continue
   210 continue
       do 260 type=-1,6
-        if (fiso(type).lt.0.01.or.fiso(type).gt.100) then
+        if (fiso(type).ne.-1..and.
+     +    (fiso(type).lt.0.01.or.fiso(type).gt.100.)) then
           write(*,'(" TALYS-error: 0.01 <= fiso <= 100.")')
+          stop
+        endif
+        if (fisom(type).ne.-1..and.
+     +    (fisom(type).lt.0.01.or.fisom(type).gt.100.)) then
+          write(*,'(" TALYS-error: 0.01 <= fisom <= 100.")')
           stop
         endif
   260 continue
@@ -1328,6 +1368,10 @@ c
         write(*,'(" TALYS-error: 1 <= kvibmodel <= 2")')
         stop
       endif
+      if (ldmodelCN.lt.1.or.ldmodelCN.gt.6) then
+        write(*,'(" TALYS-error: 1 <= ldmodelCN <= 6")')
+        stop
+      endif
       do 310 Zix=0,numZ
         do 320 Nix=0,numN
           if (ldmodel(Zix,Nix).lt.1.or.ldmodel(Zix,Nix).gt.6) then
@@ -1494,6 +1538,11 @@ c
             write(*,'(" TALYS-error: 0.1 <= gpadjust <= 10.")')
             stop
           endif
+          if (gadjust(Zix,Nix).lt.0.1.or.gadjust(Zix,Nix).gt.10.)
+     +      then
+            write(*,'(" TALYS-error: 0.1 <= gadjust <= 10.")')
+            stop
+          endif
           if (pair(Zix,Nix).lt.-10..or.pair(Zix,Nix).gt.10.) then
             write(*,'(" TALYS-error: -10. <= pair <= 10.")')
             stop
@@ -1572,6 +1621,7 @@ c               : rotational effects
 c Kph           : constant for single-particle level density parameter
 c                 (g=A/Kph)
 c Rspincut      : adjustable constant (global) for spin cutoff factor
+c Rspincutff    : parameter (global) for FF spin cutoff factor
 c
       do 340 Zix=0,numZ
         do 350 Nix=0,numN
@@ -1619,6 +1669,10 @@ c
         write(*,'(" TALYS-error: 0. < Rspincut <= 10.")')
         stop
       endif
+      if (Rspincutff.le.0..or.Rspincutff.gt.20.) then
+        write(*,'(" TALYS-error: 0. < Rspincutff <= 20.")')
+        stop
+      endif
 c
 c 8. Check of values for fission
 c
@@ -1628,7 +1682,13 @@ c flagnatural: flag for calculation of natural element
 c flagmassdis: flag for calculation of fission fragment mass yields
 c fismodel   : fission model
 c fismodelalt: alternative fission model for default barriers
+c ffmodel    : fission fragment model, 1: GEF 2: HF3D (Okumura) 3:SPY
+c pfnsmodel  : PFNS  model, 1: Iwamoto 2: from FF decay
 c gefran     : number of random events for GEF calculation
+c Cnubar1    : adjustable parameter for nubar constant value
+c Cnubar2    : adjustable parameter for nubar energy slope
+c Tmadjust   : adjustable parameter for PFNS temperature
+c Fsadjust   : adjustable parameter for PFNS scission fraction
 c fax0       : type of axiality of barrier
 c axtype     : type of axiality of barrier
 c                 1: axial symmetry
@@ -1653,8 +1713,8 @@ c widthc2    : width of class2 states
 c betafiscor : adjustable factor for fission path width
 c vfiscor    : adjustable factor for fission path height
 c
-      if ((flagfission.or.flagfisout).and.Atarget.le.120) then
-        write(*,'(" TALYS-error: Fission not allowed for A <= 120")')
+      if ((flagfission.or.flagfisout).and.Atarget.le.150) then
+        write(*,'(" TALYS-error: Fission not allowed for A <= 150")')
         stop
       endif
       if (flagfission.and.flagmassdis.and.flagnatural) then
@@ -1666,16 +1726,45 @@ c
         write(*,'(" TALYS-error: 1 <= fismodel <= 5")')
         stop
       endif
+      if (fismodel.ne.5.and.flagfispartdamp) then
+        write(*,'(" TALYS-error: Fission partial damping only",
+     +    " allowed for fismodel 5")')
+        stop
+      endif
       if (fismodelalt.lt.3.or.fismodelalt.gt.4) then
         write(*,'(" TALYS-error: 3 <= fismodelalt <= 4")')
         stop
       endif
-      if (fymodel.lt.1.or.fymodel.gt.3) then
-        write(*,'(" TALYS-error: 1 <= fymodel <= 3")')
+      if (fymodel.lt.1.or.fymodel.gt.5) then
+        write(*,'(" TALYS-error: 1 <= fymodel <= 5")')
+        stop
+      endif
+      if (ffmodel.lt.1.or.ffmodel.gt.3) then
+        write(*,'(" TALYS-error: 1 <= ffmodel <= 3")')
+        stop
+      endif
+      if (pfnsmodel.lt.1.or.pfnsmodel.gt.2) then
+        write(*,'(" TALYS-error: 1 <= pfnsmodel <= 2")')
         stop
       endif
       if (gefran.lt.1000.or.gefran.gt.1000000) then
         write(*,'(" TALYS-error: 1000 <= gefran <= 1000000")')
+        stop
+      endif
+      if (Cnubar1.lt.0.1.or.Cnubar2.gt.10.) then
+        write(*,'(" TALYS-error: 0.1 < Cnubar1 <= 10.")')
+        stop
+      endif
+      if (Cnubar2.lt.0.1.or.Cnubar2.gt.10.) then
+        write(*,'(" TALYS-error: 0.1 < Cnubar2 <= 10.")')
+        stop
+      endif
+      if (Tmadjust.lt.0.1.or.Tmadjust.gt.10.) then
+        write(*,'(" TALYS-error: 0.1 < Tmadjust <= 10.")')
+        stop
+      endif
+      if (Fsadjust.lt.0.1.or.Fsadjust.gt.10.) then
+        write(*,'(" TALYS-error: 0.1 < Fsadjust <= 10.")')
         stop
       endif
       do 410 Zix=0,numZ
@@ -1732,9 +1821,19 @@ c
             write(*,'(" TALYS-error: 0.05 <= betafiscor <= 20.")')
             stop
           endif
+          fhw0=betafiscoradjust(Zix,Nix)
+          if (fhw0.lt.0.1.or.fhw0.gt.10.) then
+            write(*,'(" TALYS-error: 0.1 <= betafiscoradjust <= 10.")')
+            stop
+          endif
           fbar0=vfiscor(Zix,Nix)
           if (fbar0.lt.0.05.or.fbar0.gt.20.) then
             write(*,'(" TALYS-error: 0.05 <= vfiscor <= 20.")')
+            stop
+          endif
+          fbar0=vfiscoradjust(Zix,Nix)
+          if (fbar0.lt.0.1.or.fbar0.gt.10.) then
+            write(*,'(" TALYS-error: 0.1 <= vfiscoradjust <= 10.")')
             stop
           endif
   420   continue
@@ -1755,6 +1854,7 @@ c enincmax : maximum incident energy
 c ddxacount: counter for double-differential cross section files
 c fileddxa : designator for double-differential cross sections on
 c            separate file: spectrum per angle
+c flagendf : flag for information for ENDF-6 file
 c
       if (eadd.lt.0..or.eadd.gt.Emaxtalys) then
         write(*,'(" TALYS-error: 0. <= eadd < ",f10.3)')  Emaxtalys
@@ -1835,9 +1935,10 @@ c flagres   : flag for output of low energy resonance cross sections
 c reslib    : library with resonance parameters
 c
       if (flagres) then
-        if (trim(reslib).eq.'default') goto 700
-        if (trim(reslib).eq.'jeff3.2') goto 700
-        if (trim(reslib).eq.'endfb7.1') goto 700
+        if (trim(reslib).eq.'tendl.2021') goto 700
+        if (trim(reslib).eq.'jeff3.3') goto 700
+        if (trim(reslib).eq.'endfb8.0') goto 700
+        if (trim(reslib).eq.'cendl3.2') goto 700
         if (trim(reslib).eq.'jendl4.0') goto 700
         write(*,'(" TALYS-error: Wrong library name: ",a16)') reslib
         stop
