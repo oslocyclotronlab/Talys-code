@@ -1,7 +1,0 @@
-
-# Information about target
-projectile n
-element kr
-mass 86
-
-energy 1
