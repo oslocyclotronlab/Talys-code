@@ -12,7 +12,7 @@ c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
       integer ibar,Zix,Nix,nen
-      real    twkbphaseint,efis,Ea,Eb,Ta,Tb,Tf,Ewkb(0:nbinswkb)
+      real    twkbphaseint,efis,Ea,Eb,Ta,Tb,Tft,Ewkb(0:nbinswkb)
 c
 c ************************* Interpolation ******************************
 c
@@ -31,8 +31,8 @@ c
         Eb=Ewkb(nen+1)
         Ta=Twkbphase(Zix,Nix,nen,ibar)
         Tb=Twkbphase(Zix,Nix,nen+1,ibar)
-        call pol1(Ea,Eb,Ta,Tb,efis,Tf)
-        twkbphaseint=Tf
+        call pol1(Ea,Eb,Ta,Tb,efis,Tft)
+        twkbphaseint=Tft
       endif
       return
       end
