@@ -84,17 +84,17 @@ c
             Exmin=max(Exinc-0.5*dExinc,0.)
             dE1=Exinc-Exmin
             dE2=Explus-Exinc
-            logdtfd=log(tf)-log(tfd)
-            logdtfu=log(tfu)-log(tf)
+            logdtfd=log(tft)-log(tfd)
+            logdtfu=log(tfu)-log(tft)
             if (logdtfd.eq.0.) then
-              fiscontr1=tf*dE1
+              fiscontr1=tft*dE1
             else
-              fiscontr1=(tf-tfd)/logdtfd*dE1
+              fiscontr1=(tft-tfd)/logdtfd*dE1
             endif
             if (logdtfu.eq.0.) then
-              fiscontr2=tf*dE2
+              fiscontr2=tft*dE2
             else
-              fiscontr2=(tfu-tf)/logdtfu*dE2
+              fiscontr2=(tfu-tft)/logdtfu*dE2
             endif
             if (Explus.gt.Exmin) then
               fiscontr=(fiscontr1+fiscontr2)/(Explus-Exmin)
