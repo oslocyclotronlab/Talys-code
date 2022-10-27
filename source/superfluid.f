@@ -10,7 +10,7 @@ c ******************* Declarations and common blocks *******************
 c
       include "talys.cmb"
       integer          Zix,Nix,ibar
-      real             ald,Eex,P,U,phi2,Df,phi1,Tf,Sf,sigma,spincut
+      real             ald,Eex,P,U,phi2,Df,phi1,Temp,Sf,sigma,spincut
       double precision superfluid,fermi
 c
 c *********************** Level density formula ************************
@@ -31,7 +31,7 @@ c phi2      : help variable
 c Df        : determinant
 c Dcrit     : critical determinant
 c phi1      : phi function of superfluid model
-c Tf        : temperature
+c Temp      : temperature
 c Tcrit     : critical temperature
 c Sf        : entropy
 c Scrit     : critical entropy
@@ -48,8 +48,8 @@ c
           phi2=1.-U/Ucrit(Zix,Nix,ibar)
           Df=Dcrit(Zix,Nix,ibar)*(1.-phi2)*(1.+phi2)*(1.+phi2)
           phi1=sqrt(phi2)
-          Tf=2.*Tcrit(Zix,Nix)*phi1/log((phi1+1.)/(1.-phi1))
-          Sf=Scrit(Zix,Nix,ibar)*Tcrit(Zix,Nix)/Tf*(1.-phi2)
+          Temp=2.*Tcrit(Zix,Nix)*phi1/log((phi1+1.)/(1.-phi1))
+          Sf=Scrit(Zix,Nix,ibar)*Tcrit(Zix,Nix)/Temp*(1.-phi2)
           sigma=sqrt(spincut(Zix,Nix,ald,Eex,ibar))
           superfluid=exp(dble(Sf))/sqrt(Df)/sqrttwopi/sigma
         endif
