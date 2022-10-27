@@ -10,7 +10,7 @@ c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
       integer      numkey
-      parameter    (numkey=388)
+      parameter    (numkey=389)
       integer      i,j
       character*80 keyword(numkey),word(40),key
 c
@@ -42,7 +42,7 @@ c
      +  'class2width', 'cnubar1', 'cnubar2', 'colenhance', 'colldamp',
      +  'components', 'compound',
      +  'core', 'coulomb', 'cpang', 'cstrip', 'ctable', 
-     +  'ctableadjust', 'ctmglobal', 'd0', 'd1adjust', 'd2adjust', 
+     +  'ctableadjust', 'ctmglobal', 'd0', 'tf', 'd1adjust', 'd2adjust', 
      +  'd3adjust', 'ddxmode', 'deformfile', 'deltaw', 'densfile', 
      +  'deuteronomp', 
      +  'disctable', 'dispersion', 'e0', 'e0adjust', 'e1file', 
