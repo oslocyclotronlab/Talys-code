@@ -112,6 +112,10 @@ c
       if (strength.eq.9) model="IAEA-CRP SMLO 2019 Tables"
       if (strength.eq.10) model="BSk27+QRPA 2018 Tables   "
       write(*,'(/" Gamma-ray strength function model for E1: ",a25)')
+      if (strength.eq.1.and.Tf(Zcomp,Ncomp).lt.0.)
+        write(*, '(/" Final temperature Tf=",f13.2," MeV")')
+     +    Tf(Zcomp,Ncomp)
+      endif
      +  model
       if (strengthM1.eq.1) model="RIPL-1                   "
       if (strengthM1.eq.2) model="RIPL-2                   "
