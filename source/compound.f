@@ -16,7 +16,7 @@ c
      +                 lprimeend,lb,lprime,irad,l2prime,
      +                 jj2primebeg,jj2primeend,jj2prime,updown2
       real             Explus,Exmin,dE1,dE2,fisfeed,s2plus1
-      double precision tfd,tf,tfu,logdtfd,logdtfu,fiscontr1,fiscontr2,
+      double precision tfd,tft,tfu,logdtfd,logdtfu,fiscontr1,fiscontr2,
      +                 fiscontr,sumIPE,sumIP,rho,total,totalrho,factor,
      +                 leftover
 c
@@ -78,7 +78,7 @@ c          integration of the fission transmission coefficients.
 c
           if (iloop.eq.1) then
             tfd=max(tfisdown(J,parity),transeps)
-            tf=max(tfis(J,parity),transeps)
+            tft=max(tfis(J,parity),transeps)
             tfu=max(tfisup(J,parity),transeps)
             Explus=min(Exmax(Zcomp,Ncomp),Exinc+0.5*dExinc)
             Exmin=max(Exinc-0.5*dExinc,0.)
