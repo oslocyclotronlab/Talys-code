@@ -12,7 +12,7 @@ c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
       integer ibar,Zix,Nix,nen
-      real    twkbint,efis,Ea,Eb,Ta,Tb,Tf,Ewkb(0:nbinswkb)
+      real    twkbint,efis,Ea,Eb,Ta,Tb,Tft,Ewkb(0:nbinswkb)
 c
 c ************************* Interpolation ******************************
 c
@@ -34,11 +34,11 @@ c
         If (Ta.gt.0.and.Tb.gt.0) then
           Ta=log(Ta)
           Tb=log(Tb)
-          call pol1(Ea,Eb,Ta,Tb,efis,Tf)
-          twkbint=exp(Tf)
+          call pol1(Ea,Eb,Ta,Tb,efis,Tft)
+          twkbint=exp(Tft)
         else
-          call pol1(Ea,Eb,Ta,Tb,efis,Tf)
-          twkbint=Tf
+          call pol1(Ea,Eb,Ta,Tb,efis,Tft)
+          twkbint=Tft
         endif
       endif
       return
