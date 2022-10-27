@@ -153,7 +153,7 @@ c
                 if ((jc2.eq.J2).and.(pc2.eq.parity)) then
                   boostmax=4./(tfb1+tfb2)
                   boost=boostmax*boost
-                  tfii=tfii+tf*boost
+                  tfii=tfii+tft*boost
                 endif
               endif
    40       continue
@@ -285,7 +285,7 @@ c
                 if ((jc2.eq.J2).and.(pc2.eq.parity)) then
                   boostmax=4./tsum123
                   boost=boostmax*boost
-                  tfiii=tfiii+tf*boost
+                  tfiii=tfiii+tft*boost
                 endif
               endif
    60       continue
