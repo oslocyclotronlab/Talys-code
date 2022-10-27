@@ -15,7 +15,7 @@ c
      +                 wo2damp,boost,boostmax,Ecut,Ecut1,Ecut2,term11,
      +                 term21,term12,term22,damper1,damper2,wo2damp1,
      +                 wo2damp2,Twkbtransint
-      double precision tf,tfb1,rnfb1,tfb2,rnfb2,tfb3,rnfb3,tfii,addnrj,
+      double precision tft,tfb1,rnfb1,tfb2,rnfb2,tfb3,rnfb3,tfii,addnrj,
      +                 tf12,tsum123,tfiii,density,tdir,trans,rnorm,
      +                 sumt2,sumt3,ta12,ta13,ta23,ta32,tdir12,tdir13,
      +                 tdir21,tdir23,tgam2,tgam3,ti2,ti3,trans2,trans3
@@ -29,7 +29,7 @@ c J2             : 2 * J
 c parity         : parity of target
 c dExinc         : excitation energy bin for mother nucleus
 c deltaEx        : excitation energy bin for population arrays
-c tf             : help variable
+c tft            : help variable
 c Eex            : excitation energy
 c Exinc          : excitation energy of entrance bin
 c tfisdown,tfisup: fission transmission coefficients
@@ -48,7 +48,7 @@ c
       J=J2/2
       dExinc=deltaEx(Zcomp,Ncomp,nex)
       do 10 iloop=1,3
-        tf=0.
+        tft=0.
         if (iloop.eq.1) then
           Eex=max(Exinc-0.5*dExinc,0.)
           tfisdown(J,parity)=0.
@@ -86,7 +86,7 @@ c rnfb3: help variable
 c
         if (nfisbar(Zcomp,Ncomp).eq.1) then
           call t1barrier(Zcomp,Ncomp,J2,parity,1,tfb1,rnfb1,Eex,iloop)
-          tf=tfb1
+          tft=tfb1
         endif
 c
 c 2. Two barriers
@@ -103,9 +103,9 @@ c
           if (tfb2.lt.transeps) goto 30
           if (flagfispartdamp) then
             trans=Twkbtransint(Eex,1,Zcomp,Ncomp)
-            tf=tfb1*tfb2/(tfb1+tfb2)*trans + tdir*(1.-trans)
+            tft=tfb1*tfb2/(tfb1+tfb2)*trans + tdir*(1.-trans)
           else
-            tf=tfb1*tfb2/(tfb1+tfb2)
+            tft=tfb1*tfb2/(tfb1+tfb2)
           endif
 c
 c ****************** Special treatment for class2 states ***************
@@ -199,11 +199,11 @@ c
             else
               Rnorm=1./(1.-(Ta23*Ta32)/(sumT2*sumT3))
             endif
-            tf=tdir13+Rnorm*(Ti2+Ti3)
+            tft=tdir13+Rnorm*(Ti2+Ti3)
           else
             tf12=tfb1*tfb2/(tfb1+tfb2)
             tsum123=tf12+tfb3
-            tf=tf12*tfb3/tsum123
+            tft=tf12*tfb3/tsum123
           endif
 c
 c *********** Special treatment for class2 and class3 states ***********
@@ -297,10 +297,10 @@ c Optional adjustment factors
 c
 c Fnorm    : multiplication factor
 c
-   30   tf=tf*Fnorm(-1)
-        if (iloop.eq.1) tfisdown(J,parity)=tf
-        if (iloop.eq.2) tfis(J,parity)=tf
-        if (iloop.eq.3) tfisup(J,parity)=tf
+   30   tft=tft*Fnorm(-1)
+        if (iloop.eq.1) tfisdown(J,parity)=tft
+        if (iloop.eq.2) tfis(J,parity)=tft
+        if (iloop.eq.3) tfisup(J,parity)=tft
    10 continue
 c
 c Partial fission widths and lifetimes
