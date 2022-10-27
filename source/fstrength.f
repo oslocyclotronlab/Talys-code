@@ -98,9 +98,9 @@ c denom    : denominator of Lorentzian
 c factor1-2: help variables
 c qrpaexist: flag for existence of tabulated QRPA strength functions
 c
-        Tnuc=0.
+        Tnuc=Tf(Zcomp,Ncomp)
         if (Tf(Zcomp,Ncomp).lt.0.) then
-          Tnuc=Tf(Zcomp,Ncomp)
+          Tnuc=0.
         endif
         if (strength.eq.1.and.l.eq.1.and.irad.eq.1) then
           if (k0.gt.0.or.Egamma.ne.Einc) then
