@@ -423,7 +423,7 @@ c
      +             elwidth,xscaptherm,xsptherm,xsalphatherm,massnucleus,
      +             massexcess,alev,alimit,gammald,pair,deltaW,Exmatch,T,
      +             E0,s2adjust,Krotconstant,beta2,ctable,ptable,g,gp,gn,
-     +             ctableadjust,ptableadjust,gamgam,D0,Tf,etable,ftable,
+     +             ctableadjust,ptableadjust,gamgam,D0,Tfg,etable,ftable,
      +             etableadjust,ftableadjust,egr,ggr,sgr,epr,gpr,tpr,
      +             egradjust,ggradjust,sgradjust,epradjust,gpradjust,
      +             tpradjust,upbend,fiso,fisom,fbarrier,fwidth,bdamp,
