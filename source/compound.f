@@ -16,7 +16,7 @@ c
      +                 lprimeend,lb,lprime,irad,l2prime,
      +                 jj2primebeg,jj2primeend,jj2prime,updown2
       real             Explus,Exmin,dE1,dE2,fisfeed,s2plus1
-      double precision tfd,tf,tfu,logdtfd,logdtfu,fiscontr1,fiscontr2,
+      double precision tfd,tft,tfu,logdtfd,logdtfu,fiscontr1,fiscontr2,
      +                 fiscontr,sumIPE,sumIP,rho,total,totalrho,factor,
      +                 leftover
 c
@@ -78,23 +78,23 @@ c          integration of the fission transmission coefficients.
 c
           if (iloop.eq.1) then
             tfd=max(tfisdown(J,parity),transeps)
-            tf=max(tfis(J,parity),transeps)
+            tft=max(tfis(J,parity),transeps)
             tfu=max(tfisup(J,parity),transeps)
             Explus=min(Exmax(Zcomp,Ncomp),Exinc+0.5*dExinc)
             Exmin=max(Exinc-0.5*dExinc,0.)
             dE1=Exinc-Exmin
             dE2=Explus-Exinc
-            logdtfd=log(tf)-log(tfd)
-            logdtfu=log(tfu)-log(tf)
+            logdtfd=log(tft)-log(tfd)
+            logdtfu=log(tfu)-log(tft)
             if (logdtfd.eq.0.) then
-              fiscontr1=tf*dE1
+              fiscontr1=tft*dE1
             else
-              fiscontr1=(tf-tfd)/logdtfd*dE1
+              fiscontr1=(tft-tfd)/logdtfd*dE1
             endif
             if (logdtfu.eq.0.) then
-              fiscontr2=tf*dE2
+              fiscontr2=tft*dE2
             else
-              fiscontr2=(tfu-tf)/logdtfu*dE2
+              fiscontr2=(tfu-tft)/logdtfu*dE2
             endif
             if (Explus.gt.Exmin) then
               fiscontr=(fiscontr1+fiscontr2)/(Explus-Exmin)

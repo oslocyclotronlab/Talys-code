@@ -189,6 +189,7 @@ c nenadjust     : number of tabulated energies of local adjustment
 c Eadjust       : tabulated energy of local adjustment
 c Dadjust       : tabulated depth of local adjustment
 c ompadjustF    : logical for local OMP adjustment
+c Tf            : temperature in the GLO model
 c ompadjustN    : number of energy ranges for local OMP adjustment
 c ompadjustE1   : start energy of local OMP adjustment
 c ompadjustE2   : end energy of local OMP adjustment
@@ -357,6 +358,7 @@ c
           gn(Zix,Nix)=0.
           gamgam(Zix,Nix)=0.
           D0(Zix,Nix)=0.
+          Tf(Zix,Nix)=-1.
           ldadjust(Zix,Nix)=.false.
           gamadjust(Zix,Nix)=.false.
           fisadjust(Zix,Nix)=.false.
@@ -1048,6 +1050,13 @@ c
           call getvalues(class,word,Zix,Nix,type,
      +      ibar,irad,lval,igr,val,ival,cval,flagassign)
           if (flagassign) D0(Zix,Nix)=val*1000.
+          goto 110
+        endif
+        if (key.eq.'tf') then
+          class=1
+          call getvalues(class,word,Zix,Nix,type,
+     +      ibar,irad,lval,igr,val,ival,cval,flagassign)
+          if (flagassign) Tf(Zix,Nix)=val
           goto 110
         endif
         if (key.eq.'aadjust') then

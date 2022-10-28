@@ -113,6 +113,10 @@ c
       if (strength.eq.10) model="BSk27+QRPA 2018 Tables   "
       write(*,'(/" Gamma-ray strength function model for E1: ",a25)')
      +  model
+      if (strength.eq.1.and.Tf(Zcomp,Ncomp).lt.0.) then
+        write(*, '(/" Final temperature Tf=",f13.2," MeV")')
+     +    Tf(Zcomp,Ncomp)
+      endif
       if (strengthM1.eq.1) model="RIPL-1                   "
       if (strengthM1.eq.2) model="RIPL-2                   "
       if (strengthM1.eq.3) model="IAEA GSF CRP (2018)      "

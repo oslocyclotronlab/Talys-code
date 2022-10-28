@@ -333,7 +333,7 @@ c
      +                  ptableadjust(0:numZ,0:numN,0:numbar)
       common /input5rB/ g(0:numZ,0:numN),gp(0:numZ,0:numN),
      +                  gn(0:numZ,0:numN),gamgam(0:numZ,0:numN),
-     +                  D0(0:numZ,0:numN),
+     +                  D0(0:numZ,0:numN),Tf(0:numZ,0:numN),
      +                  etable(0:numZ,0:numN,0:1,numgam),
      +                  ftable(0:numZ,0:numN,0:1,numgam),
      +                  wtable(0:numZ,0:numN,0:1,numgam),
@@ -423,7 +423,7 @@ c
      +             elwidth,xscaptherm,xsptherm,xsalphatherm,massnucleus,
      +             massexcess,alev,alimit,gammald,pair,deltaW,Exmatch,T,
      +             E0,s2adjust,Krotconstant,beta2,ctable,ptable,g,gp,gn,
-     +             ctableadjust,ptableadjust,gamgam,D0,etable,ftable,
+     +             ctableadjust,ptableadjust,gamgam,D0,Tf,etable,ftable,
      +             etableadjust,ftableadjust,egr,ggr,sgr,epr,gpr,tpr,
      +             egradjust,ggradjust,sgradjust,epradjust,gpradjust,
      +             tpradjust,upbend,fiso,fisom,fbarrier,fwidth,bdamp,

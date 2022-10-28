@@ -11,7 +11,7 @@ c ****************** Declarations and common blocks ********************
 c
       include "talys.cmb"
       integer ibar,Zix,Nix,nen
-      real    Twkbtransint,efis,Ea,Eb,Ta,Tb,Tf,Ewkb(0:nbinswkb)
+      real    Twkbtransint,efis,Ea,Eb,Ta,Tb,Tft,Ewkb(0:nbinswkb)
 c
 c ************************* Interpolation ******************************
 c
@@ -34,11 +34,11 @@ c
         if ( Ta.gt.0. and. Tb.gt.0 ) then
           Ta=log(Ta)
           Tb=log(Tb)
-          call pol1(Ea,Eb,Ta,Tb,efis,Tf)
-          Twkbtransint=exp(Tf)
+          call pol1(Ea,Eb,Ta,Tb,efis,Tft)
+          Twkbtransint=exp(Tft)
         else
-          call pol1(Ea,Eb,Ta,Tb,efis,Tf)
-          Twkbtransint=Tf
+          call pol1(Ea,Eb,Ta,Tb,efis,Tft)
+          Twkbtransint=Tft
         endif
       endif
       return
