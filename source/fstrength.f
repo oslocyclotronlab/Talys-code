@@ -259,39 +259,41 @@ c only if explicitly specified in the input
 c
 c tpr1: strength of PR
 c
-      tpr1=tpr(Zcomp,Ncomp,irad,l,1)
-      if (Egamma.gt.0.001.and.tpr1.gt.0.) then
-        if (gamadjust(Zcomp,Ncomp)) then
-          key='tpr'
-          call adjust(Egamma,key,Zcomp,Ncomp,0,l,factor1)
-          key='tpradjust'
-          call adjust(Egamma,key,Zcomp,Ncomp,0,l,factor2)
-          tpr1=factor1*factor2*tpr(Zcomp,Ncomp,irad,l,1)*
-     +      tpradjust(Zcomp,Ncomp,irad,l,1)
-          key='gpr'
-          call adjust(Egamma,key,Zcomp,Ncomp,0,l,factor1)
-          key='gpradjust'
-          call adjust(Egamma,key,Zcomp,Ncomp,0,l,factor2)
-          gpr1=factor1*factor2*gpr(Zcomp,Ncomp,irad,l,1)*
-     +      gpradjust(Zcomp,Ncomp,irad,l,1)
-          key='epr'
-          call adjust(Egamma,key,Zcomp,Ncomp,0,l,factor1)
-          key='epradjust'
-          call adjust(Egamma,key,Zcomp,Ncomp,0,l,factor2)
-          epr1=factor1*factor2*epr(Zcomp,Ncomp,irad,l,1)*
-     +      epradjust(Zcomp,Ncomp,irad,l,1)
-        else
-          epr1=epr(Zcomp,Ncomp,irad,l,1)
-          gpr1=gpr(Zcomp,Ncomp,irad,l,1)
+      do 20 i=1,2
+        tpr1=tpr(Zcomp,Ncomp,irad,l,i)
+        if (Egamma.gt.0.001.and.tpr1.gt.0.) then
+          if (gamadjust(Zcomp,Ncomp)) then
+            key='tpr'
+            call adjust(Egamma,key,Zcomp,Ncomp,0,l,factor1)
+            key='tpradjust'
+            call adjust(Egamma,key,Zcomp,Ncomp,0,l,factor2)
+            tpr1=factor1*factor2*tpr(Zcomp,Ncomp,irad,l,i)*
+     +        tpradjust(Zcomp,Ncomp,irad,l,i)
+            key='gpr'
+            call adjust(Egamma,key,Zcomp,Ncomp,0,l,factor1)
+            key='gpradjust'
+            call adjust(Egamma,key,Zcomp,Ncomp,0,l,factor2)
+            gpr1=factor1*factor2*gpr(Zcomp,Ncomp,irad,l,i)*
+     +        gpradjust(Zcomp,Ncomp,irad,l,i)
+            key='epr'
+            call adjust(Egamma,key,Zcomp,Ncomp,0,l,factor1)
+            key='epradjust'
+            call adjust(Egamma,key,Zcomp,Ncomp,0,l,factor2)
+            epr1=factor1*factor2*epr(Zcomp,Ncomp,irad,l,i)*
+     +        epradjust(Zcomp,Ncomp,irad,l,i)
+          else
+            epr1=epr(Zcomp,Ncomp,irad,l,i)
+            gpr1=gpr(Zcomp,Ncomp,irad,l,i)
+          endif
+          kgr1=kgr(l)
+          epr2=epr1**2
+          gpr2=gpr1**2
+          Egam2=Egamma**2
+          enum=gpr2*Egamma**(3-2*l)
+          denom=(Egam2-epr2)**2+Egam2*gpr2
+          fstrength=fstrength+kgr1*tpr1*enum/denom
         endif
-        kgr1=kgr(l)
-        epr2=epr1**2
-        gpr2=gpr1**2
-        Egam2=Egamma**2
-        enum=gpr2*Egamma**(3-2*l)
-        denom=(Egam2-epr2)**2+Egam2*gpr2
-        fstrength=fstrength+kgr1*tpr1*enum/denom
-      endif
+   20 continue
 c 
 c Inclusion of an additional low-E limit of E1 nature
 c
