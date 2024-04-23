@@ -1,15 +1,15 @@
-      MODULE om_retrieve 
+      MODULE om_retrieve
 
 !To print change "ccalone" to "alone" in the DEFINE statement below
 !MS$DEFINE ccalone
 !
 !======================================================================
-!                       MODULE om_retrieve 
+!                       MODULE om_retrieve
 !======================================================================
 !
 ! GOAL: Code to retrieve optical model potentials from the RIPL optical
 !       model potential (omp) library and to format them for input into
-!       the SCAT2000, ECIS06 and OPTMAN computer codes.   
+!       the SCAT2000, ECIS06 and OPTMAN computer codes.
 !
 !----------------------------------------------------------------------
 !
@@ -19,16 +19,16 @@
 !
 !    > use om_retrieve
 !
-! Used I/O files: 
+! Used I/O files:
 ! ki = 171 ko = 15 standard output: 6
 ! temporalily used files: 13,34,35,36,37,38,44,45
 !
 ! Note: File 6 remain open !
 !
-c------------------------ PUBLIC INTERFACE -----------------------------   
+c------------------------ PUBLIC INTERFACE -----------------------------
 C PUBLIC :: retrieve
 C PUBLIC  Number_Energies, Energies, Emin, Emax
-C PUBLIC  Ztarget, Atarget, RIPL_Index, Calc_Type, Def_Index, Iflag   
+C PUBLIC  Ztarget, Atarget, RIPL_Index, Calc_Type, Def_Index, Iflag
 !
 !****************************************************************************************************
 ! WARNING; This module does not produce correct OMP tables for soft-rotor model (imodel=3) potentials                                    :
@@ -36,18 +36,18 @@ C PUBLIC  Ztarget, Atarget, RIPL_Index, Calc_Type, Def_Index, Iflag
 !
 !  RETURN FLAG VALUES:
 !
-!  Iflag = 0  normal return: Both OMP and coupling scheme tables produced 
+!  Iflag = 0  normal return: Both OMP and coupling scheme tables produced
 !  Iflag > 0  ERROR: OMP table not printed
 !  Iflag < 0  WARNING: OMP table produced but not the coupling scheme table
 !
-!  WARNINGS: 
+!  WARNINGS:
 !  Iflag = -1  No coupling scheme available, but ECIS can be used
 !  Iflag = -2  Inputted target Z outside range of RIPL potential
 !  Iflag = -3  Inputted target A outside range of RIPL potential
 !
-!  ERRORS: 
+!  ERRORS:
 !  Iflag = +1  No coupling scheme available, OPTMAN is needed
-!  Iflag = +2  Structure model not implemented yet in RIPL library 
+!  Iflag = +2  Structure model not implemented yet in RIPL library
 !  Iflag = +3  Coupled-channel model not implemented in SCAT2000
 !  Iflag = +4  Only OPTMAN code can be used for soft rotor potentials
 !  Iflag = +5  Producing a dispersive input from a non-dispersive potential, change modtyp to 2.
@@ -72,7 +72,7 @@ C PUBLIC  Ztarget, Atarget, RIPL_Index, Calc_Type, Def_Index, Iflag
 ! R. Capote Noy, IAEA Nuclear Data Section
 ! email address R.CapoteNoy@iaea.org or rcapotenoy@yahoo.com
 !
-! P. Talou, Group T-2, Los Alamos National Laboratory 
+! P. Talou, Group T-2, Los Alamos National Laboratory
 ! email address talou@lanl.gov
 !---------------------------------------------------------------
 !
@@ -80,7 +80,7 @@ C PUBLIC  Ztarget, Atarget, RIPL_Index, Calc_Type, Def_Index, Iflag
 !! Date         Release #          Author(s)           Comments
 ! ----         ---------          ---------           --------
 ! 23/08/2005      0.1         A.Delgado, R.Capote  Original version
-! 07/11/2005      0.2             R.Capote         OPTMAN added  
+! 07/11/2005      0.2             R.Capote         OPTMAN added
 ! 31/07/2006      0.3             R.Capote         Format extended
 !                                                  Dispersive ECIS input added
 ! 28/08/2008      0.4         R.Capote, P.Talou    RIPL-3 version
@@ -208,20 +208,20 @@ c                       this izaproj and the inputted izatar (target).
 c
 c       iabs(modtyp)= 1 to generate SCAT2 input file (sc2.inp)
 c       iabs(modtyp)= 2 to generate ECIS input file (ecis.inp)
-c                       For dispersive potentials it is assuming that the Im(geom)=Real(geom). 
-c                       Therefore for dispersive potentials it is better to use modtyp = 5 
+c                       For dispersive potentials it is assuming that the Im(geom)=Real(geom).
+c                       Therefore for dispersive potentials it is better to use modtyp = 5
 c       iabs(modtyp)= 3 to generate ECIS DWBA input files
 c                       (ecisdw.inp), using structure information from
 c                       an external file (deform.dat), which may be the
 c                       om-deformations.dat*file or a user-provided
 c                       deform.dat file.
 c       iabs(modtyp)= 4 to generate OPTMAN input file (optman.inp)
-c       iabs(modtyp)= 5 to generate ECIS input file for dispersive 
-c                       potentials with externally calculated corrections 
+c       iabs(modtyp)= 5 to generate ECIS input file for dispersive
+c                       potentials with externally calculated corrections
 c                       (recommended option for dispersive potentials)
-c       iabs(modtyp)= 6 to generate ECIS input file for dispersive 
+c       iabs(modtyp)= 6 to generate ECIS input file for dispersive
 c                       potentials with ECIS internally calculated dispersive
-c                       corrections. Avoid using it for charged particle potentials. 
+c                       corrections. Avoid using it for charged particle potentials.
 c
 c     if(iabs(modtyp).eq.3)read(5,*)kdef
 c
@@ -245,21 +245,21 @@ c       state in om-deformations.dat, the code makes an ECIS input
 c       for each entry.
 c
       implicit real*8 (A-H,O-Z)
-      
+
       PRIVATE
 
-c------------------------ PUBLIC INTERFACE -----------------------------   
+c------------------------ PUBLIC INTERFACE -----------------------------
 
       PUBLIC :: retrieve
 
       PUBLIC  Number_Energies, Energies, Emin, Emax
       PUBLIC  Ztarget, Atarget, RIPL_Index, Calc_Type, Def_Index, Iflag
-      
-c--------------------------- DECLARATIONS -----------------------------      
+
+c--------------------------- DECLARATIONS -----------------------------
 
       integer Number_Energies, Iflag
       integer Ztarget, Atarget, RIPL_Index, Calc_Type, Def_Index
-      real*8  Energies (500), Emin, Emax      
+      real*8  Energies (500), Emin, Emax
 C
 C     RCN, 08/2004, to handle new extension to the OMP RIPL format
 C     PARAMETER(NDIM1 = 10, NDIM2 = 13, NDIM3 = 24, NDIM4 = 30,
@@ -270,7 +270,7 @@ C    &          NDIM5 = 10, NDIM6 = 10, NDIM7 = 120, NDIM8 = 50)
 C     RCN, 09/2014, to increase NDIM6 for rigid-rotor potentials
 C                   (multi-level coupling)
 C     PARAMETER(NDIM1 = 10, NDIM2 = 13, NDIM3 = 25, NDIM4 = 40,
-C    &          NDIM5 = 10, NDIM6 = 30, NDIM7 = 120, NDIM8 = 50) 
+C    &          NDIM5 = 10, NDIM6 = 30, NDIM7 = 120, NDIM8 = 50)
       parameter (ndim1=10, ndim2=13, ndim3=25, ndim4=40, ndim5=10,
      + ndim6=30,ndim7=120,ndim8=50)
 
@@ -281,7 +281,7 @@ C    &          NDIM5 = 10, NDIM6 = 30, NDIM7 = 120, NDIM8 = 50)
       real*8 epot(6,ndim1),rco(6,ndim1,ndim2),aco(6,ndim1,ndim2),
      +  pot(6,ndim1,ndim3)
       integer ncoll(ndim4),nvib(ndim4),nisotop,iz(ndim4),ia(ndim4),
-     +  lmax(ndim4)
+     +  lmaxOM(ndim4)
       real*8 bandk(ndim4),def(ndim4,ndim5)
       integer idef(ndim4),izproj,iaproj
       real*8 exv(ndim7,ndim4)
@@ -297,7 +297,7 @@ C    &          NDIM5 = 10, NDIM6 = 30, NDIM7 = 120, NDIM8 = 50)
 
       integer ko,ieof
       integer IDRs
-      
+
       character*1 opname(14),tarpar,projpar
       character*16 relz
       character*11 modelz
@@ -309,7 +309,7 @@ c     physical constants
       integer ipsc,lmaxec
       real*8 tarmas,projmas,projspi,ztar,atar,zproj,tarspi
       real*8 coul,eta,efermi,xratio,el,encoul
-       
+
       real*8 v,rv,av,w,rw,aw,vd,rvd,avd,wd,rwd,awd,
      + vso,rvso,avso,wso,rwso,awso,rc,ac
 
@@ -371,7 +371,7 @@ c-----------------------------------------------------------------------------
       character*3 ifin
       data isuit,ifin/0,'FIN'/
         character*66 Diagnostic(19)
-        data Diagnostic/ 
+        data Diagnostic/
      +'WARNING:Inputted target A outside range of RIPL potential',       ! Iflag = -3
      +'WARNING:Inputted target Z outside range of RIPL potential',   ! Iflag = -2
      +'WARNING:No coupling scheme available, but ECIS can be used',           ! Iflag = -1
@@ -395,18 +395,18 @@ c-----------------------------------------------------------------------------
       data nee/21/
       data optman/.false./,scat/.false./,ecis/.false./
 
-      open(unit=ki,file='om-parameter-u.dat')  
-      open(unit=35,file='omp-table.dat')          
+      open(unit=ki,file='om-parameter-u.dat')
+      open(unit=35,file='omp-table.dat')
 !MS$IF DEFINED (alone)
-        open(unit=37,file='vint-table.dat')     
+        open(unit=37,file='vint-table.dat')
 !MS$ENDIF
-      Iflag = 0 ! normal return 
+      Iflag = 0 ! normal return
       IDRs  = 0
 c----------------------------------------------------------------
 c     Transfer input information
 c
       ne = Number_Energies
-      if (ne.eq.0) nee = 0  
+      if (ne.eq.0) nee = 0
       do n=1,ne
        en(n)= Energies(n)
       enddo
@@ -419,9 +419,9 @@ c
       modtyp=iabs(modtyp)
         kdef = 0
       if (modtyp.eq.3) kdef = Def_Index
-c---------------------------------------------------------------- 
-      nsc2=0                    
-      nread = 0 
+c----------------------------------------------------------------
+      nsc2=0
+      nread = 0
       idr = 0
 
       irndp=0
@@ -449,7 +449,7 @@ c
       if(modtyp.eq.2) open(unit=ko,file='ecis.inp')
       if(modtyp.eq.3) open(unit=ko,file='ecisdw.inp')
       if(modtyp.eq.4) open(unit=ko,file='optman.inp')
-      if(modtyp.ge.5) then 
+      if(modtyp.ge.5) then
         open(unit=ko,file='ecis.inp')
 C*****************************
 C       Skipping CMS calculation
@@ -481,7 +481,7 @@ c
         open(unit=36,file='DOM-table.dat')
         open(unit=34,file='DOMtoW.dat')
       endif
-      if(izproj.GT.0.and. modtyp.le.2) 
+      if(izproj.GT.0.and. modtyp.le.2)
      &    open(unit=38,file='coul-vint-table.dat')
 !MS$ENDIF
 c
@@ -502,13 +502,13 @@ c     Check for desired reference and Z,A range
       if(iztar.lt.izmin.or.iztar.gt.izmax)  then
         write(6,
      +'(" WARNING: Inputted target Z outside range of RIPL potential")')
-        Iflag = -2 
+        Iflag = -2
         endif
  114  if(iamin.eq.0.and.iamax.eq.0) go to 120
       if(iatar.lt.iamin.or.iatar.gt.iamax) then
         write(6,
      +'(" WARNING: Inputted target A outside range of RIPL potential")')
-        Iflag = -3 
+        Iflag = -3
         endif
 c
 c     Check if input file can be made for this potential
@@ -516,14 +516,14 @@ c
  120  if(imodel.le.4)go to 122
       write(6,
      + '(" ERROR: imodel=",i2," in RIPL library not implemented yet.")')
-      Iflag = 2 
+      Iflag = 2
       go to 1020
 c
  122  if(modtyp.ne.1)go to 126
       if(imodel.eq.0)go to 126
       write(6,
      +'(" ERROR: Coupled-channel model not implemented for SCAT2000")')
-      Iflag = 3 
+      Iflag = 3
       go to 1020
 
  126  if(imodel.eq.2.and.modtyp.eq.3)write(6,'(" You are making an ECIS0
@@ -536,36 +536,36 @@ C     if(imodel.eq.4) write(6,'(" You are making an input from a rigid-s
 C    +oft rotor potential.")')
 
       if(imodel.eq.3.and.modtyp.ne.4) then
-       write(6, 
+       write(6,
      + '(" ERROR: You are making an input from a soft-rotor potential.")
      +')
-       write(6, 
+       write(6,
      + '(" ERROR: Only OPTMAN code can be used, set modtyp = -4")')
-       Iflag = 4 
+       Iflag = 4
        go to 1020
-      endif 
+      endif
 
       if(idr.eq.0 .and. ecis  .and. modtyp.gt.3) then
-       write(6, 
-     + '(" ERROR: You are trying to produce a dispersive input", 
+       write(6,
+     + '(" ERROR: You are trying to produce a dispersive input",
      +   " from a non-dispersive potential.")')
-       write(6, 
+       write(6,
      + '(" ERROR: Set modtyp to -2")')
 
-       Iflag = 5 
+       Iflag = 5
        go to 1020
-      endif 
+      endif
 
       if(idr.le.-2.and. ecis  .and. modtyp.gt.3) then
-       write(6, 
-     + '(" Dispersive integrals have to be calculated numerically", 
+       write(6,
+     + '(" Dispersive integrals have to be calculated numerically",
      +   " for these potentials !")')
        write(6, '(" modtyp = 4/5/6 not available, resetted to -2")')
        modtyp = 2
        open(unit=36,file='DOM-table.dat')
        open(unit=34,file='DOMtoW.dat')
        if(izproj.GT.0) open(unit=38,file='coul-vint-table.dat')
-      endif 
+      endif
 c
 c     Initialize program
  130  call setup
@@ -743,7 +743,7 @@ C     write(*,*) ' Reading RIPL OMP # ',iref
       read(ki,*) izmin,izmax
       read(ki,*) iamin,iamax
       read(ki,*) imodel,izproj,iaproj,irel,idr
-c     if(idr.gt.0) write(*,'(2x,i5,4x,i3,3h<Z<,i3,5x,15a1)') 
+c     if(idr.gt.0) write(*,'(2x,i5,4x,i3,3h<Z<,i3,5x,15a1)')
 c    >        iref,izmin,izmax,(author(m),m=1,15)
 c
 c     write(*,'(1x,8I4)') iref,imodel,izproj,iaproj,irel,idr
@@ -764,7 +764,7 @@ c------------------ RCN
 c         if((pot(m,j,20).ne.0.) .and.      (pot(m,j,24).ge.1) .and.
 c    +   (pot(m,j,14) + pot(m,j,15) + pot(m,j,16)).ne.0. ) then
 c            write (*,*) iref,izmin,izmax,' Cviso=',sngl(pot(m,j,20))
-c            write (*,*) 
+c            write (*,*)
 c         endif
 c------------------ RCN
 
@@ -776,11 +776,11 @@ c------------------ RCN
  108  read(ki,*) ecoul(j),rcoul0(j),rcoul(j),rcoul1(j),rcoul2(j),
      >           beta(j),acoul(j),rcoul3(j)
  110  if(imodel.ne.1) go to 130
-C     Reading rigid rotor parameters    
+C     Reading rigid rotor parameters
       read(ki,*) nisotop
 
       do 120 n=1,nisotop
-        read(ki,*) iz(n),ia(n),ncoll(n),lmax(n),idef(n),bandk(n),
+        read(ki,*) iz(n),ia(n),ncoll(n),lmaxOM(n),idef(n),bandk(n),
      +    (def(n,k),k=2,idef(n),2)
 
         nlvmax = 0
@@ -793,7 +793,7 @@ C     Reading rigid rotor parameters
  120  continue
       go to 200
  130  if(imodel.ne.2) go to 150
-C     Reading vibrational rotor parameters    
+C     Reading vibrational rotor parameters
       read(ki,*) nisotop
       do 140 n=1,nisotop
         read(ki,*) iz(n),ia(n),nvib(n)
@@ -806,7 +806,7 @@ C     Reading vibrational rotor parameters
 
  150  if(imodel.ne.3)go to 170
 
-C     Reading soft rotor parameters    
+C     Reading soft rotor parameters
       read(ki,*) nisotop
       do 165 n=1,nisotop
         read(ki,*) iz(n),ia(n),ncoll(n) !  Isotope atomic and mass number read
@@ -826,10 +826,10 @@ C     Reading soft rotor parameters
 
  170  if(imodel.ne.4)go to 200
 
-C     Reading rigid-soft rotor parameters    
+C     Reading rigid-soft rotor parameters
       read(ki,*) nisotop
       do 175 n=1,nisotop
-        read(ki,*) iz(n),ia(n),ncoll(n),lmax(n),idef(n),bandk(n),
+        read(ki,*) iz(n),ia(n),ncoll(n),lmaxOM(n),idef(n),bandk(n),
      +    (def(n,k),k=2,idef(n),2)
         nlvmax = 0
         do 172 k=1,ncoll(n)
@@ -971,9 +971,9 @@ c     if(isimple.ne.2)go to 90
   80  continue
       jc=min0(jc,jcoul)
   90  rcoulsc=rcoul(jc) + rcoul0(jc)*atar**(-1.d0/3.d0) +
-     +       rcoul1(jc)*atar**(-2.d0/3.d0) + 
+     +       rcoul1(jc)*atar**(-2.d0/3.d0) +
      +       rcoul2(jc)*atar**(-5.d0/3.d0) +
-c            RCN addition to consider new Morillon-Romain potential 
+c            RCN addition to consider new Morillon-Romain potential
      +       rcoul3(jc)*atar
       betasc=beta(jc)
  100  encoul2=0.
@@ -986,9 +986,9 @@ c     For Lane consistent potentials change the incident energy for proton poten
 c     by the specified Coulomb shift (pot(1,1,25)
 c
       VCshift = 0.d0
-      IF(izproj.eq.1 .and. pot(i,1,25).gt.0.d0) 
+      IF(izproj.eq.1 .and. pot(i,1,25).gt.0.d0)
      >   VCshift = pot(i,1,25)*ztar/atar**(1.d0/3.d0)
- 
+
       jab=iabs(jrange(i))
       ii=i
       if(i.eq.2)ii=3
@@ -1111,7 +1111,7 @@ c
           Vnonl = -Vhf(EEE,alpha_PB,beta_PB,gamma_PB)
           vc = 0.d0
           if(i.eq.1 .and. b(1,j,5).ne.0.d0) then
-C           MR do not use derivarive of the potential 
+C           MR do not use derivarive of the potential
 C
 C           Numerical derivative of the Vhf
 C           Vnonlm = -Vhf(EEE-0.05,alpha_PB,beta_PB,gamma_PB)
@@ -1124,7 +1124,7 @@ C           MR are using constant Coulomb correction
             VDcoul = b(i,j,5)*vc
           endif
         endif
-        
+
         potsc(ii,js,1)=
      +    Vnonl + b(i,j,5)*vc +
      +    b(i,j,6)*(elf**nn/(elf**nn + b(i,j,7)**nn)) +
@@ -1207,7 +1207,7 @@ c
           Bv =b(i,j,7)
           n = nint( pot(i,j,13) )
           nnv = n
-          if(n.eq.0 .or. mod(n,2).eq.1) stop 
+          if(n.eq.0 .or. mod(n,2).eq.1) stop
      +      'ERROR: Zero or odd exponent in Wv(E) for dispersive OMP'
 
 c         Retrieving average energy of the particle states Ep
@@ -1217,9 +1217,9 @@ c         Retrieving average energy of the particle states Ep
 c         analytical DOM integral
           DWV=DOM_INT_Wv(Ef,Ep,AAv,Bv,EEE,n,DerDWV)
           if (pot(1,1,24).ne.1) DerDWV = 0.d0
-c         Coulomb correction for real volume potential 
+c         Coulomb correction for real volume potential
           DerDWV = -b(1,1,5)*encoul2*DerDWV
-C         numerical DOM derivative (not needed for a time being) 
+C         numerical DOM derivative (not needed for a time being)
 C         DWVp = DOM_INT_Wv(Ef,Ep,AAv,Bv,EEE+0.1d0,n,dtmp)
 C         DWVm = DOM_INT_Wv(Ef,Ep,AAv,Bv,EEE-0.1d0,n,dtmp)
 C         DerDWV = -b(1,1,5)*encoul2*(DWVp-DWVm)*5.d0
@@ -1236,7 +1236,7 @@ c           (only used if Ea is non-zero)
 
           Dwplus = 0.d0
           Dwmin = 0.d0
-          T12der = 0.d0  
+          T12der = 0.d0
           if(Ea.lt.1000.) THEN
              AlphaV=pot(i,j,22)
              if(AlphaV.eq.0.d0) AlphaV=1.65d0
@@ -1244,30 +1244,30 @@ c           (only used if Ea is non-zero)
              dtmp1 = Wvf(AAv,Bv,Ep,Ef,Ef+Ea,n)
              Dwmin = dtmp1*DOM_INT_T1(Ef,Ea,EEE)
              DWV = DWV + Dwplus + Dwmin
-c            Coulomb correction for nonlocal dispersive contribution  
-c                to real volume potential 
+c            Coulomb correction for nonlocal dispersive contribution
+c                to real volume potential
              if(b(1,1,5).ne.0.d0 .and. pot(1,1,24).eq.1) then
                if(eee.ne.0.05d0) then
-                 T2p = DOM_INT_T2(Ef,Ea,EEE+0.05d0)  
-                 T2m = DOM_INT_T2(Ef,Ea,EEE-0.05d0)  
-                 T2der = AlphaV*(T2p-T2m)*10.d0 
+                 T2p = DOM_INT_T2(Ef,Ea,EEE+0.05d0)
+                 T2m = DOM_INT_T2(Ef,Ea,EEE-0.05d0)
+                 T2der = AlphaV*(T2p-T2m)*10.d0
                  T1p = DOM_INT_T1(Ef,Ea,EEE+0.05d0)
                  T1m = DOM_INT_T1(Ef,Ea,EEE-0.05d0)
                  T1der = dtmp1*(T1p-T1m)*10.d0
                  T12der =  -b(1,1,5)*encoul2* ( T1der + T2der )
               else
-                 T2p = DOM_INT_T2(Ef,Ea,EEE+0.1d0)  
+                 T2p = DOM_INT_T2(Ef,Ea,EEE+0.1d0)
                  T2m = DOM_INT_T2(Ef,Ea,EEE-0.1d0)
-                 T2der = AlphaV*(T2p-T2m)*5.d0 
+                 T2der = AlphaV*(T2p-T2m)*5.d0
                  T1p = DOM_INT_T1(Ef,Ea,EEE+0.1d0)
                  T1m = DOM_INT_T1(Ef,Ea,EEE-0.1d0)
                  T1der = dtmp1*(T1p-T1m)*5.d0
                  T12der =  -b(1,1,5)*encoul2* ( T1der + T2der )
-               endif 
+               endif
              endif
 
           endif
-          VVcoul = DerDWV + T12der 
+          VVcoul = DerDWV + T12der
         endif
 
         i=4
@@ -1283,7 +1283,7 @@ c       Real surface contribution from Dispersive relation
           Bs=b(i,j,10)
           Cs=b(i,j,9)
 
-          if(n.eq.0 .or. mod(n,2).eq.1) stop 
+          if(n.eq.0 .or. mod(n,2).eq.1) stop
      +      'ERROR: Zero or odd exponent in Wd(E) for dispersive OMP'
             iq=1
           if(b(4,j,12).gt.0.) iq=nint(b(4,j,12))
@@ -1304,10 +1304,10 @@ c           analytical DOM integral
 c           numerical DOM integral
             WDE=WDf(As,Bs,Cs,Ep,EEE,n,iq)
             DWS = 2*DOM_int(Delta_WD,WDf,Ef,Ef+30.d0,2000.d0,EEE,WDE)
-c           Coulomb correction for real surface potential 
+c           Coulomb correction for real surface potential
             if(b(1,1,5).ne.0.d0) then
               WDE=WDf(As,Bs,Cs,Ep,EEE+0.1d0,n,iq)
-              DWSp = 
+              DWSp =
      >         2*DOM_int(Delta_WD,WDf,Ef,Ef+30.d0,2000.d0,EEE+0.1d0,WDE)
               WDE=WDf(As,Bs,Cs,Ep,EEE-0.1d0,n,iq)
               DWSm =
@@ -1336,7 +1336,7 @@ c
           Bvso =b(i,j,7)
           n = nint( pot(i,j,13) )
 
-          if(n.eq.0 .or. mod(n,2).eq.1) stop 
+          if(n.eq.0 .or. mod(n,2).eq.1) stop
      +      'ERROR: Zero or odd exponent in Wso(E) for dispersive OMP'
 
 c         analytical DOM integral
@@ -1427,29 +1427,29 @@ c     ROUTINE TO PREPARE AND WRITE OPTMAN INPUT
         write(ko,*) 'ERROR: RIPL to OPTMAN interface is not prepared yet
      + to deal with this potential dependence (Contact R.CapoteNoy@iaea.
      +org)'
-        Iflag = 10           
+        Iflag = 10
         return
       endif
 
       if (imodel.eq.2) then
-        write(ko,*) 
+        write(ko,*)
      +   'ERROR:OPTMAN cant not calculate CC vibrational model'
-        Iflag = 11           
+        Iflag = 11
         return
       endif
 
 C     if (idr.eq.0 .and. izproj.ne.0 .and. imodel.ne.3) then
-C       write(ko,*) 
+C       write(ko,*)
 C    +   'OPTMAN cant not calculate non-dispersive CC proton OMPs'
 C       stop 6
 C     endif
 
       if((imodel.eq.1 .or. imodel.eq.3 .or. imodel.eq.4) .and.
      +     idr.ne.0  .and. nint(pot(2,1,13)).ne.nint(pot(4,1,13)) ) then
-        Iflag = 12           
+        Iflag = 12
         write(ko,*) 'ERROR: RIPL to OPTMAN interface can not calculate d
      +ispersive effects using Nv not equal Ns (Contact R.CapoteNoy@iaea.
-     +org)'  
+     +org)'
         return
       endif
 
@@ -1458,24 +1458,24 @@ C     OPTMAN input parameters
 C     OPTMAN 1st line
       mejob = 1 ! OMP calculation, no fitting
       mepot = 2 ! potential expanded by derivatives
-      meham = 5 ! Davidov-Chaban(3), Davidov-Filippov(4), Soft rotor(5) 
+      meham = 5 ! Davidov-Chaban(3), Davidov-Filippov(4), Soft rotor(5)
       mesho = 2
       mehao = 2
       mesha = 4
 
-C mesol > 3 - solution using iterations with exact coupled channels 
+C mesol > 3 - solution using iterations with exact coupled channels
 C solution with the number of coupled states equal MESOL as zero
 C approximation, MESOL must be less than or equal to 20;
       mesol = 5 ! automatic selection
 c     mesol = 2 ! automatic selection
 
       if(imodel.eq.4) then ! rigid + soft rotor (4)
-        mepot = 1 
+        mepot = 1
         meham = 1
-C mesol > 3 - solution using iterations with exact coupled channels 
+C mesol > 3 - solution using iterations with exact coupled channels
 C solution with the number of coupled states equal MESOL as zero
 C approximation, MESOL must be less than or equal to 20;
-        mesol =20 
+        mesol =20
         mesha = 1
         mesho = 0
         mehao = 0
@@ -1484,7 +1484,7 @@ C       exact calculation for odd and odd-odd targets
       endif
 
       if(imodel.le.1) then ! rigid rotor (1) or spherical (0)
-        mepot = 1 
+        mepot = 1
         meham = 1
         mesha = 1
         mesho = 0
@@ -1509,12 +1509,12 @@ C     mecul = 3 ! E = Ep - Ccoul*Z/A**(1/3) for real potential
       if(pot(2,1,25).ne.0.d0 .or. pot(4,1,25).ne.0.d0) mecul =2
 
       merzz = 1 ! Constant charge radius(0) Energy dependent(1)
-      merrr = 1 ! Real potential radius is constant(0) Energy dependent(1)  
+      merrr = 1 ! Real potential radius is constant(0) Energy dependent(1)
       medis = 0 ! No dispersion
-      if (abs(idr).eq.3) medis = 1 
+      if (abs(idr).eq.3) medis = 1
       if (abs(idr).eq.2) medis = 2
 C     If merip = 1 then potentials defined at every energy (loop over energies)
-      merip = 0 
+      merip = 0
       if(idr.eq.0 .and. imodel.lt.4) merip = 1
 c------------------------------------------------------------------------------
       jchk=1
@@ -1531,12 +1531,12 @@ C
       call optmod(i,kecis)
           if(Iflag.gt.0) return
 C
-C     Checking if OPTMAN can deal with them. 
+C     Checking if OPTMAN can deal with them.
 C
       if((rvso.ne.0.d0 .and. rwso.ne.0.d0) .and.
      +     rvso.ne.rwso ) then
-        write(6,*) 'ERROR: OPTMAN can not deal with different radii for 
-     +real and imaginary SO potentials'  
+        write(6,*) 'ERROR: OPTMAN can not deal with different radii for
+     +real and imaginary SO potentials'
            Iflag = 14
        return
       endif
@@ -1544,7 +1544,7 @@ C
       if((avso.ne.0.d0 .and. awso.ne.0.d0) .and.
      +     avso.ne.awso ) then
        write(6,*) 'ERROR: OPTMAN can not deal with different diffuseness
-     +  for real and imaginary SO potentials'  
+     +  for real and imaginary SO potentials'
            Iflag = 15
        return
       endif
@@ -1555,25 +1555,25 @@ C-----Writing OPTMAN input
 
 C-----CARD 1 : Title
 
-      IF(imodel.eq.0) then 
+      IF(imodel.eq.0) then
        write(ko,'(f10.5,"-",f10.5," MeV ",a8," on ",i3,a2,
-     + ": rigid rotor, OMP ",14a1," RIPL REF#=",i5)') 
+     + ": rigid rotor, OMP ",14a1," RIPL REF#=",i5)')
      + en(1),en(ne),parname(ipsc),iatar,nuc(iztar),opname,iref
       ELSEIF(imodel.eq.1) then
        write(ko,'(f10.5,"-",f10.5," MeV ",a8," on ",i3,a2,
-     + ": rigid rotor, OMP ",14a1," RIPL REF#=",i5)') 
+     + ": rigid rotor, OMP ",14a1," RIPL REF#=",i5)')
      + en(1),en(ne),parname(ipsc),iatar,nuc(iztar),opname,iref
       ELSEIF(imodel.eq.3) then
        write(ko,'(f10.5,"-",f10.5," MeV ",a8," on ",i3,a2,
-     + ": soft rotor, OMP ",14a1," RIPL REF#=",i5)') 
+     + ": soft rotor, OMP ",14a1," RIPL REF#=",i5)')
      + en(1),en(ne),parname(ipsc),iatar,nuc(iztar),opname,iref
       ELSEIF(imodel.eq.4) then
         write(ko,'(f10.5,"-",f10.5," MeV ",a8," on ",i3,a2,
-     + ": rigid+soft rotor, OMP ",14a1," RIPL REF#=",i5)') 
+     + ": rigid+soft rotor, OMP ",14a1," RIPL REF#=",i5)')
      + en(1),en(ne),parname(ipsc),iatar,nuc(iztar),opname,iref
-      ENDIF 
+      ENDIF
 
-      write(ko,'(20i2.2)') 
+      write(ko,'(20i2.2)')
      +mejob,mepot,meham,mepri,mesol,mesha,mesho,mehao,
      +meapp,mevol,merel,mecul,merzz,merrr,medis,merip,0,0,0,0
 C
@@ -1591,7 +1591,7 @@ C
      +    SR_dpar(ntar),SR_gshape(ntar)
       endif
 
-      npd = 8     ! maximum multipole in use 
+      npd = 8     ! maximum multipole in use
       las = 8
       if(imodel.eq.1 .or. imodel.eq.4) npd = idef(ntar)
 
@@ -1603,7 +1603,7 @@ C       las = npd
 C      endif
 
       if(imodel.eq.3) then
-        npd = 4   ! maximum multipole in use 
+        npd = 4   ! maximum multipole in use
         las = 4
       endif
 
@@ -1620,7 +1620,7 @@ C     KODMA 0 needed as coupled states are not ordered
 C     write(ko,'(9I3)') ncol,ne,npd,las,mtet,90,200,180,0
       write(ko,'(9I3)') ncol,ne,npd,las,mtet,90,200,180,1  ! KODMA = 1
 
-      write(ko,'(6e12.5)') (en(i),i=1,min(50,ne)) 
+      write(ko,'(6e12.5)') (en(i),i=1,min(50,ne))
       write(ko,'(36I2.2)') (izproj,i=1,min(50,ne))
       if(mtet.gt.1) then
         nang(1) = 0.d0
@@ -1628,7 +1628,7 @@ C     write(ko,'(9I3)') ncol,ne,npd,las,mtet,90,200,180,0
         do i=2,mtet
           nang(i) = dble(180.d0/(mtet-1))*(i-1)
         enddo
-        write(ko,'(6e12.5)') (nang(i),i=1,mtet) 
+        write(ko,'(6e12.5)') (nang(i),i=1,mtet)
       endif
 
       if(imodel.ge.1) then
@@ -1636,13 +1636,13 @@ C     write(ko,'(9I3)') ncol,ne,npd,las,mtet,90,200,180,0
 
           do k=1,ncoll(ntar)
               if(ex(k,ntar).le.100.d0) then
-C             Normal excited states (for n,n or p,p scattering) 
-              write(ko,'(F11.7,1x,4I2)') 
+C             Normal excited states (for n,n or p,p scattering)
+              write(ko,'(F11.7,1x,4I2)')
      +          ex(k,ntar),nint(2*spin(k,ntar)),ipar(k,ntar),
      +                            nint(2*spin(1,ntar)), 0
             else
-C             Isobar analogue states (for p,n scattering) 
-              write(ko,'(F11.7,1x,4I2)') 
+C             Isobar analogue states (for p,n scattering)
+              write(ko,'(F11.7,1x,4I2)')
      +          ex(k,ntar)-100.d0,nint(2*spin(k,ntar)),ipar(k,ntar),
      +                            nint(2*spin(1,ntar)), 1
             endif
@@ -1654,7 +1654,7 @@ C             Isobar analogue states (for p,n scattering)
               write(ko,'(F11.7,1x,6I2)') exv(k,ntar),
      +         nint(2*spinv(k,ntar)),iparv(k,ntar),
      +            SR_ntu(k,ntar), SR_nnb(k,ntar),
-     +            SR_nng(k,ntar), SR_nno(k,ntar) 
+     +            SR_nng(k,ntar), SR_nno(k,ntar)
             enddo
           else                 ! rigid (or rigid-soft) rotor
 C     READ(20,3)(EL(I),JO(I),NPO(I),KO(I),NCA(I),
@@ -1665,10 +1665,10 @@ C             write(ko,'(e12.5,5I2,2E12.5)') ex(k,ntar),
               write(ko,'(F11.7,1x,5I2,2E12.5)') ex(k,ntar),
      +         nint(2*spin(k,ntar)),ipar(k,ntar),
      +            SR_ntu(k,ntar), SR_nnb(k,ntar),
-     +            SR_nng(k,ntar), defv(k,ntar), defr(k,ntar) ! SR_nno(k,ntar) 
-                ! SR_nno(k,ntar) is always zero in the rigid rotor model      
+     +            SR_nng(k,ntar), defv(k,ntar), defr(k,ntar) ! SR_nno(k,ntar)
+                ! SR_nno(k,ntar) is always zero in the rigid rotor model
             enddo
-          endif 
+          endif
         endif
       else  ! spherical potential
         write(ko,'(F11.7,1x,4I2)')  0.d0,0,+1,0
@@ -1696,11 +1696,11 @@ C    >  Ef=dble(int(100000*(pot(1,1,18) + pot(1,1,19)*atar)))/100000
       CAACss  = 0.d0
 
       iaref = 0
-      IF(pot(1,1,23).gt.0 .and. NINT(pot(1,1,24)).eq.1) 
+      IF(pot(1,1,23).gt.0 .and. NINT(pot(1,1,24)).eq.1)
      >  iaref = NINT(pot(1,1,23))
-      IF(pot(2,1,23).gt.0 .and. NINT(pot(2,1,24)).eq.1) 
+      IF(pot(2,1,23).gt.0 .and. NINT(pot(2,1,24)).eq.1)
      >  iaref = NINT(pot(2,1,23))
-      IF(pot(4,1,23).gt.0 .and. NINT(pot(4,1,24)).eq.1) 
+      IF(pot(4,1,23).gt.0 .and. NINT(pot(4,1,24)).eq.1)
      >  iaref = NINT(pot(4,1,23))
 
 C     ALFNEW,VRD,CAVR,CARR,CAAR,CARD,
@@ -1718,56 +1718,56 @@ C     AC0=ACG+CAAC*dtmp
         CAARss = aco(1,1,7)  ! Real vol diffuseness
         CARDss = rco(4,1,7)  ! Real sur radius
         CAACss = aco(2,1,7)  ! Imag vol diffuseness
-      ENDIF 
+      ENDIF
 C
 C     Dispersive deformed potentials are treated exactly.
-C     All others potentials are calculated at a fixed energy, 
-C     therefore loop over incident energies is needed. 
+C     All others potentials are calculated at a fixed energy,
+C     therefore loop over incident energies is needed.
 C
-      if(imodel.ge.3 .or. (idr.ne.0 .and. imodel.eq.1)) then 
+      if(imodel.ge.3 .or. (idr.ne.0 .and. imodel.eq.1)) then
         write(ko,'(6F12.5)')
-C               Vr0                         Vr1       
-     +    pot(1,1,14)+pot(1,1,15)*iatar, -pot(1,1,3)-pot(1,1,4)*iatar, 
-C               Vr2                         Vr3      
-     +    pot(1,1,5) +pot(1,1,6) *iatar, -pot(1,1,7), 
-C          VRLA           ALAVR  
+C               Vr0                         Vr1
+     +    pot(1,1,14)+pot(1,1,15)*iatar, -pot(1,1,3)-pot(1,1,4)*iatar,
+C               Vr2                         Vr3
+     +    pot(1,1,5) +pot(1,1,6) *iatar, -pot(1,1,7),
+C          VRLA           ALAVR
      +    pot(1,1,16),  pot(1,1,17)
 
-        write(ko,'(6F12.5)')  0.d0, 0.d0, 0.d0, 
-C                        W0       
-     +    pot(4,1,1) +pot(4,1,7)*iatar +pot(4,1,9)*iatar**(-1.d0/3.d0), 
+        write(ko,'(6F12.5)')  0.d0, 0.d0, 0.d0,
+C                        W0
+     +    pot(4,1,1) +pot(4,1,7)*iatar +pot(4,1,9)*iatar**(-1.d0/3.d0),
 C            Bs          Cs
-     +    pot(4,1,6), pot(4,1,2)    
+     +    pot(4,1,6), pot(4,1,2)
 
-        write(ko,'(6F12.5)')  0.d0, 0.d0, 0.d0, 
+        write(ko,'(6F12.5)')  0.d0, 0.d0, 0.d0,
 C             Av=b(2,j,6)                  Bv=b(2,j,7)
-     +    pot(2,1,1)+pot(2,1,2)*iatar, pot(2,1,3)+pot(2,1,4)*iatar, 0.d0    
+     +    pot(2,1,1)+pot(2,1,2)*iatar, pot(2,1,3)+pot(2,1,4)*iatar, 0.d0
 
         write(ko,'(6F12.5)')
-C               Vso                        Lso                   
-     +     pot(5,1,10)+pot(5,1,11)*iatar, pot(5,1,12), 0.d0, 0.d0, 
+C               Vso                        Lso
+     +     pot(5,1,10)+pot(5,1,11)*iatar, pot(5,1,12), 0.d0, 0.d0,
 C                 Wso        Bso
      +     pot(6,1,1), pot(6,1,3)
-         
+
         if(iaref.gt.0) THEN
           write(ko,'(6F12.5)')   rv - rco(1,1,7)*atar, 0.d0, 0.d0,
-     +              pot(2,1,13), av - aco(1,1,7)*atar, 0.d0    
-          write(ko,'(6F12.5)') 
-     +        rwd - rco(4,1,7)*atar,  awd - aco(4,1,7)*atar, 0.d0,   
-     +        rw  - rco(2,1,7)*atar,   aw - aco(2,1,7)*atar, 0.d0          
-          write(ko,'(6F12.5)')1.d0, 1.d0, 0.d0, rvso, avso, 0.d0                
+     +              pot(2,1,13), av - aco(1,1,7)*atar, 0.d0
+          write(ko,'(6F12.5)')
+     +        rwd - rco(4,1,7)*atar,  awd - aco(4,1,7)*atar, 0.d0,
+     +        rw  - rco(2,1,7)*atar,   aw - aco(2,1,7)*atar, 0.d0
+          write(ko,'(6F12.5)')1.d0, 1.d0, 0.d0, rvso, avso, 0.d0
         else
 C                                                   nv
-          write(ko,'(6F12.5)')  rv, 0.d0, 0.d0, pot(2,1,13), av, 0.d0    
-          write(ko,'(6F12.5)') rwd,  awd, 0.d0,   rw,   aw, 0.d0          
-          write(ko,'(6F12.5)')1.d0, 1.d0, 0.d0, rvso, avso, 0.d0                
+          write(ko,'(6F12.5)')  rv, 0.d0, 0.d0, pot(2,1,13), av, 0.d0
+          write(ko,'(6F12.5)') rwd,  awd, 0.d0,   rw,   aw, 0.d0
+          write(ko,'(6F12.5)')1.d0, 1.d0, 0.d0, rvso, avso, 0.d0
         endif
 
         Ccoul = 0.d0
-        if(izproj.gt.0 .and. rc.gt.0.d0 .and. mecul.eq.0) 
+        if(izproj.gt.0 .and. rc.gt.0.d0 .and. mecul.eq.0)
      +        Ccoul =  pot(1,1,9)*1.73/rc
         if(izproj.gt.0 .and. mecul.ge.2) Ccoul =  pot(1,1,25)
-        write(ko,'(6F12.5)')  rc, 0.d0, 0.d0, ac,Ccoul, 1.d0                      
+        write(ko,'(6F12.5)')  rc, 0.d0, 0.d0, ac,Ccoul, 1.d0
 
         write(ko,'(6F12.5)')
 C                 Cviso          Cwiso                      Ea
@@ -1778,7 +1778,7 @@ C                 Cviso          Cwiso                      Ea
 
 C       This line is new for OPTMAN v.10 (from March 2008)
 C       write(ko,'(6g12.5)') AlphaV, 0.d0
-C       Modified for OPTMAN v.12 
+C       Modified for OPTMAN v.12
         write(ko,'(6F12.5)') AlphaV,0.d0,CAVRss,CARRss,CAARss,CARDss
 
 C       This line is new for OPTMAN v.12 (from November 2011)
@@ -1788,31 +1788,31 @@ C       This line is new for OPTMAN v.12 (from November 2011)
           write(ko,'(6F12.5)') CAACss, dble(iaref)
         endif
         if(meham.eq.1 .or. imodel.eq.4 ) ! rigid rotor
-     +      write(ko,'(6g12.5)') (def(ntar,i),i=2,las,2) 
+     +      write(ko,'(6g12.5)') (def(ntar,i),i=2,las,2)
         return
 
       endif
 
-      write(ko,'(6F12.5)')   v, 0.d0, 0.d0, 0.d0, 0.d0, 0.d0    
-      write(ko,'(6F12.5)')  wd, 0.d0, 0.d0, 0.d0, 0.d0, 0.d0    
-      write(ko,'(6F12.5)')   w, 0.d0, 0.d0, 0.d0, 0.d0, 0.d0    
-      write(ko,'(6F12.5)') vso, 0.d0,  wso, 0.d0, 0.d0, 0.d0    
-      write(ko,'(6F12.5)')  rv, 0.d0, 0.d0, 0.d0,   av, 0.d0    
-      write(ko,'(6F12.5)') rwd,  awd, 0.d0,   rw,   aw, 0.d0          
-      write(ko,'(6F12.5)')1.d0, 1.d0, 0.d0, rvso, avso, 0.d0            
-      write(ko,'(6F12.5)')  rc, 0.d0, 0.d0,   ac, 0.d0, 1.d0                  
+      write(ko,'(6F12.5)')   v, 0.d0, 0.d0, 0.d0, 0.d0, 0.d0
+      write(ko,'(6F12.5)')  wd, 0.d0, 0.d0, 0.d0, 0.d0, 0.d0
+      write(ko,'(6F12.5)')   w, 0.d0, 0.d0, 0.d0, 0.d0, 0.d0
+      write(ko,'(6F12.5)') vso, 0.d0,  wso, 0.d0, 0.d0, 0.d0
+      write(ko,'(6F12.5)')  rv, 0.d0, 0.d0, 0.d0,   av, 0.d0
+      write(ko,'(6F12.5)') rwd,  awd, 0.d0,   rw,   aw, 0.d0
+      write(ko,'(6F12.5)')1.d0, 1.d0, 0.d0, rvso, avso, 0.d0
+      write(ko,'(6F12.5)')  rc, 0.d0, 0.d0,   ac, 0.d0, 1.d0
 C                         Cviso  Cwiso       Ea
       write(ko,'(6F12.5)') 0.d0, 0.d0, 0d0, 0.d0
 
 C     These lines are new for OPTMAN v.10 (from March 2008)
 C     write(ko,'(6g12.5)') AlphaV, 0.d0
-C      Modified for OPTMAN v.12 
+C      Modified for OPTMAN v.12
       write(ko,'(6F12.5)') AlphaV,0.d0,CAVRss,CARRss,CAARss,CARDss
 C     This line is new for OPTMAN v.12 (from November 2011)
       write(ko,'(6F12.5)') CAACss, dble(iaref)
 
       if(meham.eq.1 .and. imodel.gt.0) ! rigid rotor
-     +      write(ko,'(6g12.5)') (def(ntar,i),i=2,las,2) 
+     +      write(ko,'(6g12.5)') (def(ntar,i),i=2,las,2)
       if(merip.eq.0) return
 
       do i = 2, ne
@@ -1825,21 +1825,21 @@ C     This line is new for OPTMAN v.12 (from November 2011)
           rc = 1.d0
           ac = 1.d0
         endif
-      
+
         write(ko,*) 'POTENTIAL PARAMETERS at Eproj=',el
-        write(ko,'(6F12.5)')   v, 0.d0, 0.d0, 0.d0, 0.d0, 0.d0    
-        write(ko,'(6F12.5)')  wd, 0.d0, 0.d0, 0.d0, 0.d0, 0.d0    
-        write(ko,'(6F12.5)')   w, 0.d0, 0.d0, 0.d0, 0.d0, 0.d0    
-        write(ko,'(6F12.5)') vso, 0.d0,  wso, 0.d0, 0.d0, 0.d0    
-        write(ko,'(6F12.5)')  rv, 0.d0, 0.d0, 0.d0,   av, 0.d0    
-        write(ko,'(6F12.5)') rwd,  awd, 0.d0,   rw,   aw, 0.d0          
-        write(ko,'(6F12.5)')1.d0, 1.d0, 0.d0, rvso, avso, 0.d0                
-        write(ko,'(6F12.5)')  rc, 0.d0, 0.d0,   ac, 0.d0, 1.d0                      
+        write(ko,'(6F12.5)')   v, 0.d0, 0.d0, 0.d0, 0.d0, 0.d0
+        write(ko,'(6F12.5)')  wd, 0.d0, 0.d0, 0.d0, 0.d0, 0.d0
+        write(ko,'(6F12.5)')   w, 0.d0, 0.d0, 0.d0, 0.d0, 0.d0
+        write(ko,'(6F12.5)') vso, 0.d0,  wso, 0.d0, 0.d0, 0.d0
+        write(ko,'(6F12.5)')  rv, 0.d0, 0.d0, 0.d0,   av, 0.d0
+        write(ko,'(6F12.5)') rwd,  awd, 0.d0,   rw,   aw, 0.d0
+        write(ko,'(6F12.5)')1.d0, 1.d0, 0.d0, rvso, avso, 0.d0
+        write(ko,'(6F12.5)')  rc, 0.d0, 0.d0,   ac, 0.d0, 1.d0
 C                           Cviso  Cwiso       Ea
         write(ko,'(6F12.5)') 0.d0, 0.d0, 0d0, 0.d0
 C       These lines are new for OPTMAN > v.10 (from March 2008)
 C       write(ko,'(6e12.5)') AlphaV, 0.d0
-C       Modified for OPTMAN v.12 
+C       Modified for OPTMAN v.12
         write(ko,'(6F12.5)') AlphaV,0.d0,CAVRss,CARRss,CAARss,CARDss
 C       This line is new for OPTMAN v.12 (from November 2011)
         write(ko,'(6F12.5)') CAACss, dble(iaref)
@@ -1883,7 +1883,7 @@ C     astep=10.
 C     rmatch= 25.d0
       rmatch = 1.35d0*iatar**(1./3.) +  10.d0*0.65d0
       if(rmatch.lt.25.d0) rmatch = 25.d0
-      if (izaproj.ne.1) rmatch = 40.d0      
+      if (izaproj.ne.1) rmatch = 40.d0
 
       ecis1=becis1
       ecis2=becis2
@@ -1906,7 +1906,7 @@ C       Preparing dispersive input for ECIS06
         ecis1(10:10)='T'! ENERGY DEPENDENT POTENTIALS BY DISPERSION RELATIONS (GS)
         ecis1(20:20)='T'! ENERGY DEPENDENT POTENTIALS BY DISPERSION RELATIONS (EXC.LEV.)
 C       ecis1(37:37)='T'! NEXT CALCULATION CHANGING ONLY ENERGY AND SOME OMP
-        ecis2(9:9)='T'  ! TRANSMISSION COEFFICIENTS FOR THE GS WRITTEN ON FILE 56 
+        ecis2(9:9)='T'  ! TRANSMISSION COEFFICIENTS FOR THE GS WRITTEN ON FILE 56
       endif
 
 C-----Smatrix output
@@ -1960,7 +1960,7 @@ C
 c
 c       Check for gaussian ff for WD
         call gaussff(igauflg)
-        if(igauflg.eq.1) then 
+        if(igauflg.eq.1) then
           Iflag = 6
           write(6,*) ' ERROR: Gaussian form factor requested in ECIS'
           return
@@ -1990,16 +1990,16 @@ C       Only one potential for a full dispersive calculation
           write(ko,'(4i5)') ncol,njmax,iterm,1
         endif
 
-C       write(ko,'(10x,f10.5,10x,1p,3(2x,e8.1))') 
+C       write(ko,'(10x,f10.5,10x,1p,3(2x,e8.1))')
 C    +    rmatch,convg,convg,convg
 
-        write(ko,'(2f10.5,10x,1p,3(2x,e8.1))') 
+        write(ko,'(2f10.5,10x,1p,3(2x,e8.1))')
      +    RStep,rmatch,convg,convg,convg
 
         if (ecis2(15:15).eq.'T') write(ko,'( )')
         if(imodel.eq.1) then
           call couch22
-        else   
+        else
           tgts=0.
           tgtp='+'
           write(ko,'(f5.2,2i2,a1,5f10.5)') tgts,0,1,tgtp,el,
@@ -2025,11 +2025,11 @@ C
           endif
 
           if(modtyp.ge.5) then
-            v   = VHFnum  
+            v   = VHFnum
             vd  = 0.d0
             vso = VSOnum
           endif
- 
+
           if(.not.(modtyp.eq.5 .and. j.gt.1)) then
             write(ko,'(3f10.5)') v,rv,av
             write(ko,'(3f10.5)') w,rw,aw
@@ -2038,7 +2038,7 @@ C
             write(ko,'(3f10.5)') vso,rvso,avso
             write(ko,'(3f10.5)') wso,rwso,awso
 
-C     COULOMB POTENTIAL       
+C     COULOMB POTENTIAL
 C      1-10   VAL(20)  REDUCED COULOMB RADIUS IN FERMIS.                ECIS-724
 C     11-20   VAL(21)  DIFFUSENESS OF A WOODS-SAXON CHARGE DISTRIBUTION.ECIS-725
 
@@ -2053,21 +2053,21 @@ C           Storing reference depths for the first level
             wsoref = wso
             vvref  = v
             vsoref = vso
-          endif 
+          endif
 
-          if (modtyp.ne.5 .and. j.eq.nppaa) 
+          if (modtyp.ne.5 .and. j.eq.nppaa)
      +                write(ko,'(3f10.5)') 0.d0,astep,180.d0
 
 
           if (modtyp.eq.5) then
-C           ECIS 06 
+C           ECIS 06
 C           Dispersive corrections read externally
 C
             if(j.eq.1) then
               write(ko,'(3f10.5)') 0.,astep,180.
               nn2 = 2
               if(ea.ge.1000.d0) nn2=0 ! there is non non-locality
-              write(ko,'(14I5)')  kecis,  -nn2,  nv,  ns,  -nl,  1  
+              write(ko,'(14I5)')  kecis,  -nn2,  nv,  ns,  -nl,  1
             endif
 
             fvv = 0.d0
@@ -2095,15 +2095,15 @@ C
             endif
             if(vsoref.ne.0.d0) fvs = (vso-vsoref)/vsoref
 
-            write (ko,'(2(G10.4,F10.4,G10.4))')                                      
-     >        tv, fv  , fvv, 
+            write (ko,'(2(G10.4,F10.4,G10.4))')
+     >        tv, fv  , fvv,
      >        ts, fs  , 0.d0
-            write (ko,'(2(G10.4,F10.4,G10.4))') 
+            write (ko,'(2(G10.4,F10.4,G10.4))')
      >        tso, fso, fvs
           endif
 
           if (modtyp.eq.6) then
-C           ECIS 06 
+C           ECIS 06
 C           Full dispersive corrections internally calculated
             nn2 = 2
             alphav = ALpha
@@ -2114,9 +2114,9 @@ C           Full dispersive corrections internally calculated
               alphav = 0.d0
             endif
 
-            if(abs(idr).ge.2) nl = -nl        
+            if(abs(idr).ge.2) nl = -nl
             write(ko,'(14I5)')  kecis ,  -nn2,  nv,  ns,  -nl,  0
-            write(ko,'(7F10.5)')   el ,    ef,  ep,  ea, ALso, 0.d0,  Bv   
+            write(ko,'(7F10.5)')   el ,    ef,  ep,  ea, ALso, 0.d0,  Bv
             write(ko,'(7F10.5)')alphav, 0.d0, Bs,  Cs, 0.d0, Bvso, ALhf
           endif
 
@@ -2145,7 +2145,7 @@ C     astep=10.
 C     rmatch= 25.d0
       rmatch = 1.35d0*iatar**(1./3.) +  10.d0*0.65d0
       if(rmatch.lt.25.d0) rmatch = 25.d0
-      if (izaproj.ne.1) rmatch = 40.d0      
+      if (izaproj.ne.1) rmatch = 40.d0
 
 
       ecis1=becis1
@@ -2194,7 +2194,7 @@ c
 c       Check for gaussian ff for WD
         el=eninc
         call gaussff(igauflg)
-        if(igauflg.eq.1) then 
+        if(igauflg.eq.1) then
             Iflag = 6
             write(6,*) ' ERROR: Gaussian form factor requested in ECIS'
           return
@@ -2258,7 +2258,7 @@ C           jchk=0
             write(ko,'(3f10.5)') wd,rwd,awd
             write(ko,'(3f10.5)') vso,rvso,avso
             write(ko,'(3f10.5)') wso,rwso,awso
-C           COULOMB POTENTIAL       
+C           COULOMB POTENTIAL
 C      1-10   VAL(20)  REDUCED COULOMB RADIUS IN FERMIS.                ECIS-724
 C     11-20   VAL(21)  DIFFUSENESS OF A WOODS-SAXON CHARGE DISTRIBUTION.ECIS-725
             write(ko,'(3f10.5)') rc,ac,0.
@@ -2283,7 +2283,7 @@ c
       if(iz(nis).ne.iztar.or.ia(nis).ne.iatar)go to 44
       ntar=nis
 !     ntar>0 (Collective Levels exist )
-      open(unit=45,file='cclev-omp.dat')          
+      open(unit=45,file='cclev-omp.dat')
       write(45,'("# Reference Number =",i5," Incident Particle: ",a8,
      +  " imodel=",i1," Target: Z=",i3," A=",i4," Ef =",f7.3)')
      +  iref,parname(ipsc),imodel,iztar,iatar,Efermi
@@ -2296,17 +2296,17 @@ C    +  izmin,izmax,iamin,iamax,emin,emax,Efermi
 
       SELECT CASE (imodel)
 
-        CASE (1) ! Rigid rotor parameters (imodel=1)    
-          write(35,10) NCOll(ntar),lmax(ntar),
+        CASE (1) ! Rigid rotor parameters (imodel=1)
+          write(35,10) NCOll(ntar),lmaxOM(ntar),
      +      idef(ntar), bandk(ntar),(def(ntar,k),k=2,idef(ntar),2)
-          write(45,10) NCOll(ntar),lmax(ntar),
+          write(45,10) NCOll(ntar),lmaxOM(ntar),
      +      idef(ntar), bandk(ntar),(def(ntar,k),k=2,idef(ntar),2)
           write(45,'(A26)') '# LEVELS: rigid rotor     '
           do k=1,ncoll(ntar)
             write(45,99045) EX(k,ntar), SPIn(k,ntar), IPAr(k,ntar)
           enddo
 
-        CASE (2) ! Vibrational rotor parameters (imodel=2)    
+        CASE (2) ! Vibrational rotor parameters (imodel=2)
           write(35,10) ncoll(ntar)
           write(45,10) ncoll(ntar)
           write(45,'(A26)') '# LEVELS: vibrational     '
@@ -2315,12 +2315,12 @@ C    +  izmin,izmax,iamin,iamax,emin,emax,Efermi
      &                      NPH(k,ntar), DEFv(k,ntar), THEtm(k,ntar)
           enddo
 
-        CASE (3) ! Soft rotor parameters (imodel=3)    
+        CASE (3) ! Soft rotor parameters (imodel=3)
           write(35,10) NCOll(ntar)
           write(45,10) NCOll(ntar)
           write(45,'(A26)') '# LEVELS: soft rotor      '
           ! Record 3 from OPTMAN (Hamiltonian parameters)
-          write(45,99047)  SR_hw(ntar),SR_amb0(ntar),SR_amg0(ntar), 
+          write(45,99047)  SR_hw(ntar),SR_amb0(ntar),SR_amg0(ntar),
      +                     SR_gam0(ntar),SR_bet0(ntar),SR_bet4(ntar)
           ! Record 4 from OPTMAN (Hamiltonian parameters)
           write(45,99047)  SR_bb42(ntar),SR_gamg(ntar),SR_delg(ntar),
@@ -2334,10 +2334,10 @@ C    +  izmin,izmax,iamin,iamax,emin,emax,Efermi
      +                     SR_nng(k,ntar),SR_nno(k,ntar)
           enddo
 
-        CASE (4) ! Rigid-soft rotor parameters (imodel=4) 
-          write(35,10) NCOll(ntar),LMAx(ntar),
+        CASE (4) ! Rigid-soft rotor parameters (imodel=4)
+          write(35,10) NCOll(ntar),lmaxOM(ntar),
      +      idef(ntar), bandk(ntar),(def(ntar,k),k=2,idef(ntar),2)
-          write(45,10) NCOll(ntar),LMAx(ntar),
+          write(45,10) NCOll(ntar),lmaxOM(ntar),
      +      idef(ntar), bandk(ntar),(def(ntar,k),k=2,idef(ntar),2)
           write(45,'(A26)') '# LEVELS: rigid-soft rotor'
           do k=1,NCOll(ntar)
@@ -2362,7 +2362,7 @@ C    +  izmin,izmax,iamin,iamax,emin,emax,Efermi
      + "    DWV     W      RW     AW  ",
      + "    VD     RVD    AVD     WD     RWD    AWD ",
      + "    VSO    RVSO   AVSO    WSO    RWSO   AWSO   VHFpn    WSpn",
-     + "     DVSpn     WVpn    DVVpn   V(Lane)  W(Lane)    VHF" )')    
+     + "     DVSpn     WVpn    DVVpn   V(Lane)  W(Lane)    VHF" )')
 
       go to 48
   44  continue
@@ -2374,7 +2374,7 @@ C    +  izmin,izmax,iamin,iamax,emin,emax,Efermi
      + "    DWV     W      RW     AW  ",
      + "    VD     RVD    AVD     WD     RWD    AWD ",
      + "    VSO    RVSO   AVSO    WSO    RWSO   AWSO   VHFpn    WSpn",
-     + "     DVSpn     WVpn    DVVpn   V(Lane)  W(Lane)    VHF" )')    
+     + "     DVSpn     WVpn    DVVpn   V(Lane)  W(Lane)    VHF" )')
       endif
 
       ndis=0
@@ -2508,7 +2508,7 @@ c             variables
 !MS$IF DEFINED (alone)
       real*8 dtmp2
       real*8 rvolint,wvolint,rsurint,wsurint,DWVintNONL,DWVint
-      real*8 vcoldisp, vcolint, scolint, rvolintsph, wsoint, vsoint 
+      real*8 vcoldisp, vcolint, scolint, rvolintsph, wsoint, vsoint
 !MS$ENDIF
       real*8 VHFnum,DWVcor,VSOnum,DSOcor,ALhf,ALso,DWScor,AHF
       real*8 WDE,WVE,Visov,WVisov,WSisov,AlphaV,ALpha,RSTep
@@ -2518,7 +2518,7 @@ c             variables
       integer iaref
       integer k,kecis
 
-      common /energy/EEE,Ef,Ep,Ea          
+      common /energy/EEE,Ef,Ep,Ea
       common /Wenerg/WDE,WVE
       common /pdatas/As,Bs,Cs,nns,iq
       common /pdatav/AAv,Bv,nnv
@@ -2562,12 +2562,12 @@ c
       jc=min0(jc,jcoul)
       rc=rcoul0(jc)*atar**(-1./3.) + rcoul(jc) +
      +   rcoul1(jc)*atar**(-2./3.) + rcoul2(jc)*atar**(-5./3.) +
-c        RCN addition to consider new Morillon-Romain potential 
+c        RCN addition to consider new Morillon-Romain potential
      +   rcoul3(jc)
 c    +   rcoul3(jc)*atar
 
       if(beta(jc).gt.0.d0) then
-        Iflag = 6 
+        Iflag = 6
         write(6,*)
      +'ERROR: ECIS can not deal with non-local potentials, use SCAT2000'
             return
@@ -2582,7 +2582,7 @@ c     For Lane consistent potentials change the incident energy for proton poten
 c     by the specified Coulomb shift (pot(1,1,25)
 c
       VCshift = 0.d0
-      IF(izproj.eq.1 .and. pot(i,1,25).gt.0.d0) 
+      IF(izproj.eq.1 .and. pot(i,1,25).gt.0.d0)
      >   VCshift = pot(i,1,25)*ztar/atar**(1.d0/3.d0)
       vc = 0.d0
       DerDWV = 0.d0
@@ -2607,9 +2607,9 @@ c
       elf = el - Ef - VCshift
 
       iaref = 0
-C     Reference nucleus defined 
-      if (NINT(pot(i,j,24)).eq.1 .and. pot(i,j,23).gt.0.) 
-     *  iaref = NINT(pot(i,j,23)) 
+C     Reference nucleus defined
+      if (NINT(pot(i,j,24)).eq.1 .and. pot(i,j,23).gt.0.)
+     *  iaref = NINT(pot(i,j,23))
 c
 c     Calculate radius and diffuseness parameters
       if(rco(i,j,13).eq.0.) then
@@ -2637,7 +2637,7 @@ C     RCN, 09/2004, to handle new extension to the OMP RIPL-2 format
      *        + aco(i,j,8)*atar**2 + aco(i,j,9)*atar**3
      *        + aco(i,j,10)*atar**(1./3.) + aco(i,j,11)*atar**(-1./3.)
 
-C     Dependence calculated inside OPTMAN 
+C     Dependence calculated inside OPTMAN
 C     if(iaref.gt.0 .and. rco(i,j,13).eq.0.) THEN
       if(iaref.eq.0) THEN
         OPTrlib(i) =  rlib(i)
@@ -2647,8 +2647,8 @@ C     if(iaref.gt.0 .and. rco(i,j,13).eq.0.) THEN
           IF( ABS(alib(1)-alib(2)).gt.0.0001 ) IDRs = 1
         endif
       else
-        OPTrlib(i) =  rco(i,j,1) + rco(i,j,7)*(atar-iaref)  
-        OPTalib(i) =  aco(i,j,1) + aco(i,j,7)*(atar-iaref)  
+        OPTrlib(i) =  rco(i,j,1) + rco(i,j,7)*(atar-iaref)
+        OPTalib(i) =  aco(i,j,1) + aco(i,j,7)*(atar-iaref)
         if (i.eq.2 .and. idr.ge.2) then
           IF( ABS(OPTrlib(1)-OPTrlib(2)).gt.0.0001 ) IDRs = 1
           IF( ABS(OPTalib(1)-OPTalib(2)).gt.0.0001 ) IDRs = 1
@@ -2710,22 +2710,22 @@ c       Morillon-Romain formulas
 c
         elf = el - Ef - VCshift
         if(i.eq.1) call bcoget(b,j,Visov,WVisov,WSisov)
-c       
+c
 c       Vhf(E) calculated from nonlocal approximation
 c          as suggested by Perey and Buck
         alpha_PB = b(i,j,1)
         beta_PB  = b(i,j,2)
         gamma_PB = b(i,j,3)
-        EEE = el  - VCshift  
+        EEE = el  - VCshift
         iq=1
         if(i.eq.4 .and. b(4,j,12).gt.0.) iq=nint(b(4,j,12))
- 
+
         Vnonl = 0.d0
         if(i.eq.1 .or. i.eq.5) then
           Vnonl = -Vhf(EEE,alpha_PB,beta_PB,gamma_PB)
           vc = 0.d0
           if(i.eq.1 .and. b(1,j,5).ne.0.d0) then
-C           MR do not use derivarive of the potential 
+C           MR do not use derivarive of the potential
 C
 C           Numerical derivative of the Vhf
 C           Vnonlm = -Vhf(EEE-0.05,alpha_PB,beta_PB,gamma_PB)
@@ -2796,7 +2796,7 @@ c
       vlib(i)=pot(i,j,1) + pot(i,j,7)*eta + pot(i,j,8)*encoul
      +   + pot(i,j,9)*atar + pot(i,j,10)*atar**(1./3.)
      +   + pot(i,j,11)*atar**(-2./3.) + pot(i,j,12)*encoul2
-      if(elf.gt.0.) vlib(i) = vlib(i) + 
+      if(elf.gt.0.) vlib(i) = vlib(i) +
      +      (pot(i,j,2) + pot(i,j,13)*eta + pot(i,j,14)*atar)*elf
      +   + pot(i,j,3)*elf**2 + pot(i,j,4)*elf**3 + pot(i,j,6)*sqrt(elf)
      +   + pot(i,j,17)*encoul/elf**2
@@ -2819,10 +2819,10 @@ c
 c       Only one energy range
         j=1
 c
-c       Only shifted if the real potential is shifted 
+c       Only shifted if the real potential is shifted
 c
-        VCshift = 0.d0 
-        IF(izproj.eq.1 .and. pot(1,1,25).gt.0.d0) 
+        VCshift = 0.d0
+        IF(izproj.eq.1 .and. pot(1,1,25).gt.0.d0)
      >   VCshift = pot(1,1,25)*ztar/atar**(1.d0/3.d0)
 c
         EEE = el - VCshift
@@ -2835,7 +2835,7 @@ c
           n = nint( pot(i,j,13) )
           nnv = n
 
-          if(n.eq.0 .or. mod(n,2).eq.1) stop 
+          if(n.eq.0 .or. mod(n,2).eq.1) stop
      +      'ERROR: Zero or odd exponent in Wv(E) for dispersive OMP'
           Ep=pot(i,j,20)
           if(Ep.eq.0.) Ep=Ef
@@ -2847,14 +2847,14 @@ c         if(modtyp.eq.6) goto 154
 c         Analytical DOM integral
           DWV=DOM_INT_Wv(Ef,Ep,AAv,Bv,EEE,n,DerDWV)
 
-C         Numerical DOM integral (used in RIPL-2 released interface)  
+C         Numerical DOM integral (used in RIPL-2 released interface)
 C         WVE=WVf(AAv,Bv,Ep,Ef,EEE,n)
 C         ftmp1=2*DOM_int(Delta_WV,WVf,Ef,Ef+5.*Bv,150000.d0,EEE,0.d0)
 
-C         Coulomb correction for real volume potential 
+C         Coulomb correction for real volume potential
           if (pot(1,1,25).ne.0) DerDWV = 0.d0
           DerDWV = -b(1,1,5)*encoul2*DerDWV
-C         numerical DOM derivative (not needed for a time being) 
+C         numerical DOM derivative (not needed for a time being)
 C         DWVp = DOM_INT_Wv(Ef,Ep,AAv,Bv,EEE+0.1d0,n,dtmp)
 
 C         DWVm = DOM_INT_Wv(Ef,Ep,AAv,Bv,EEE-0.1d0,n,dtmp)
@@ -2865,7 +2865,7 @@ c           WVE=WVf(AAv,Bv,Ep,Ef,EEE,n)
 c           DWV=2*DOM_int(Delta_WV,WVf,Ef,Ef+5.*Bv,150000.d0,EEE,0.d0)
 c         endif
 c
-          T12der = 0.d0  
+          T12der = 0.d0
           if(Ea.lt.1000.d0) THEN
              AlphaV=pot(i,j,22)
              if(AlphaV.eq.0.d0) AlphaV=1.65d0
@@ -2876,26 +2876,26 @@ c
 
              DWV = DWV + Dwplus + Dwmin
              DWVnonl = Dwplus + Dwmin
-c            Coulomb correction for nonlocal dispersive contribution  
-c                to real volume potential 
+c            Coulomb correction for nonlocal dispersive contribution
+c                to real volume potential
              if(b(1,1,5).ne.0.d0 .and. pot(1,1,25).eq.0) then
                if(eee.ne.0.05d0) then
-                 T2p = DOM_INT_T2(Ef,Ea,EEE+0.05d0)  
-                 T2m = DOM_INT_T2(Ef,Ea,EEE-0.05d0)  
-                     T2der = AlphaV*(T2p-T2m)*10.d0 
+                 T2p = DOM_INT_T2(Ef,Ea,EEE+0.05d0)
+                 T2m = DOM_INT_T2(Ef,Ea,EEE-0.05d0)
+                     T2der = AlphaV*(T2p-T2m)*10.d0
                  T1p = DOM_INT_T1(Ef,Ea,EEE+0.05d0)
                  T1m = DOM_INT_T1(Ef,Ea,EEE-0.05d0)
                  T1der = dtmp1*(T1p-T1m)*10.d0
                  T12der =  -b(1,1,5)*encoul2* ( T1der + T2der )
                else
-                 T2p = DOM_INT_T2(Ef,Ea,EEE+0.1d0)  
+                 T2p = DOM_INT_T2(Ef,Ea,EEE+0.1d0)
                  T2m = DOM_INT_T2(Ef,Ea,EEE-0.1d0)
-                     T2der = AlphaV*(T2p-T2m)*5.d0 
+                     T2der = AlphaV*(T2p-T2m)*5.d0
                  T1p = DOM_INT_T1(Ef,Ea,EEE+0.1d0)
                  T1m = DOM_INT_T1(Ef,Ea,EEE-0.1d0)
                  T1der = dtmp1*(T1p-T1m)*5.d0
                  T12der =  -b(1,1,5)*encoul2* ( T1der + T2der )
-               endif 
+               endif
              endif
           endif
           VVcoul = DerDWV + T12der
@@ -2907,10 +2907,10 @@ c       Only one energy range
         j=1
 c
 c
-c       Only shifted if the real potential is shifted 
+c       Only shifted if the real potential is shifted
 c
-        VCshift = 0.d0 
-        IF(izproj.eq.1 .and. pot(1,1,25).gt.0.d0) 
+        VCshift = 0.d0
+        IF(izproj.eq.1 .and. pot(1,1,25).gt.0.d0)
      >   VCshift = pot(1,1,25)*ztar/atar**(1.d0/3.d0)
 c
         EEE = el - VCshift
@@ -2936,7 +2936,7 @@ C         if(modtyp.eq.6) goto 156
           if(idr.ge.2) then
 c           analytical DOM integral
             DWS = DOM_INT_Ws(Ef,Ep,As,Bs,Cs,EEE,n,DerDWS)
-c           Coulomb correction for real surface potential 
+c           Coulomb correction for real surface potential
             if (pot(1,1,25).ne.0) DerDWS = 0.d0
             VScoul = -b(1,1,5)*encoul2*DerDWS
           endif
@@ -2946,10 +2946,10 @@ c           numerical DOM integral
             nns=n
             WDE=WDf(As,Bs,Cs,Ep,EEE,n,iq)
             DWS = 2*DOM_int(Delta_WD,WDf,Ef,Ef+30.d0,2000.d0,EEE,WDE)
-c           Coulomb correction for real surface potential 
+c           Coulomb correction for real surface potential
             if(b(1,1,5).ne.0.d0 .and. pot(1,1,24).eq.1) then
               WDE=WDf(As,Bs,Cs,Ep,EEE+0.1d0,n,iq)
-              DWSp = 
+              DWSp =
      >         2*DOM_int(Delta_WD,WDf,Ef,Ef+30.d0,2000.d0,EEE+0.1d0,WDE)
               WDE=WDf(As,Bs,Cs,Ep,EEE-0.1d0,n,iq)
               DWSm =
@@ -2973,7 +2973,7 @@ c
           AAvso = b(i,j,6)
           Bvso  = b(i,j,7)
           nnl = nint( pot(i,j,13) )
-          if(nnl.eq.0 .or. mod(nnl,2).eq.1) stop 
+          if(nnl.eq.0 .or. mod(nnl,2).eq.1) stop
      +      'ERROR: Zero or odd exponent in Wso(E) for dispersive OMP'
 
 c         analytical DOM integral
@@ -2990,13 +2990,13 @@ C         if (IDRs.gt.0) DWVcor = DWV + VVcoul
           DWScor = DWS + VScoul
           DSOcor = DWVso
         endif
-C       Dependence calculated inside OPTMAN 
+C       Dependence calculated inside OPTMAN
         iaref = 0
-C       Reference nucleus defined 
-        if (NINT(pot(1,1,24)).eq.1 .and. pot(1,1,23).gt.0.) 
-     *    iaref = NINT(pot(1,1,23)) 
+C       Reference nucleus defined
+        if (NINT(pot(1,1,24)).eq.1 .and. pot(1,1,23).gt.0.)
+     *    iaref = NINT(pot(1,1,23))
 
-        if(iaref.gt.0) then 
+        if(iaref.gt.0) then
           OPTvlib(1) =  vlib(1) + pot(1,1,22)*(atar-iaref) + DWVcor
         else
           OPTvlib(1) =  vlib(1) + DWVcor
@@ -3054,24 +3054,24 @@ c
       if(w.lt.0.0.and.nonegw.eq.1) w=0.
       rw=rlib(2)
       aw=alib(2)
-      
+
       vd=vlib(3)*gamma
       OPTvlib(3) = OPTvlib(3)*gamma
       rvd=rlib(3)
       avd=alib(3)
-      
+
       wd=vlib(4)*gamma
       OPTvlib(4) = OPTvlib(4)*gamma
       if(w.lt.0.0.and.nonegw.eq.1) OPTvlib(4) = 0.d0
       if(wd.lt.0.0.and.nonegw.eq.1) wd=0.
       rwd=rlib(4)
       awd=alib(4)
-      
+
       vso=vlib(5)*gamma
       OPTvlib(5) = OPTvlib(5)*gamma
       rvso=rlib(5)
       avso=alib(5)
-      
+
       wso=vlib(6)*gamma
       OPTvlib(6) = OPTvlib(6)*gamma
       rwso=rlib(6)
@@ -3079,9 +3079,9 @@ c
 
 
       IF(k.eq.1 .and. kecis.eq.1) then
-C       IF(IDRs>0) 
-C    >    write(*,*) 
-C    >    'Dispersive potential with Real geom.<> Imag. geom. !!' 
+C       IF(IDRs>0)
+C    >    write(*,*)
+C    >    'Dispersive potential with Real geom.<> Imag. geom. !!'
 C       write(*,*) 'GS Dispers. OMP parameters'
 C       write(*,*) 'E=',sngl(El),' Ef=',sngl(Ef),' Ep=',sngl(Ep)
 C     write(*,*) 'Real HF volume  VHF,rHF,aHF:',
@@ -3102,17 +3102,17 @@ C     write(*,*) 'Real SO pot vso,rvs,avs:',
 C    >    sngl(vlib(5)*gamma),sngl(rlib(5)),sngl(alib(5))
 C     write(*,*) 'Imag SO pot wso,rws,aws:',
 C    >    sngl(vlib(6)*gamma),sngl(rlib(6)),sngl(alib(6))
-C       write(*,*) 
+C       write(*,*)
       ENDIF
 
-C     if (modtyp.ge.4) return  
+C     if (modtyp.ge.4) return
 
       if(jchk.eq.1) then
        iqm = 1
        do j=1,ndim5
          betass(j)=0.d0
        enddo
-       if(imodel.gt.0 .and. ntar.gt.0) then        
+       if(imodel.gt.0 .and. ntar.gt.0) then
          iqm=idef(ntar)
          do j=2,iqm,2
            betass(j)=dble(def(ntar,j))
@@ -3121,31 +3121,31 @@ C     if (modtyp.ge.4) return
 
 !MS$IF DEFINED (alone)
 C
-C      DEFORMED VOLUME INTEGRALS 
+C      DEFORMED VOLUME INTEGRALS
 C
-C      write(*,'(1x,A3,F7.3,3x,A5,5(f5.3,1x))') 
+C      write(*,'(1x,A3,F7.3,3x,A5,5(f5.3,1x))')
 C    >    ' E=',el,' DEF:',(betass(j),j=2,iqm,2)
        call VOLIN(1,dble(VHFnum*gamma) , dble(rv), !dble(rv *atar**(1./3.)),
      >             dble(av),rvolintsph)
        ! rvolintsph = rvolintsph  / atar / iaproj
        rvolintsph = rvolintsph     / iaproj
-       
+
        rvolint = VolumeInt2D(0,BETAss,iqm,dble(Vhfnum*gamma),
-     >                     dble(rv *atar**(1./3.)),dble(av),1)   
+     >                     dble(rv *atar**(1./3.)),dble(av),1)
        rvolint = rvolint / atar     / iaproj
 
        ! write(6,*) ' VOL INTEGRAL =',rvolint,' SPH=',rvolintsph
 
        DWVint = VolumeInt2D(0,BETAss,iqm,dble(DWV*gamma),
-     >                     dble(rw *atar**(1./3.)),dble(aw),1)   
+     >                     dble(rw *atar**(1./3.)),dble(aw),1)
        DWVint = DWVint  / atar / iaproj
-       rvolint = rvolint + DWVint 
+       rvolint = rvolint + DWVint
 
        vcoldisp = 0.d0
        if(VVcoul.gt.0) then
          vc = VVcoul*gamma
          vcoldisp = VolumeInt2D(0,BETAss,iqm,dble(vc),
-     >                     dble(rw *atar**(1./3.)),dble(aw),1)   
+     >                     dble(rw *atar**(1./3.)),dble(aw),1)
          vcoldisp = vcoldisp / atar / iaproj
        endif
        rvolint = rvolint + vcoldisp
@@ -3153,34 +3153,34 @@ C
 C      Spin-orbit volume integrals
 C
        vsoint = VolumeInt2D(0,BETAss,iqm,dble(vso*gamma),
-     >                     dble(rvso *atar**(1./3.)),dble(avso),3)   
+     >                     dble(rvso *atar**(1./3.)),dble(avso),3)
        vsoint = vsoint / atar / iaproj * cso
        wsoint = VolumeInt2D(0,BETAss,iqm,dble(wso*gamma),
-     >                     dble(rwso *atar**(1./3.)),dble(awso),3)   
-       wsoint = wsoint / atar / iaproj * cso  
+     >                     dble(rwso *atar**(1./3.)),dble(awso),3)
+       wsoint = wsoint / atar / iaproj * cso
        DWVintNONL = VolumeInt2D(0,BETAss,iqm,dble(DWVnonl*gamma),
-     >                     dble(rw *atar**(1./3.)),dble(aw),1)   
+     >                     dble(rw *atar**(1./3.)),dble(aw),1)
        DWVintNONL = DWVintNONL  / atar / iaproj
        wvolint = VolumeInt2D(0,BETAss,iqm,dble(w),
-     >                     dble(rw *atar**(1./3.)),dble(aw),1)   
+     >                     dble(rw *atar**(1./3.)),dble(aw),1)
        wvolint = wvolint  / atar / iaproj
        rsurint = VolumeInt2D(0,BETAss,iqm,dble(vd),
-     >                     dble(rvd *atar**(1./3.)),dble(avd),2)     
+     >                     dble(rvd *atar**(1./3.)),dble(avd),2)
        rsurint = rsurint / atar     / iaproj
        wsurint = VolumeInt2D(0,BETAss,iqm,dble(wd),
-     >                     dble(rwd *atar**(1./3.)),dble(awd),2)     
+     >                     dble(rwd *atar**(1./3.)),dble(awd),2)
        wsurint = wsurint / atar     / iaproj
        vcolint = 0.d0
        scolint = 0.d0
        if((VDcoul+VScoul).gt.0) then
          vc = VDcoul*gamma
          vcolint = VolumeInt2D(0,BETAss,iqm,dble(vc),
-     >                     dble(rv *atar**(1./3.)),dble(av),1)   
+     >                     dble(rv *atar**(1./3.)),dble(av),1)
          vcolint = vcolint / atar / iaproj
-         vcolint = vcolint + vcoldisp 
-         vc = VScoul*gamma 
+         vcolint = vcolint + vcoldisp
+         vc = VScoul*gamma
          scolint = VolumeInt2D(0,BETAss,iqm,dble(vc),
-     >                     dble(rvd *atar**(1./3.)),dble(avd),2)     
+     >                     dble(rvd *atar**(1./3.)),dble(avd),2)
          scolint = scolint / atar / iaproj
        endif
 !MS$ENDIF
@@ -3227,7 +3227,7 @@ C    +             6(f7.3,f6.3,f6.3),18(1x,f6.3,1x))')
      +             26(1x,f7.3,1x))') el,
      +    v,rv,av,DWVcor,w,rw,aw,vd,rvd,avd,wd,rwd,awd,
      +    vso,rvso,avso,wso,rwso,awso
-        endif 
+        endif
 !MS$IF DEFINED (alone)
         if( idr.ne.0) then
           write(36,'(f7.3,15(1x,f8.3,1x))')
@@ -3235,13 +3235,13 @@ C    +             6(f7.3,f6.3,f6.3),18(1x,f6.3,1x))')
      +    OPTvlib(1),Vhfnum,DWVcor,VDCoul,DerDWV,T12der,VScoul,DWS,
      +    OPTvlib(3)
 
-          dtmp = w 
+          dtmp = w
           if(dtmp.eq.0.d0) dtmp=1.d0
-          dtmp1 = wd 
+          dtmp1 = wd
           if(dtmp1.eq.0.d0) dtmp1=1.d0
           dtmp2 = wso
           if(dtmp2.eq.0.d0) dtmp2=1.d0
-          write(34,'(f7.3,1x,12(G13.7,1x))')  
+          write(34,'(f7.3,1x,12(G13.7,1x))')
      +      el,DWVcor/dtmp,(DWV-Dwplus-Dwmin)/dtmp,Dwplus/dtmp,
      +      Dwmin/dtmp,OPTvlib(2),DWS/dtmp1,OPTvlib(4),Dwvso/dtmp2,
      +      OPTvlib(6)
@@ -3278,8 +3278,8 @@ c
        WSisov = 0.d0
 
        call setr(0.d0,b,90*ndim1)
-C      Default Coulomb correction = 1.73 Z/(rc*A**(1/3)) = Ecoul2       
-       b(1,j,5)  =  pot(1,j,9) 
+C      Default Coulomb correction = 1.73 Z/(rc*A**(1/3)) = Ecoul2
+       b(1,j,5)  =  pot(1,j,9)
 
 C      Original Koning dependence
        b(1,j,1)  =  pot(1,j,1) + pot(1,j,2)*atar + pot(1,j,8)*eta
@@ -3294,14 +3294,14 @@ c        Soukhovitski dependence
            b(1,j,1)  =  pot(1,j,1) + pot(1,j,2)*atar + pot(1,j,8)*eta +
      +                pot(1,j,20)*eta/
      +               (pot(1,j,14) + pot(1,j,15)*atar + pot(1,j,16))
-c          Visov = 2 * ( pot(1,j,8) + pot(1,j,20) ) * sqrt(eta/atar) 
-C          Visov =       pot(1,j,8) + 
+c          Visov = 2 * ( pot(1,j,8) + pot(1,j,20) ) * sqrt(eta/atar)
+C          Visov =       pot(1,j,8) +
 C    +                   pot(1,j,20)/
-C    +                  (pot(1,j,14) + pot(1,j,15)*atar + pot(1,j,16))   
+C    +                  (pot(1,j,14) + pot(1,j,15)*atar + pot(1,j,16))
 
-           Visov =       pot(1,j,20)  
+           Visov =       pot(1,j,20)
          endif
-       
+
          b(1,j,2)  =  pot(1,j,3) + pot(1,j,4)*atar
          b(1,j,3)  =  pot(1,j,5) + pot(1,j,6)*atar
          b(1,j,4)  =  pot(1,j,7)
@@ -3311,7 +3311,7 @@ C    +                  (pot(1,j,14) + pot(1,j,15)*atar + pot(1,j,16))
 
 c        b coefficients from 13 to 15 added for Soukhovitski potential
 c        V^DISP_R
-C        b(1,j,13)  =  pot(1,j,16)  
+C        b(1,j,13)  =  pot(1,j,16)
          b(1,j,13)  =  pot(1,j,16) + pot(1,j,2)*atar
 
 c        Lambda_R
@@ -3326,32 +3326,32 @@ c        b(i,j,15) must be equal to 1., b(1,j,13)  =  0 !!! for Koning OMP
      >      (pot(1,j,14) + pot(1,j,15)*atar + pot(1,j,16)).eq.0.) then
            b(1,j,13) = pot(1,j,16)
            b(1,j,15) = 1.d0
-         endif 
+         endif
        endif
 
        if(pot(1,j,24).eq.3) then
 
-c        Li & Cai OMP 
+c        Li & Cai OMP
 
-         b(1,j,15)= 1.d0         
+         b(1,j,15)= 1.d0
          b(1,j,5) = 0.d0   ! No Coulomb correction
 
          if(b(1,j,1).eq.0.d0) stop 'ERROR in the RIPL pot. compilation'
-c                         beta0         beta1          
+c                         beta0         beta1
          b(1,j,2)  = -(pot(1,j,3) + pot(1,j,4)*eta)/b(1,j,1)
        endif
 
 c      Wv( Av )
 C      b(2,j,6)  =  pot(2,j,1) + pot(2,j,2)*atar
 c      added eta dependence for Av parameter (RCN, 12/2006) if pot(2,j,8)<>0
-       b(2,j,6)  =  pot(2,j,1) + pot(2,j,2)*atar + pot(2,j,8)*eta 
+       b(2,j,6)  =  pot(2,j,1) + pot(2,j,2)*atar + pot(2,j,8)*eta
 
 c      Wv( Bv )
 c      added eta dependence for Bv parameter (RCN, 12/2006, corrected 08/08) if pot(2,j,9)<>0
-       b(2,j,7)  =  pot(2,j,3) + pot(2,j,4)*atar + pot(2,j,9)*eta 
+       b(2,j,7)  =  pot(2,j,3) + pot(2,j,4)*atar + pot(2,j,9)*eta
 
 C    factor 2*sqrt(eta/atar) explicitly quoted in the definition of the isovector potential
-C      WVisov = 2*pot(2,j,8)*sqrt(eta/atar)    
+C      WVisov = 2*pot(2,j,8)*sqrt(eta/atar)
        WVisov =   pot(2,j,8)
 
 c      Wd
@@ -3360,11 +3360,11 @@ c      added A dependence for As parameter (RCN, 09/2004) if pot(4,j,7)<>0
 C      b(4,j,8)  =  pot(4,j,1) + pot(4,j,8)*eta + pot(4,j,7)*atar
 c      added A**(-1/3) dependence for As parameter (RCN, 11/2005) if pot(4,j,9)<>0
 c      Wd( As )
-       b(4,j,8)  =  pot(4,j,1) + pot(4,j,8)*eta + pot(4,j,7)*atar + 
+       b(4,j,8)  =  pot(4,j,1) + pot(4,j,8)*eta + pot(4,j,7)*atar +
      >                pot(4,j,9)*atar**(-1.d0/3.d0)
 
 C    factor 2*sqrt(eta/atar) explicitly quoted in the definition of the potential
-C      WSisov = 2*pot(4,j,8)*sqrt(eta/atar) 
+C      WSisov = 2*pot(4,j,8)*sqrt(eta/atar)
        WSisov =   pot(4,j,8)
 
 c      Wd( Cs )
@@ -3373,11 +3373,11 @@ c        added A dependence for Cs parameter (RCN, 05/2008) if pot(4,j,10)<>0
          b(4,j,9)  =  pot(4,j,2) + pot(4,j,10)*atar +
      +                pot(4,j,3)/(1.+ exp((atar-pot(4,j,4))/pot(4,j,5)))
        else
-         b(4,j,9)  =  pot(4,j,2) + pot(4,j,10)*atar 
+         b(4,j,9)  =  pot(4,j,2) + pot(4,j,10)*atar
        endif
 c      Wd( Bs )
 c      added A dependence for Bs parameter (RCN, 05/2008) if pot(4,j,10)<>0
-       b(4,j,10) =  pot(4,j,6) + pot(4,j,11)*atar 
+       b(4,j,10) =  pot(4,j,6) + pot(4,j,11)*atar
 C      Wd( q )
        b(4,j,12) =  pot(4,j,12)
 
@@ -3386,7 +3386,7 @@ c      Vso
        b(5,j,12) =  pot(5,j,12)
 
        if(pot(1,j,24).eq.2) then
-c       
+c
 c       Vso(E) calculated from nonlocal approximation
 c            as suggested by Perey and Buck
          b(5,j,1)  =  pot(5,j,1) + pot(5,j,2)*atar + pot(5,j,8)*eta
@@ -3462,7 +3462,7 @@ c     ecis1(21:21)='T'
       if(iz(nis).ne.iztar.or.ia(nis).ne.iatar)go to 44
       ntar=nis
 !     ntar>0 (Collective Levels exist )
-      open(unit=45,file='cclev-omp.dat')          
+      open(unit=45,file='cclev-omp.dat')
       write(45,'("# Reference Number =",i5," Incident Particle: ",a8,
      +  " imodel=",i1," Target: Z=",i3," A=",i4," Ef =",f7.3)')
      +  iref,parname(ipsc),imodel,iztar,iatar,Efermi
@@ -3474,17 +3474,17 @@ C    + "  E-Range=",f8.3,"-",f8.3," MeV         Ef =",f7.3)')
 C    +  izmin,izmax,iamin,iamax,emin,emax,Efermi
 
       SELECT CASE (imodel)
-        CASE (1) ! Rigid rotor parameters (imodel=1)    
-          write(35,10) NCOll(ntar),lmax(ntar),
+        CASE (1) ! Rigid rotor parameters (imodel=1)
+          write(35,10) NCOll(ntar),lmaxOM(ntar),
      +      idef(ntar), bandk(ntar),(def(ntar,k),k=2,idef(ntar),2)
-          write(45,10) NCOll(ntar),lmax(ntar),
+          write(45,10) NCOll(ntar),lmaxOM(ntar),
      +      idef(ntar), bandk(ntar),(def(ntar,k),k=2,idef(ntar),2)
           write(45,'(A26)') '# LEVELS: rigid rotor     '
           do k=1,ncoll(ntar)
             write(45,99045) EX(k,ntar), SPIn(k,ntar), IPAr(k,ntar)
           enddo
-          
-        CASE (2) ! Vibrational rotor parameters (imodel=2)    
+
+        CASE (2) ! Vibrational rotor parameters (imodel=2)
         write(35,10) ncoll(ntar)
         write(45,10) ncoll(ntar)
           write(45,'(A26)') '# LEVELS: vibrational     '
@@ -3493,12 +3493,12 @@ C    +  izmin,izmax,iamin,iamax,emin,emax,Efermi
      &                      NPH(k,ntar), DEFv(k,ntar), THEtm(k,ntar)
           enddo
 
-        CASE (3) ! Soft rotor parameters (imodel=3)    
+        CASE (3) ! Soft rotor parameters (imodel=3)
         write(35,10) NCOll(ntar)
         write(45,10) NCOll(ntar)
           write(45,'(A26)') '# LEVELS: soft rotor      '
           ! Record 3 from OPTMAN (Hamiltonian parameters)
-          write(45,99047)  SR_hw(ntar),SR_amb0(ntar),SR_amg0(ntar), 
+          write(45,99047)  SR_hw(ntar),SR_amb0(ntar),SR_amg0(ntar),
      +                     SR_gam0(ntar),SR_bet0(ntar),SR_bet4(ntar)
           ! Record 4 from OPTMAN (Hamiltonian parameters)
           write(45,99047)  SR_bb42(ntar),SR_gamg(ntar),SR_delg(ntar),
@@ -3511,11 +3511,11 @@ C    +  izmin,izmax,iamin,iamax,emin,emax,Efermi
      +                     SR_ntu(k,ntar),SR_nnb(k,ntar),
      +                     SR_nng(k,ntar),SR_nno(k,ntar)
           enddo
-      
-        CASE (4) ! Rigid-soft rotor parameters (imodel=4) 
-          write(35,10) NCOll(ntar),LMAx(ntar),
+
+        CASE (4) ! Rigid-soft rotor parameters (imodel=4)
+          write(35,10) NCOll(ntar),lmaxOM(ntar),
      +      idef(ntar), bandk(ntar),(def(ntar,k),k=2,idef(ntar),2)
-          write(45,10) NCOll(ntar),LMAx(ntar),
+          write(45,10) NCOll(ntar),lmaxOM(ntar),
      +      idef(ntar), bandk(ntar),(def(ntar,k),k=2,idef(ntar),2)
           write(45,'(A26)') '# LEVELS: rigid-soft rotor'
           do k=1,NCOll(ntar)
@@ -3523,10 +3523,10 @@ C    +  izmin,izmax,iamin,iamax,emin,emax,Efermi
      +               SR_ntu(k,ntar),SR_nnb(k,ntar),SR_nng(k,ntar),
      +               SR_nno(k,ntar),defv(k,ntar),defr(k,ntar)
           enddo
-            
+
         CASE DEFAULT
         write(35,'(A21)') '# SPHERICAL POTENTIAL'
-          
+
       END SELECT
       close(45)
       if(idr.ne.0) THEN
@@ -3539,7 +3539,7 @@ C    +  izmin,izmax,iamin,iamax,emin,emax,Efermi
      + "    DWV     W      RW     AW  ",
      + "    VD     RVD    AVD     WD     RWD    AWD ",
      + "    VSO    RVSO   AVSO    WSO    RWSO   AWSO   VHFpn    WSpn",
-     + "     DVSpn     WVpn    DVVpn   V(Lane)  W(Lane)    VHF" )')    
+     + "     DVSpn     WVpn    DVVpn   V(Lane)  W(Lane)    VHF" )')
       go to 48
   44  continue
 !     ntar<=0 Collective Levels do not exist
@@ -3549,7 +3549,7 @@ C    +  izmin,izmax,iamin,iamax,emin,emax,Efermi
      + "    DWV     W      RW     AW  ",
      + "    VD     RVD    AVD     WD     RWD    AWD ",
      + "    VSO    RVSO   AVSO    WSO    RWSO   AWSO   VHFpn    WSpn",
-     + "     DVSpn     WVpn    DVVpn   V(Lane)  W(Lane)    VHF" )')    
+     + "     DVSpn     WVpn    DVVpn   V(Lane)  W(Lane)    VHF" )')
       endif
       if(imodel.gt.0 .and. imodel.lt.4 .and. Iflag.ne.-1) then
 
@@ -3599,10 +3599,10 @@ c
       else
         if (modtyp.eq.6 .or. modtyp.eq.5) kom = 1
         write(ko,'(f5.2,2i2,a1,5f10.5)') tarspi,0,kom,tarpar,elx
-      endif 
+      endif
   56  continue
       iqm=idef(ntar)
-      iqmax=lmax(ntar)
+      iqmax=lmaxOM(ntar)
       aspin=bandk(ntar)
       ik=1
       write(ko,'(2i5,f10.5,i5)') iqm,iqmax,aspin,ik
@@ -3626,14 +3626,14 @@ c-------------------------------------------------------------------------------
 c  Physical  constants (following ECIS03 definitions and ENDF manual 2001)
 c-------------------------------------------------------------------------------
 C CONSTANTS COMPUTED FROM THE FUNDAMENTAL CONSTANTS, ATOMIC MASS, HBAR*C
-C AND ALPHA, AS GIVEN IN THE EUROPEAN PHYSICAL JOURNAL, PAGE 73, VOLUME 
-C 15 (2000) REFERRING FOR THESE VALUES TO THE 1998 CODATA SET WHICH MAY 
-C BE FOUND AT http://physics.nist.gov/constants                         
-C     amu0c2=931.494013 +/- 0.000037 MeV                                
-      amu0c2=931.494013D0                                               
-C     hbarc=197.3269601 +/- 0.0000078 (*1.0E-9 eV*cm)                   
-      hbarc=197.3269601D0  
-C                                                        
+C AND ALPHA, AS GIVEN IN THE EUROPEAN PHYSICAL JOURNAL, PAGE 73, VOLUME
+C 15 (2000) REFERRING FOR THESE VALUES TO THE 1998 CODATA SET WHICH MAY
+C BE FOUND AT http://physics.nist.gov/constants
+C     amu0c2=931.494013 +/- 0.000037 MeV
+      amu0c2=931.494013D0
+C     hbarc=197.3269601 +/- 0.0000078 (*1.0E-9 eV*cm)
+      hbarc=197.3269601D0
+C
       ampipm = 1.395688d+02
       ampi0  = 1.349645d+02
       ampi   = (2.d0*ampipm + ampi0)/3.d0
@@ -3650,7 +3650,7 @@ c     Compute Fermi energy
       call energy2(zatar-zaproj,dm,ds,dp,tarexm1)
       call energy2(zatar+zaproj,dm,ds,dp,tarexp1)
       efermi=-0.5*(tarexm1-tarexp1+2.*projex)
-      etmp = nint(efermi*10000)  
+      etmp = nint(efermi*10000)
       efermi = etmp/10000  ! Fermi energy redued to four numbers after the dot
       return
       end subroutine masses
@@ -3910,7 +3910,7 @@ C       write(35,'(1H#/,"# En(MeV)      V    RV    AV ",
 C    +          "   DWV      W    RW    AW ",
 C    +          "    VD   RVD   AVD     WD   RWD   AWD ",
 C    +          "   VSO   RVSO  AVSO   WSO   RWSO  AWSO   VHFpn WSpn",
-C    +          " DVSpn    WVpn    DVVpn   V(Lane)  W(Lane)    E" )')    
+C    +          " DVSpn    WVpn    DVVpn   V(Lane)  W(Lane)    E" )')
 C     endif
 !MS$IF DEFINED (alone)
       if(idr.ne.0 .and. modtyp.le.2) then
@@ -3937,8 +3937,8 @@ C     endif
      +   iref,parname(ipsc),imodel,iztar,iatar,Efermi
       write(37,'("# En(MeV)     RealPot   RVolPot   RSurPot    VSOPot",
      +   "   DVolPot    DVolNonL  DVolSym    ImPot    ImVolPot",
-     +   "   ImSurPot   WSOPot")')    
-      endif 
+     +   "   ImSurPot   WSOPot")')
+      endif
       if(izproj.GT.0 .and. modtyp.le.2) then
         write(38,'("# Reference Number =",i5," Incident Particle: ",a8,
      +  " imodel=",i1," Target: Z=",i3," A=",i4," Ef =",f7.3)')
@@ -4072,14 +4072,14 @@ C       Odd function
       ResEmin  =  Emin**n / (Emin**n + Bv**n)
 
       DerEmin  =  Emin**(n-1) *
-     >           ( Emin**n + Bv**n*(1.d0 + n*log(dabs(Emin)) ) ) 
-     >           / (Emin**n + Bv**n)**2 
+     >           ( Emin**n + Bv**n*(1.d0 + n*log(dabs(Emin)) ) )
+     >           / (Emin**n + Bv**n)**2
 
       ResEplus = -Eplus**n / (Eplus**n + Bv**n)
 
       DerEplus = -Eplus**(n-1) *
-     >           ( Eplus**n + Bv**n*(1.d0+n*log(Eplus)) ) 
-     >           / (Eplus**n + Bv**n)**2 
+     >           ( Eplus**n + Bv**n*(1.d0+n*log(Eplus)) )
+     >           / (Eplus**n + Bv**n)**2
 
 C----------------------------------
 C     Complex arithmetic follows
@@ -4095,10 +4095,10 @@ C     Complex arithmetic follows
      >           /( (Pj+Eplus)**2 * (Pj-Emin)**2 )
       enddo
 
-      IF(ABS(IMAG(Fs)).gt.1.e-4) STOP 
+      IF(ABS(IMAG(Fs)).gt.1.e-4) STOP
      > 'ERROR: (F) Too big imag part in DWv'
       Rs  = REAL(Fs)
-      IF(ABS(IMAG(Ds)).gt.1.e-4) STOP 
+      IF(ABS(IMAG(Ds)).gt.1.e-4) STOP
      > 'ERROR: (D) Too big imag part in DWv'
       Rds = REAL(Ds)
 C----------------------------------
@@ -4112,7 +4112,7 @@ C----------------------------------
       END FUNCTION DOM_INT_Wv
 
 c-----------------------------------------------------------------------------
-      DOUBLE PRECISION FUNCTION 
+      DOUBLE PRECISION FUNCTION
      +          DOM_INT_Ws(Ef,Ep,As,Bs,Cs,Einc,m,DerivIntWs)
 c-----------------------------------------------------------------------------
 C
@@ -4122,7 +4122,7 @@ C      Ws(E)=Ws(2*Ef-E)                                           for E<2Ef-Ep
 C      Ws(E)=0                                                    OTHERWISE
 C
       IMPLICIT NONE
-      REAL*8 Ef,Ep,As,Bs,Cs,E,Einc      
+      REAL*8 Ef,Ep,As,Bs,Cs,E,Einc
       COMPLEX*16 I,Pj,Zj,Ztmp
       COMPLEX*16 Fs,Ds
       REAL*8 E0,Ex,Eplus,Emin,pi
@@ -4130,9 +4130,9 @@ C
       REAL*8 DerivIntWs,DerEmin,DerEplus,Rds
       INTEGER m,j,IS
 
-C     To be uncommented for release, problem with MS FORTRAN compilers (link error) 
+C     To be uncommented for release, problem with MS FORTRAN compilers (link error)
 C     COMPLEX*16 zfi
-C     REAL*8 Ein                             
+C     REAL*8 Ein
 
       DATA I/(0.d0,1.d0)/
       pi=4.d0*atan(1.d0)
@@ -4155,15 +4155,15 @@ C       Odd function
 
       DerEmin  = -Emin**(m-1) *
      >          ( Emin**m + Bs**m + ( -Cs*Emin**(m+1) +
-     >            Bs**m *(-Cs*Emin+m) ) * exp(-Cs*Emin)*EIn(Cs*Emin) ) 
-     >           / (Emin**m + Bs**m)**2 
+     >            Bs**m *(-Cs*Emin+m) ) * exp(-Cs*Emin)*EIn(Cs*Emin) )
+     >           / (Emin**m + Bs**m)**2
 
       ResEplus = -Eplus**m / (Eplus**m + Bs**m)
 
       DerEplus =  Eplus**(m-1) *
      >          ( Eplus**m + Bs**m + ( Cs*Eplus**(m+1) +
-     >            Bs**m *(Cs*Eplus+m) ) * exp(Cs*Eplus)*EIn(-Cs*Eplus) ) 
-     >           / (Eplus**m + Bs**m)**2 
+     >            Bs**m *(Cs*Eplus+m) ) * exp(Cs*Eplus)*EIn(-Cs*Eplus) )
+     >           / (Eplus**m + Bs**m)**2
 
 C----------------------------------
 C     Complex arithmetic follows
@@ -4179,10 +4179,10 @@ C     Complex arithmetic follows
      >           /( (Pj+Eplus)**2 * (Pj-Emin)**2 )
       enddo
 
-      IF(ABS(IMAG(Fs)).gt.1.e-4) STOP 
+      IF(ABS(IMAG(Fs)).gt.1.e-4) STOP
      >  'ERROR: (F) Too big imag part in DWs'
       Rs  = REAL(Fs)
-      IF(ABS(IMAG(Ds)).gt.1.e-4) STOP 
+      IF(ABS(IMAG(Ds)).gt.1.e-4) STOP
      >  'ERROR: (D) Too big imag part in DWs'
       Rds = REAL(Ds)
 C----------------------------------
@@ -4251,7 +4251,7 @@ c-----------------------------------------------------------------------------
       ENDDO
       RETURN
       END FUNCTION EIn
-     
+
 c-----------------------------------------------------------------------------
       real*8 function WV(A,B,Ep,Ef,E,n)
 c-----------------------------------------------------------------------------
@@ -4291,7 +4291,7 @@ c-----------------------------------------------------------------------------
       REAL*8 FUNCTION DOM_int_T1_VDK(Av,Ef,Ea,E)
 c-----------------------------------------------------------------------------
 C
-C     Integral over E' corresponding to nonlocal additions T1(E'<<0) 
+C     Integral over E' corresponding to nonlocal additions T1(E'<<0)
 C
       IMPLICIT REAL*8(A-H,O-Z)
       real*8 Eax, Ex, Ea
@@ -4320,7 +4320,7 @@ C
 C     Integral over E' corresponding to nonlocal additions T1(E'<<0)
 C
 C     Following formula (20) CPC
-C 
+C
       IMPLICIT NONE
 
       real*8 E,Ea,Ef,Ex,Ea2,Eax,Pi,T11,T12,T13
@@ -4375,7 +4375,7 @@ C
 
       ELSEIF(E.EQ.0.d0) THEN
 
-C     CPC formula 
+C     CPC formula
 C     DOM_int = DOM_int + 1.d0/Pi*( 0.5*EL**(1./3.)
 C    > + log(EL/Ea) + 0.5d0*sqrt(EL) )
 
@@ -4399,7 +4399,7 @@ C    > + log(EL/Ea) + 0.5d0*sqrt(EL) )
 C
 C     Integral over E' corresponding to nonlocal additions T2(E'>>0)
 C
-C     Following Eq.(24) PRC94(2016)064605 
+C     Following Eq.(24) PRC94(2016)064605
 C     (CPC equation (20) contains typos !!)
 C
       IMPLICIT NONE
@@ -4431,7 +4431,7 @@ C     ELSEIF(E.GT.0.d0 .AND. E.LE.EL) THEN
 
       ELSEIF(E.EQ.0.d0) THEN
 
-C     CPC (wrong) formula 
+C     CPC (wrong) formula
 C     DOM_int = DOM_int + 1.d0/Pi*( 0.5*EL**(1./3.)
 C    > + log(EL/Ea) + 0.5d0*sqrt(EL) )
 
@@ -4563,7 +4563,7 @@ c
       END FUNCTION DOM_int
 
 c-----------------------------------------------------------------------------
-      subroutine VolIn(itype,depth,rad,dif,volint)    
+      subroutine VolIn(itype,depth,rad,dif,volint)
 c-----------------------------------------------------------------------------
 c**********************************************************
 c  Calculate volume integrals (from SCAT2000, O.Bersillon)*
@@ -4586,10 +4586,10 @@ c
       data             one   /1.0d+00/
       data             three /3.0d+00/
       data             four  /4.0d+00/
-      data             pi    /3.1415926d0/ 
+      data             pi    /3.1415926d0/
 c=======================================================================
 c
-      volint = 0.d0 
+      volint = 0.d0
       if(rad.eq.zero .or. depth.eq.zero) return
 c
       arg = (pi*dif/rad)**2
@@ -4610,11 +4610,11 @@ c
       DIMENSION X(100),W(100)
 
       common/pgaus/x,w,n1
-      common/parameters/vdepth,radius,diffuss  ! common for potential parameters 
+      common/parameters/vdepth,radius,diffuss  ! common for potential parameters
       common/armon/LANDA,LANDAM
 c
-c Radius is the theta dependent deformed radius (carried through a common statement), 
-c which takes different values for the varius shapes (HF, volume,surface & spin-orbit) 
+c Radius is the theta dependent deformed radius (carried through a common statement),
+c which takes different values for the varius shapes (HF, volume,surface & spin-orbit)
 c XR is the increment applied to RD for the upper limit of radial integration
       DATA PI/3.1415926d0/,XR/30.d0/
 
@@ -4649,9 +4649,9 @@ C
 C
         YL0P=SQRT((2*LANDA+1)/(4*PI))*PLGNDR(LANDA,0,XP)
         YL0M=SQRT((2*LANDA+1)/(4*PI))*PLGNDR(LANDA,0,XM)
-        FTETAP = 2.d0*PI*YL0P*SIN(THETAP) 
-        FTETAM = 2.d0*PI*YL0M*SIN(THETAM) 
-C     
+        FTETAP = 2.d0*PI*YL0P*SIN(THETAP)
+        FTETAM = 2.d0*PI*YL0M*SIN(THETAM)
+C
 C       Integration over radius(theta)
 C
 C       Real parts
@@ -4681,7 +4681,7 @@ c-----------------------------------------------------------------------------
       REAL*8 FUNCTION qgauss(VVHF,A,B)
 c-----------------------------------------------------------------------------
 C
-C     Gauss-Legendre quadrature integration method 
+C     Gauss-Legendre quadrature integration method
 C
       IMPLICIT real*8 (A-H,O-Z)
       DIMENSION X(100),W(100)
@@ -4738,7 +4738,7 @@ c-----------------------------------------------------------------------------
 c-----------------------------------------------------------------------------
       IMPLICIT real*8 (A-H,O-Z)
 C
-C Computes the associated Legendre Polinomials  P(lm). Here m and l are 
+C Computes the associated Legendre Polinomials  P(lm). Here m and l are
 C integers satisfying 0<=m<=l, while x lies in the range -1<=x<=1.
 C
       IF(M.LT.0.OR.M.GT.L.OR.ABS(X).GT.1) then
@@ -4784,7 +4784,7 @@ C
 
       DIMENSION A(6)
       DATA NTOP,A/0,1.d0,1.d0,1.d0,1.d0,1.d0,1.d0/
-      IF (N.LT.0) THEN 
+      IF (N.LT.0) THEN
         write(6,*) 'ERROR: NEGATIVE FACTORIAL CALL'
         stop
       ELSE IF (N.LE.NTOP) THEN
@@ -4816,7 +4816,7 @@ c-----------------------------------------------------------------------------
      >           /((y-Ef)**2-(E-Ef)**2)
       RETURN
       END FUNCTION DELTA_WV
-      
+
 
 c-----------------------------------------------------------------------------
       REAL*8 FUNCTION WVf(A,B,Ep,Ef,E,n)
@@ -4833,8 +4833,8 @@ c-----------------------------------------------------------------------------
       WVf = A*ee/(ee+B**n)
 
       RETURN
-      END FUNCTION WVf      
-      
+      END FUNCTION WVf
+
 c-----------------------------------------------------------------------------
       REAL*8 FUNCTION DELTA_WD(WDf,y)
 c-----------------------------------------------------------------------------
@@ -4850,7 +4850,7 @@ c-----------------------------------------------------------------------------
 
       RETURN
       END FUNCTION DELTA_WD
-      
+
 c-----------------------------------------------------------------------------
       REAL*8 FUNCTION WDf(A,B,C,Ep,E,m,iq)
 c-----------------------------------------------------------------------------
@@ -4863,12 +4863,12 @@ c-----------------------------------------------------------------------------
       IF (arg.GT.15) RETURN
       ee = (E-Ep)**m
       WDf = A*ee/(ee+B**m)*EXP(-arg)
-      
-      END FUNCTION WDf      
+
+      END FUNCTION WDf
 
 c==   START integrands in r for the various terms
 c-----------------------------------------------------------------------------
-      real*8 function VolumeR(r) 
+      real*8 function VolumeR(r)
 c-----------------------------------------------------------------------------
       IMPLICIT real*8 (A-H,O-Z)
       common/parameters/vdepth,radius,diffuss
@@ -4878,7 +4878,7 @@ c-----------------------------------------------------------------------------
       end   function VolumeR
 
 c-----------------------------------------------------------------------------
-      real*8 function SurfaceR(r) 
+      real*8 function SurfaceR(r)
 c-----------------------------------------------------------------------------
       IMPLICIT real*8 (A-H,O-Z)
       common/parameters/vdepth,radius,diffuss
@@ -4889,7 +4889,7 @@ c-----------------------------------------------------------------------------
       end   function SurfaceR
 
 c-----------------------------------------------------------------------------
-      real*8 function SpinOrbitR(r) 
+      real*8 function SpinOrbitR(r)
 c-----------------------------------------------------------------------------
       IMPLICIT real*8 (A-H,O-Z)
       common/parameters/vdepth,radius,diffuss

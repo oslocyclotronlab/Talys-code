@@ -7,9 +7,7 @@ C
       IMPLICIT NONE
       real Fmoment
       real Eps, Vdef
-      real Uexc, Smiu
-      INTEGER K
-      COMMON /VARGS/ Uexc, Smiu, K
+      include "wkb.cmb"
       Fmoment = 2.d0*SMIU* sqrt( abs (UEXC - Vdef(Eps)) )
       return
       end
@@ -22,10 +20,8 @@ C
       IMPLICIT NONE
       real FmomentParab
       real Eps, VdefParab
-      real Uexc, Smiu
-      INTEGER K
-      COMMON /VARGS/ Uexc, Smiu, K
-      FmomentParab = 2.d0*Smiu* sqrt( abs (Uexc - VdefParab(Eps)) )
+      include "wkb.cmb"
+      FmomentParab=2.d0*Smiu*sqrt(abs(Uexc-VdefParab(Eps,Smiu,K)))
       return
       end
       FUNCTION GaussLegendre41(F,Ea,Eb,ABSERR)

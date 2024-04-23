@@ -11,21 +11,30 @@ C-----Maximum Reactions
       PARAMETER (MAXNREACT = 11)
 C-----Max. points in tabulated Rho
       PARAMETER (MAXRHO = 5000)
+c----- 5,000 X 8 bytes X 3 arrays = 120,000 bytes
 c-----2014/2/20 - reduced to 300000 from 600000
-      PARAMETER (MAXRES = 300000) ! Max. # of resonances
+c-----2019/6/29 - reduced to 100000 from 300000
+c-----            ENDF/B-VIII U235 and U235 are each only ~ 3,000
+      PARAMETER (MAXRES = 100000) ! Max. # of resonances
+c----- 300,000 X 8 bytes X 17 arrays = 40,800,000 bytes
 c-----2014/2/1 - decreased from 1,000 to 100
       PARAMETER (MAXSEC =  100)   ! Max. # of sections
-C-----2017/3/7 - INCREASED FROM 600,000 TO 1,200,000
+c----- 100 X 8 bytes X 31 arrays = 24,800 bytes
 C
 C     WARNING - Change both MAXPTX and MAXPTXP1
 C
-CAK   PARAMETER (MAXPTX   = 1200000) ! Max. # energy points per page
-CAK   PARAMETER (MAXPTXP1 = 1200001) ! MAXPTX + 1
-CAK Reduced to previous values to make PREPRO routines fit inside TALYS
-      PARAMETER (MAXPTX   = 600000) ! Max. # energy points per page
-      PARAMETER (MAXPTXP1 = 600001) ! MAXPTX + 1
+c***** DEBUG
+C-----2017/3/7 - INCREASED FROM 600,000 TO 1,200,000
+c     PARAMETER (MAXPTX   = 1200000) ! Max. # energy points per page
+      PARAMETER (MAXPTX   =  120000) ! Max. # energy points per page
+c----- 1,200,000 X 8 bytes X 16 = 153,600,000 bytes
+c     PARAMETER (MAXPTXP1 = 1200001) ! MAXPTX + 1
+      PARAMETER (MAXPTXP1 =  120001) ! MAXPTX + 1
+c***** DEBUG
+c----- 1,200,001 X 8 bytes X 12 = 115,200,000 bytes
 C-----12/20/06 - INCREASED MAXSAVE FROM 200 TO 2,000
       PARAMETER (MAXSAVE = 2000)  ! Max. # of saved iteration points
+c----- 2,000 X 8 bytes X 12 arrays = 192,000 bytes
 C-----------------------------------------------------------------------
 C
 C     STORAGE
@@ -45,7 +54,7 @@ C-----RESONANCE SECTION
 c-----2016/11/15 - Added to allow L dependent fission = speed if no
       COMMON/GOFISH/LFWL(MAXSEC)
 C-----2017/4/13 - INTERPOLATION LAW - now fixed dimension = 100
-      COMMON/TERPCOM/INTF(100),NBTF(100)
+      COMMON/NBTINT/INT(100),NBT(100)
 C-----------------------------------------------------------------------
 C
 C     BLANK COMMON = Only 1 declaration

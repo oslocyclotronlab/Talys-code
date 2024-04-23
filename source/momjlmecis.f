@@ -765,7 +765,7 @@ c     (1998)
      &                    /1.25d0,1.35d0,0.d0,1,1/
       data kmw/0/
       data xlv,xlw/1.d0,1.d0/
-      data ilamaxi/5/
+      data ilamaxi/3/
       data ac/-974.d0,    7097.d0, -19530.d0,
      &        11.26d0,   -125.7d0,    418.d0,
      &       -.0425d0,    .5853d0,  -2.054d0/
