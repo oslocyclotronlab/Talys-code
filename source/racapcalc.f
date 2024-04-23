@@ -1,4 +1,4 @@
-      subroutine racapcalc(ein,kz1,ka1,beta2tar,
+      subroutine racapcalc(knp,ein,kz1,ka1,beta2tar,
      &  spinexptar,iparexptar,spinthtar,iparthtar,
      &  a1exp,a1th,kz2,ka2,spinexpproj,a2,
      &  spinexpcn,iparexpcn,spinthcn,iparthcn,afexp,afth,Sn,
@@ -11,6 +11,7 @@ c
       implicit double precision(a-h,o-z)
       real ein
       integer kz1,ka1,kz2,ka2
+	  integer knp
       real spinexptar,spinthtar
       real spinexpproj
       real spinexpcn,spinthcn
@@ -112,7 +113,11 @@ c
       af=afexp
       kaf=ka1+ka2
       kzf=kz1+kz2
-      nnf=kaf-kzf
+      if (knp.eq.1) nnf=kaf-kzf
+      if (knp.eq.2) nnf=kzf
+c     knp=1 is for neutron capture, nnf should be the total neutron number in the final nuclei;
+c     knp=2 is for proton capture, nnf should be the total proton number in the final nuclei.
+c     nnf is used for the selection rule in the following code.
 c
 c     set of experimental and theoretical real masses: experimental mass frist.
 c     if experimental mass not available, theoretical mass is used.
@@ -133,7 +138,7 @@ c     set the coulomb radii and charged, reduced mass, and odd-even functions(lz
 c
 c     hc=hbar*c  (in Mev*fm)
 c     fsc=inverse of the fine-structure constant
-c     amn=amu*a2, mean nucleon mass (in Mev c**(-2)), a2 is real neutron mass
+c     amn=amu*a2, mean nucleon mass (in Mev c**(-2)), a2 is real neutron or proton mass
 c     hm=hc**2/2*amn
 c
       rc=1.2*(dble(ka1)**(1./3.)+dble(ka2)**(1./3.))
@@ -377,7 +382,6 @@ c
       jspin=min(jspin,jspmax)
       jspin=max(jspin,0)
       jparity=min(idnint(ipaff(jlev)/2.d0+1.5d0),2)
-      if (jparity.lt.1) jparity=1
   710 rhobin(jlev,jspin,jparity)=1.d0
       nlevfmax=nlevf
 c
@@ -475,11 +479,7 @@ c
       esigjp=0.
       spinf=dble(jspin+dble(mod(kaf,2))/2.)
       ipaf=int((dble(jparity)-1.5)*2.)
-      if (jlev.gt.1) then
-        weight=rhobin(jlev,jspin,jparity)*(0.1d0+0.33d0*dexp(-0.8*ef))
-      else
-        weight=rhobin(jlev,jspin,jparity)*spfacst(jlev)
-      endif
+      weight=rhobin(jlev,jspin,jparity)*spfacst(jlev)
       if (weight.le.1.d-20) goto 221
 c
 c     remove the fake contributions that does not match to the known experimental levels
@@ -499,6 +499,7 @@ c
      +  write(*,*) ' Problem in Parity of (',kzf,',',kaf,') G.S.=',ipaf
       jf=int(spinf*(mod(kaf,2)+1))
       jf=jf*lz
+c      write(8964,*) jspin,jparity,weight
 c
 c  Loop on different transitions
 c  lam=1 for E1
@@ -672,6 +673,7 @@ c
           fac1=0.
         endif
       endif
+c      write(8965,*) jspin,jparity,weight,fac1
 c
 c     Determination of the final state characteristics.
 c     Normalization of the final potential on the excitation energy
@@ -687,6 +689,7 @@ c
       facv=1.
       xfac=0.05
       fvmax=1.3
+      if (knp.eq.2.and.Sn.le.0.9) fvmax=1.9
       jtestmax=int((fvmax-1.)/xfac)
       itest=0
       itestmax=20
@@ -722,12 +725,15 @@ c     computing the final energy (ebound) and wave function (wff)
 c
       eps=1.d-4
       call num1l(n,h,e,s2,potf,wff,n0,eps)
+c     write(8976,*) n,h,e,s2,n0
+c     write(8977,*),itest,facv,n0
       ebound=(e+umax)/rm
       eexcit=Sn+ebound
       ee0=eexcit
 c
       if (dabs(ee0-ef).lt.100.*eps.and.n0.ne.-1) goto 490
       if (itest.gt.itestmax) then
+c        write(8972,*) "No solution found at E*=',ef"
 c  No solution found at E*=',ef
         goto 500
       endif
@@ -759,9 +765,11 @@ c  No solution found at E*=',ef
       endif
       facv1=facv0
       goto 430
+c      write(8973,*) facv1 
 c
   490 continue
       if (facv.gt.fvmax.or.facv.lt.1./fvmax) then
+c        write(8974,*) "facv.gt.fvmax.or.facv.lt.1./fvmax" 
         goto 500
       endif
 c
@@ -787,6 +795,7 @@ c
         fac2=fac1*((e0-ebound)/hc)**3./(qk*qk*fsc)*sqrt(rmu*amn/e0/2.)
       endif
       fac3=e0*exp(2.*pi*eta)
+c      write(8966,*) jspin,jparity,weight,fac1,fac2,fac3
 c
 c     Determination of the initial state wave function
 c
@@ -822,7 +831,8 @@ c
         if (lam.eq.3) then
           z=wff(j)*wfi(j)
           elmat=elmat+z
-      endif
+        endif
+c        write(8967,*) jspin,jparity,j,wff(j),wfi(j)
   530 continue
       if (lam.eq.1) then
         elmat=(elmat*h)**2.*fac2
@@ -862,6 +872,7 @@ c     end of loop all the available excited states in final nucleus
 c
       return
       end
+c
       subroutine sixj(j1,j2,j3,l1,l2,l3,q)
 c
 c     sixj
@@ -1033,6 +1044,7 @@ c     sixj
  1010 format(10h erreur 6j,2(3x,3i3))
       return
       end
+c
       subroutine clebs (l1,l2,l3,m1,m2,m3,q)
 c
 c     clebs
@@ -1132,6 +1144,7 @@ c     clebs
       if(mod(l +is,2).eq.1)q=-q
       return
       end
+c
       subroutine calmagelc (kzmag,kamag,dmagxy,qelcxytar,b2tar)
 c     subroutine for calculating the magnetic dipole and electric quadrupole
 c
@@ -1254,6 +1267,7 @@ c
 c==========================================================================
       return
       end
+c
       subroutine num1l(n,h,e,s2,u,s,no,eps)
 c
 c     num1l
@@ -1417,6 +1431,7 @@ c2000 format(/,35x,56hl"etat demande n"est pas lie. retour de num1l avec
 c    1 no=-1,/)
 c     fin formats
       end
+c
       subroutine dephase(maxv,h,w,y,eps,delta,l,eta,qk,rfin,ifail)
 c
 c     dephase
@@ -1481,6 +1496,7 @@ c      print2000,l,qk
 c2000 format(15x,29h no conv. in dephase() for l=,i3,3h k=,f10.6)
  2001 format(15x,' the potential has no coulomb asymptotic form')
       end
+c
       subroutine coufra(rho,eta,minl,maxl,fc,fcp,gc,gcp)
 c
 c     coufra
@@ -1643,6 +1659,7 @@ c     renormalisation de fc et fcp pour chaque valeur de l **************
       gp = 0.0
       goto 8
       end
+c
       subroutine intu1(u,nr,du,volj,rms,rin,key)
 c**************************************************************
 c
@@ -1719,6 +1736,7 @@ c**************************************************************
       if(sum1.ne.0.) rms=sum2/sum1
       return
       end
+c
       subroutine foldpot(e,rho,ka,kz,vfold,hu,volj,ipot)
       implicit double precision(a-h,o-z)
       parameter(nmx=1000,ndimax=5001)
