@@ -33,7 +33,7 @@ subroutine machine
 !
 ! The code directory can be changed here via a script, or manually.
 !
-  codedir = '/Users/koning/talys/'
+  codedir = '/Users/vetlewi/talys2/'
   i = len_trim(codedir)
   if (codedir(i:i) /= '/') codedir = codedir//'/'
 !
