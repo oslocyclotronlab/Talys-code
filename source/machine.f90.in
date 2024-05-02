@@ -92,7 +92,7 @@ subroutine machine
   write(date(1:4),'(i4.4)') year
   write(date(6:7),'(i2.2)') month
   write(date(9:10),'(i2.2)') day
-  user = 'Arjan Koning'
+  user = 'Homebrew'
   return
 end subroutine machine
 ! Copyright A.J. Koning 2023
