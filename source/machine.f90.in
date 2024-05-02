@@ -33,7 +33,7 @@ subroutine machine
 !
 ! The code directory can be changed here via a script, or manually.
 !
-  codedir = '/opt/homebrew/share/'
+  codedir = '@CMAKE_INSTALL_PREFIX@/share/'
   i = len_trim(codedir)
   if (codedir(i:i) /= '/') codedir = codedir//'/'
 !
