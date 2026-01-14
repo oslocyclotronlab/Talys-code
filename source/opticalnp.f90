@@ -123,6 +123,7 @@ subroutine opticalnp(Zix, Nix, k, eopt)
   integer           :: A                ! mass number of target nucleus
   integer           :: i                ! counter
   integer           :: k                ! designator for particle
+  integer           :: ktype            ! designator for particle
   integer           :: md               ! powers for W and Wd
   integer           :: mw               ! powers for W and Wd
   integer           :: nen              ! energy counter
@@ -171,7 +172,12 @@ subroutine opticalnp(Zix, Nix, k, eopt)
 !
 ! 1. In case of an optical model file, we interpolate between the tabulated values.
 !
-  call ompadjust(eopt, k)
+  if (flagompejec .and. k == k0) then
+    ktype = 0
+  else
+    ktype = k
+  endif
+  call ompadjust(eopt, ktype)
   optmodfile = '                                                     '
   if (Zix <= numZph .and. Nix <= numNph) optmodfile = optmod(Zix, Nix, k)
   if (optmodfile(1:1) /= ' ' .or. omplines(Zix, Nix, k) > 0) then
@@ -216,7 +222,6 @@ subroutine opticalnp(Zix, Nix, k, eopt)
 !
   Z = ZZ(Zix, Nix, 0)
   A = AA(Zix, Nix, 0)
-
   if (flagsoukhoinp .or. (flagsoukho .and. Z >= 90 .and. ompglobal(Zix, Nix, k))) then
     call soukhovitskii(k, Z, A, eopt)
   else
@@ -225,7 +230,7 @@ subroutine opticalnp(Zix, Nix, k, eopt)
     v1loc = Fv1 * v1(Zix, Nix, k)
     v2loc = Fv2 * v2(Zix, Nix, k)
     v3loc = Fv3 * v3(Zix, Nix, k)
-    v4loc = Fv4 * 7.e-9
+    v4loc = Fv4 * v4(Zix, Nix, k)
 !
 ! Coulomb term for protons
 !

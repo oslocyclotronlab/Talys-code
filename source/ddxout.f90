@@ -5,7 +5,7 @@ subroutine ddxout
 !
 ! Author    : Arjan Koning
 !
-! 2021-12-30: Original code
+! 2025-07-25: Original code
 !-----------------------------------------------------------------------------------------------------------------------------------
 !
 ! *** Use data from other modules
@@ -24,10 +24,10 @@ subroutine ddxout
 ! Variables for output
 !   ddxacount        ! counter for double - differential cross section files
 !   ddxecount        ! counter for double - differential cross section files
-!   ddxmode            ! mode for DDX: 0: None, 1: Angular distributions, 2: Spectra per angle, 3: Both
+!   ddxmode          ! mode for DDX: 0: None, 1: Angular distributions, 2: Spectra per angle, 3: Both
 !   fileddxa         ! designator for double - differential cross sections on separate file
 !   fileddxe         ! designator for double - differential cross sections on separate file
-!   flagblock        ! flag to block spectra, angle and gamma files
+!   flagblockddx     ! flag to block DDX files
 ! Variables for basic reaction
 !   flaglabddx       ! flag for calculation of DDX in LAB system
 !   flagrecoil       ! flag for calculation of recoils
@@ -71,7 +71,7 @@ subroutine ddxout
 !
   implicit none
   character(len=28) :: ddxfile         ! file for DDX
-  character(len=13) :: Estr
+  character(len=12) :: Estr
   character(len=18) :: reaction   ! reaction
   character(len=132) :: topline    ! topline
   character(len=15) :: col(6)     ! header
@@ -80,6 +80,9 @@ subroutine ddxout
   integer           :: i               ! level
   integer           :: MF
   integer           :: MT
+  integer           :: indent
+  integer           :: id2
+  integer           :: id4
   integer           :: iang            ! running variable for angle
   integer           :: Ncol            ! number of columns
   integer           :: nen             ! energy counter
@@ -105,20 +108,23 @@ subroutine ddxout
 !
   MF = 6
   MT = 5
+  indent = 0
+  id2 = indent + 2
+  id4 = indent + 4
   Estr=''
-  write(Estr,'(es13.6)') Einc
+  write(Estr,'(es12.6)') Einc
   un='mb/MeV/sr'
   col(1)='Angle'
   un(1)='deg'
   col(2)='xs'
   col(3)='Direct'
   col(4)='Preequilibrium'
-  col(5)='Multiple preeq'
+  col(5)='Multiple_preeq'
   col(6)='Compound'
   Ncol=6
   quantity='double-differential cross section'
   if (ddxmode == 1 .or. ddxmode == 3) then
-    write(*, '(/" 9. Double-differential cross sections per", " outgoing energy")')
+    write(*, '(/" 9. Double-differential cross sections per outgoing energy")')
     do type = 1, 6
       if (parskip(type)) cycle
       if (xsparticle(type) == 0.) cycle
@@ -126,7 +132,7 @@ subroutine ddxout
         Eo(nen) = espec(type, nen)
         if (xssumout(type, nen) == 0.) cycle
         write(*, '(/" DDX for outgoing ", a8, " at ", f8.3, " MeV"/)') parname(type), Eo(nen)
-        write(*, '(" Angle   Total      Direct  ", "   Pre-equil.  Mult. preeq   Compound"/)')
+        write(*, '(" Angle   Total      Direct     Pre-equil.  Mult. preeq   Compound"/)')
         do iang = 0, nanglecont
           write(*, '(1x, f5.1, 5es12.5)') anglecont(iang), xssumoutad(type, nen, iang), xsdiscoutad(type, nen, iang), &
  &          xspreeqoutad(type, nen, iang), xsmpreeqoutad(type, nen, iang), xscompoutad(type, nen, iang)
@@ -136,7 +142,7 @@ subroutine ddxout
         enf = fileddxe(type, i)
         call locate(Eo, ebegin(type), eendout(type), enf, nen)
         fac = (enf - Eo(nen)) / deltaE(nen)
-        if (flagblock) then
+        if (flagblockddx) then
           ddxfile = ' ddx.MeV'//natstring(iso)
           write(ddxfile(1:1), '(a1)') parsym(type)
           if (.not. ddxexist1(type)) then
@@ -161,12 +167,13 @@ subroutine ddxout
         write(ddxfile(15:18), '(i4.4)') int(enf)
         reaction='('//parsym(k0)//',x'//parsym(type)//')'
         topline=trim(targetnuclide)//trim(reaction)//' '//trim(quantity)//' at '//Estr//' MeV'
-        call write_header(topline,source,user,date,oformat)
-        call write_target
-        call write_reaction(reaction,0.D0,0.D0,MF,MT)
-        call write_real(2,'E-incident [MeV]',Einc)
-        call write_real(2,'E-emission [MeV]',enf)
-        call write_datablock(quantity,Ncol,nanglecont+1,col,un)
+        call write_header(indent,topline,source,user,date,oformat)
+        call write_target(indent)
+        call write_reaction(indent,reaction,0.D0,0.D0,MF,MT)
+        call write_real(id2,'E-incident [MeV]',Einc)
+        call write_real(id2,'E-emission [MeV]',enf)
+        call write_quantity(id2,quantity)
+        call write_datablock(id2,Ncol,nanglecont+1,col,un)
         do iang = 0, nanglecont
           xsa = xssumoutad(type, nen, iang)
           xsb = xssumoutad(type, nen + 1, iang)
@@ -193,7 +200,7 @@ subroutine ddxout
       if (flagrecoil .and. flaglabddx) then
         do nen = 1, iejlab(type)
           Eo(nen) = Eejlab(type, nen)
-          write(*, '(/" DDX for outgoing ", a8, " at ", f8.3, " MeV", " in LAB frame")') parname(type), Eo(nen)
+          write(*, '(/" DDX for outgoing ", a8, " at ", f8.3, " MeV in LAB frame")') parname(type), Eo(nen)
           write(*, '(" Angle   Cross section"/)')
           do iang = 0, nanglecont
             write(*, '(1x, f5.1, es12.5)') anglecont(iang), ddxejlab(type, nen, iang)
@@ -203,7 +210,7 @@ subroutine ddxout
           enf = fileddxe(type, i)
           call locate(Eo, 1, iejlab(type), enf, nen)
           fac = (enf - Eo(nen)) / deltaE(nen)
-          if (flagblock) then
+          if (flagblockddx) then
             ddxfile = ' ddx.lab'//natstring(iso)
             write(ddxfile(1:1), '(a1)') parsym(type)
             if (.not. ddxexist2(type)) then
@@ -229,12 +236,13 @@ subroutine ddxout
           quantity='double-differential cross section in LAB frame'
           reaction='('//parsym(k0)//',x'//parsym(type)//')'
           topline=trim(targetnuclide)//trim(reaction)//' '//trim(quantity)//' at '//Estr//' MeV'
-          call write_header(topline,source,user,date,oformat)
-          call write_target
-          call write_reaction(reaction,0.D0,0.D0,MF,MT)
-          call write_real(2,'E-incident [MeV]',Einc)
-          call write_real(2,'E-emission [MeV]',enf)
-          call write_datablock(quantity,Ncol,nanglecont+1,col,un)
+          call write_header(indent,topline,source,user,date,oformat)
+          call write_target(indent)
+          call write_reaction(indent,reaction,0.D0,0.D0,MF,MT)
+          call write_real(id2,'E-incident [MeV]',Einc)
+          call write_real(id2,'E-emission [MeV]',enf)
+          call write_quantity(id2,quantity)
+          call write_datablock(id2,Ncol,nanglecont+1,col,un)
           do iang = 0, nanglecont
             xsa = ddxejlab(type, nen, iang)
             xsb = ddxejlab(type, nen + 1, iang)
@@ -250,14 +258,16 @@ subroutine ddxout
 ! 2. Emission spectra per outgoing angle
 !
   if (ddxmode == 2 .or. ddxmode == 3) then
+    col(1)='E-out'
+    un(1)='MeV'
     anginc = 180. / nanglecont
-    write(*, '(/" 9. Double-differential cross sections per", " outgoing angle")')
+    write(*, '(/" 9. Double-differential cross sections per outgoing angle")')
     do type = 1, 6
       if (parskip(type)) cycle
       if (xsparticle(type) == 0.) cycle
       do iang = 0, nanglecont
         write(*, '(/" DDX for outgoing ", a8, " at ", f7.3, " degrees")') parname(type), anglecont(iang)
-        write(*, '(/"    E-out    Total      Direct  ", "   Pre-equil. Mult. preeq   Compound"/)')
+        write(*, '(/"    E-out    Total      Direct     Pre-equil. Mult. preeq   Compound"/)')
         do nen = ebegin(type), eendout(type)
           Eout = espec(type, nen)
           write(*, '(1x, f8.3, 5es12.5)') Eout, xssumoutad(type, nen, iang), xsdiscoutad(type, nen, iang), &
@@ -268,7 +278,7 @@ subroutine ddxout
         angf = fileddxa(type, i)
         call locate(anglecont, 0, nanglecont, angf, iang)
         fac = (angf - anglecont(iang)) / anginc
-        if (flagblock) then
+        if (flagblockddx) then
           ddxfile = ' ddx.deg'//natstring(iso)
           write(ddxfile(1:1), '(a1)') parsym(type)
           if (.not. ddxexist3(type)) then
@@ -294,12 +304,13 @@ subroutine ddxout
         quantity='double-differential cross section'
         reaction='('//parsym(k0)//',x'//parsym(type)//')'
         topline=trim(targetnuclide)//trim(reaction)//' '//trim(quantity)//' at '//Estr//' MeV'
-        call write_header(topline,source,user,date,oformat)
-        call write_target
-        call write_reaction(reaction,0.D0,0.D0,MF,MT)
-        call write_real(2,'E-incident [MeV]',Einc)
-        call write_real(2,'Angle [deg]',angf)
-        call write_datablock(quantity,Ncol,eendout(type)-ebegin(type)+1,col,un)
+        call write_header(indent,topline,source,user,date,oformat)
+        call write_target(indent)
+        call write_reaction(indent,reaction,0.D0,0.D0,MF,MT)
+        call write_real(id2,'E-incident [MeV]',Einc)
+        call write_real(id2,'Angle [deg]',angf)
+        call write_quantity(id2,quantity)
+        call write_datablock(id2,Ncol,eendout(type)-ebegin(type)+1,col,un)
         do nen = ebegin(type), eendout(type)
           Eout = espec(type, nen)
           xsa = xssumoutad(type, nen, iang)
@@ -336,7 +347,7 @@ subroutine ddxout
           angf = fileddxa(type, i)
           call locate(anglecont, 0, nanglecont, angf, iang)
           fac = (angf - anglecont(iang)) / anginc
-          if (flagblock) then
+          if (flagblockddx) then
             ddxfile = ' ddx.lab'//natstring(iso)
             write(ddxfile(1:1), '(a1)') parsym(type)
             if (.not. ddxexist4(type)) then
@@ -363,12 +374,13 @@ subroutine ddxout
           quantity='double-differential cross section in LAB frame'
           reaction='('//parsym(k0)//',x'//parsym(type)//')'
           topline=trim(targetnuclide)//trim(reaction)//' '//trim(quantity)//' at '//Estr//' MeV'
-          call write_header(topline,source,user,date,oformat)
-          call write_target
-          call write_reaction(reaction,0.D0,0.D0,MF,MT)
-          call write_real(2,'E-incident [MeV]',Einc)
-          call write_real(2,'Angle [deg]',angf)
-          call write_datablock(quantity,Ncol,eendout(type)-ebegin(type)+1,col,un)
+          call write_header(indent,topline,source,user,date,oformat)
+          call write_target(indent)
+          call write_reaction(indent,reaction,0.D0,0.D0,MF,MT)
+          call write_real(id2,'E-incident [MeV]',Einc)
+          call write_real(id2,'Angle [deg]',angf)
+          call write_quantity(id2,quantity)
+          call write_datablock(id2,Ncol,eendout(type)-ebegin(type)+1,col,un)
           do nen = 1, iejlab(type)
             xsa = ddxejlab(type, nen, iang)
             xsb = ddxejlab(type, nen, iang + 1)

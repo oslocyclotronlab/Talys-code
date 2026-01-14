@@ -5,8 +5,8 @@ module A0_talys_mod
 !
 ! Author    : Arjan Koning
 !
-! 2021-12-30: Original code
-! 2023-12-29: Current version
+! 2023-12-30: Original code
+! 2025-12-18: Current version
 !-----------------------------------------------------------------------------------------------------------------------------------
 !
 !-----------------------------------------------------------------------------------------------------------------------------------
@@ -42,19 +42,20 @@ module A0_talys_mod
   integer, parameter :: numenadj=1000                        ! maximum number of energies for adjustable parameters
   integer, parameter :: numlev=40                            ! maximum number of discrete levels
   integer, parameter :: numisom=10                           ! number of isomers
+  integer, parameter :: numresgrid=1000                      ! number of energies on resonance grid
   integer, parameter :: numflux=100                          ! number of integral experiments
   integer, parameter :: numfile=100                          ! maximum number of separate output files
   integer, parameter :: numlev2=200                          ! maximum number of levels
   integer, parameter :: numrotcc=4                           ! number of rotational deformation parameters
   integer, parameter :: numgamqrpa=300                       ! number of energies for QRPA strength function
-  integer, parameter :: numTqrpa=11                          ! number of temperatures for QRPA strength functions
+  integer, parameter :: numTqrpa=31                          ! number of temperatures for QRPA strength functions
   integer, parameter :: numomp=500                           ! maximum number of lines in optical model file
   integer, parameter :: numompadj=13                         ! number of adjustable ranges for OMP
   integer, parameter :: numjlm=200                           ! maximum number of radial points
   integer, parameter :: numrot=700                           ! number of rotational states
   integer, parameter :: nummatchT=4000                       ! maximum number of energy points for T matching
   integer, parameter :: numdens=60                           ! number of energy points for tabulated level densities
-  integer, parameter :: numdensracap=200                     ! number of energy points for tabulated level densities for direct cap.
+  integer, parameter :: numdensracap=200                     ! number of energy points for tabulated level densities for dir. cap.
   integer, parameter :: numen=260                            ! maximum number of outgoing energies
   integer, parameter :: numang=90                            ! maximum number of angles
   integer, parameter :: numangcont=36                        ! maximum number of angles for continuum
@@ -184,6 +185,7 @@ module A0_talys_mod
 !
   character(len=10)  :: date     ! date
   character(len=132) :: bestpath ! alternative directory for best values
+  character(len=132) :: bestfile ! file with best parameters
   character(len=132) :: nulldev  ! null device
   character(len=132) :: path     ! directory containing files to be read
 !
@@ -210,7 +212,7 @@ module A0_talys_mod
   logical                                         :: flagchannels  ! flag for exclusive channel calculation
   logical                                         :: flagEchannel  ! flag for channel energy for emission spectrum
   logical                                         :: flagendf      ! flag for information for ENDF-6 file
-  logical                                         :: flagendfdet   ! flag for detailed ENDF-6 information per cchannel
+  logical                                         :: flagendfdet   ! flag for detailed ENDF-6 information per channel
   logical                                         :: flagendfecis  ! flag for new ECIS calculation for ENDF-6 files
   logical                                         :: flaglabddx    ! flag for calculation of DDX in LAB system
   logical                                         :: flagmassdis   ! flag for calculation of fission fragment mass distribution
@@ -222,6 +224,7 @@ module A0_talys_mod
   logical                                         :: flagnffit     ! flag for using fitted (n,f) nuclear model parameters
   logical                                         :: flagnnfit     ! flag for using fitted (n,n'), etc. nuclear model parameters
   logical                                         :: flagnafit     ! flag for using fitted (n,a) nuclear model parameters
+  logical                                         :: flagndfit     ! flag for using fitted (n,d) nuclear model parameters
   logical                                         :: flagpnfit     ! flag for using fitted (p,n) nuclear model parameters
   logical                                         :: flaggnfit     ! flag for using fitted (g,n) nuclear model parameters
   logical                                         :: flagdnfit     ! flag for using fitted (d,n) nuclear model parameters
@@ -231,7 +234,8 @@ module A0_talys_mod
   logical                                         :: flagrecoil    ! flag for calculation of recoils
   logical                                         :: flagrecoilav  ! flag for average velocity in recoil calculation
   logical                                         :: flagrel       ! flag for relativistic kinematics
-  logical                                         :: flagrpevap    ! flag for eva. of residual products at high inccident energies
+  logical                                         :: flagrpevap    ! flag for eva. of residual products at high incident energies
+  logical                                         :: flaglegacy    ! flag to run legacy models
   character(len=132)                              :: ompenergyfile ! file with energies for OMP calculation (ENDF files only)
 !
 !-----------------------------------------------------------------------------------------------------------------------------------
@@ -279,7 +283,7 @@ module A0_talys_mod
   integer   :: maxN       ! maximal number of neutrons away from initial compound nucleus
   integer   :: maxNrp     ! maximal number of neutrons away from the initial compound nucleus
   integer   :: maxZ       ! maximal number of protons away from initial compound nucleus
-  integer   :: maxZrp     ! maximal number of protons away from the initial comppound nucleus
+  integer   :: maxZrp     ! maximal number of protons away from the initial compound nucleus
   integer   :: nangle     ! number of angles
   integer   :: nanglecont ! number of angles for continuum
   integer   :: nbins0     ! number of continuum excitation energy bins
@@ -308,6 +312,7 @@ module A0_talys_mod
 !
   logical                               :: flagbestbr   ! flag to use only best set of branching ratios
   logical                               :: flagelectron ! flag for application of electron conversion coefficient
+  logical                               :: flagpseudores! flag for using light nuclide discrete levels for resonances
   logical                               :: flaglevels   ! flag for output of discrete level information
   character(len=132), dimension(0:numZ) :: deformfile   ! deformation parameter file
   character(len=132), dimension(0:numZ) :: levelfile    ! discrete level file
@@ -316,6 +321,8 @@ module A0_talys_mod
   integer, dimension(0:numpar)          :: nlevbin      ! number of excited levels for binary nucleus
   integer                               :: nlevmax      ! maximum number of included discrete levels for target nucleus
   integer                               :: nlevmaxres   ! maximum number of included discrete levels for residual nucleus
+  real(sgl), dimension(0:numresgrid)    :: Eresgrid     ! energies on resonance grid
+  real(sgl), dimension(0:numresgrid)    :: resgrid      ! resonance grid
 !
 !-----------------------------------------------------------------------------------------------------------------------------------
 ! Variables for level densities
@@ -324,6 +331,7 @@ module A0_talys_mod
   character(len=132), dimension(0:numZ,0:numN)   :: densfile          ! tabulated level density file
   logical                                        :: filedensity       ! flag for level densities on separate files
   logical                                        :: flagasys          ! flag for all level density parameters a from systematics
+  logical                                        :: flagldglobal      ! flag for global level density model
   logical, dimension(0:numZ, 0:numN)             :: flagcol           ! flag for collective enhancement of level density
   logical                                        :: flagcolall        ! flag for collective enhancement of level density
   logical                                        :: flagcolldamp      ! flag for damp of coll eff in effec lev dens (no expl col en)
@@ -352,6 +360,7 @@ module A0_talys_mod
   real(sgl), dimension(0:numZ,0:numN,0:numbar)   :: ctable            ! constant to adjust tabulated level densities
   real(sgl), dimension(0:numZ,0:numN,0:numbar)   :: ctableadjust      ! adjustable correction to adjust tabulated level densities
   real(sgl), dimension(0:numZ,0:numN)            :: D0                ! s-wave resonance spacing in eV
+  real(sgl), dimension(0:numZ,0:numN)            :: D1r               ! p-wave resonance spacing in eV
   real(sgl), dimension(0:numZ,0:numN,0:numbar)   :: deltaW            ! shell correction in nuclear mass
   real(sgl), dimension(0:numZ,0:numN,0:numbar)   :: E0                ! particle constant of temperature formula
   real(sgl), dimension(0:numZ,0:numN,0:numbar)   :: E0adjust          ! adjustable factor for E0
@@ -390,6 +399,7 @@ module A0_talys_mod
   logical                                                 :: flaggnorm      ! flag to normalize PSF to average radiative width
   logical                                                 :: flagupbend     ! flag for low-energy upbend of photon strength function
   logical                                                 :: flagpsfglobal  ! flag for global photon strength functions only
+  logical                                                 :: flagglobalwtable ! flag for global average wtable value instead of 1.
   integer                                                 :: gammax         ! number of l-values for gamma multipolarity
   integer                                                 :: ldmodelracap   ! level density model for direct radiative capture
   integer                                                 :: strength       ! E1 strength function model
@@ -421,8 +431,10 @@ module A0_talys_mod
   real(sgl), dimension(0:numZ,0:numN,0:1,numgam,2)        :: tpr            ! strength of PR
   real(sgl), dimension(0:numZ,0:numN,0:1,numgam,2)        :: tpradjust      ! adjustable factor for strength of PR
   real(sgl), dimension(0:numZ,0:numN,0:1,numgam,3)        :: upbend         ! properties of the low-energy upbend of given multipola
+  real(sgl), dimension(0:numZ,0:numN,0:1,numgam,3)        :: upbendadjust   ! properties of the low-energy upbend of given multipola
   real(sgl), dimension(0:numZ,0:numN,0:1,numgam)          :: wtable         ! constant to adjust tabulated strength functions
   real(sgl), dimension(0:numZ,0:numN,0:1,numgam)          :: wtableadjust   ! adjustable correction to adjust tabulated strength fun
+  real(sgl)                                               :: levinger       ! Levinger parameter for quasi-deuteron
 !
 !-----------------------------------------------------------------------------------------------------------------------------------
 ! Variables to set OMP parameters
@@ -436,13 +448,14 @@ module A0_talys_mod
   logical                                                   :: flagompall    ! flag for new optical model calculation for all nuclei
   logical                                                   :: flagomponly   ! flag to execute ONLY an optical model calculation
   logical                                                   :: flagriplomp   ! flag for RIPL OMP
-  logical, dimension(numpar)                                :: ompadjustF    ! logical for local OMP adjustment
-  logical, dimension(numpar)                                :: ompadjustp    ! flag for local optical model parameter adjustment
+  logical, dimension(0:numpar)                              :: ompadjustF    ! logical for local OMP adjustment
+  logical, dimension(0:numpar)                              :: ompadjustp    ! flag for local optical model parameter adjustment
   logical                                                   :: flagoutomp    ! flag for output of optical model parameters
   logical                                                   :: flagoutkd     ! flag for output of KD03 OMP parameters
   logical                                                   :: flagsoukhoinp ! flag for Soukhovitskii OMP for actinides
   logical                                                   :: flagsoukho    ! flag for Soukhovitskii OMP for actinides
   logical                                                   :: flagriplrisk  ! flag for going outside RIPL mass validity range
+  character(len=1)                                          :: pruitt        ! identifier for using Pruitt parameters for KD03
   character(len=132), dimension(0:numZph, 0:numNph, numpar) :: optmod        ! file with optical model parameters
   character(len=132), dimension(0:numZ)                     :: optmodfileN   ! optical model parameter file for neutrons
   character(len=132), dimension(0:numZ)                     :: optmodfileP   ! optical model parameter file for protons
@@ -451,51 +464,54 @@ module A0_talys_mod
   integer                                                   :: deuteronomp   ! deuteron optical model
   integer                                                   :: jlmmode       ! option for JLM imaginary potential normalization
   integer, dimension(numpar)                                :: riplomp       ! RIPL OMP
-  integer, dimension(numpar, numompadj)                     :: ompadjustN    ! number of energy ranges for local OMP adjustment
+  integer, dimension(0:numpar, numompadj)                   :: ompadjustN    ! number of energy ranges for local OMP adjustment
+  integer                                                   :: pruittset     ! random set for Pruitt et al OMP
   integer                                                   :: radialmodel   ! model for radial matter densities (JLM OMP only)
+  integer                                                   :: Npot          ! number of OMP radial points
   real(sgl)                                                 :: adepthcor     ! adjustable parameter for depth of DF alpha potential
   real(sgl)                                                 :: aradialcor    ! adjustable parameter for shape of DF alpha potential
-  real(sgl), dimension(numpar)                              :: avadjust      ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: avdadjust     ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: avsoadjust    ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: awadjust      ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: awdadjust     ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: awsoadjust    ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: d1adjust      ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: d2adjust      ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: d3adjust      ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: Ejoin         ! joining energy for high energy OMP
+  real(sgl), dimension(0:numpar)                            :: avadjust      ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: avdadjust     ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: avsoadjust    ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: awadjust      ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: awdadjust     ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: awsoadjust    ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: d1adjust      ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: d2adjust      ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: d3adjust      ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: Ejoin         ! joining energy for high energy OMP
+  real(sgl)                                                 :: ecisstep      ! integration step size for ECIS OMP calculation
   real(sgl)                                                 :: lvadjust      ! adjustable parameter for JLM OMP
   real(sgl)                                                 :: lv1adjust     ! adjustable parameter for JLM OMP
   real(sgl)                                                 :: lvsoadjust    ! adjustable parameter for JLM OMP
   real(sgl)                                                 :: lwadjust      ! adjustable parameter for JLM OMP
   real(sgl)                                                 :: lw1adjust     ! adjustable parameter for JLM OMP
   real(sgl)                                                 :: lwsoadjust    ! adjustable parameter for JLM OMP
-  real(sgl), dimension(numpar,numompadj,numrange)           :: ompadjustD    ! depth of local OMP adjustment
-  real(sgl), dimension(numpar,numompadj,numrange)           :: ompadjustE1   ! start energy of local OMP adjustment
-  real(sgl), dimension(numpar,numompadj,numrange)           :: ompadjustE2   ! end energy of local OMP adjustment
-  real(sgl), dimension(numpar,numompadj,numrange)           :: ompadjusts    ! variance of local OMP adjustment
+  real(sgl), dimension(0:numpar,numompadj,numrange)         :: ompadjustD    ! depth of local OMP adjustment
+  real(sgl), dimension(0:numpar,numompadj,numrange)         :: ompadjustE1   ! start energy of local OMP adjustment
+  real(sgl), dimension(0:numpar,numompadj,numrange)         :: ompadjustE2   ! end energy of local OMP adjustment
+  real(sgl), dimension(0:numpar,numompadj,numrange)         :: ompadjusts    ! variance of local OMP adjustment
   real(sgl)                                                 :: RprimeU       ! potential scattering radius
-  real(sgl), dimension(numpar)                              :: rcadjust      ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: rvadjust      ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: rvdadjust     ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: rvsoadjust    ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: rwadjust      ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: rwdadjust     ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: rwsoadjust    ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: v1adjust      ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: v2adjust      ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: v3adjust      ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: v4adjust      ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: Vinfadjust    ! adj. factor for high E limit of real central pot.
-  real(sgl), dimension(numpar)                              :: vso1adjust    ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: vso2adjust    ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: w1adjust      ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: w2adjust      ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: w3adjust      ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: w4adjust      ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: wso1adjust    ! adjustable factor for OMP (default 1.)
-  real(sgl), dimension(numpar)                              :: wso2adjust    ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: rcadjust      ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: rvadjust      ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: rvdadjust     ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: rvsoadjust    ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: rwadjust      ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: rwdadjust     ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: rwsoadjust    ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: v1adjust      ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: v2adjust      ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: v3adjust      ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: v4adjust      ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: Vinfadjust    ! adj. factor for high E limit of real central pot.
+  real(sgl), dimension(0:numpar)                            :: vso1adjust    ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: vso2adjust    ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: w1adjust      ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: w2adjust      ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: w3adjust      ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: w4adjust      ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: wso1adjust    ! adjustable factor for OMP (default 1.)
+  real(sgl), dimension(0:numpar)                            :: wso2adjust    ! adjustable factor for OMP (default 1.)
 !
 !-----------------------------------------------------------------------------------------------------------------------------------
 ! Variables for compound reactions
@@ -562,6 +578,7 @@ module A0_talys_mod
   logical                                      :: flagfisfeed     ! flag for output of fission per excitation energy bin
   logical                                      :: flagfisout      ! flag for output of fission information
   logical                                      :: flagfispartdamp ! flag for fission partial damping
+  logical                                      :: flagsffactor    ! flag to constrain vfiscor and rmiufiscor by sp. fis. half-life
   logical                                      :: flagfission     ! flag for fission
   logical                                      :: flaghbstate     ! flag for head band states in fission
   logical                                      :: flagoutfy       ! flag for output detailed fission yield calculation
@@ -578,6 +595,9 @@ module A0_talys_mod
   integer                                      :: gefran          ! number of random events for GEF calculation
   real(sgl), dimension(0:numZ,0:numN)          :: betafiscor      ! adjustable factor for fission path width
   real(sgl), dimension(0:numZ,0:numN)          :: betafiscoradjust! adjustable factor for fission path width
+  real(sgl), dimension(0:numZ,0:numN)          :: rmiufiscor      ! adjustable factor for inertia mass along fission path
+  real(sgl), dimension(0:numZ,0:numN)          :: rmiufiscoradjust! adjustable factor for inertia mass along fission path
+  real(sgl), dimension(0:numZ,0:numN)          :: sffactor        ! factor to constrain vfiscor and rmiufiscor by sp. fis. half-life
   real(sgl), dimension(0:numZ,0:numN,numbar)   :: fbaradjust      ! adjustable factor for fission parameters
   real(sgl), dimension(0:numZ,0:numN,numbar)   :: fbarrier        ! height of fission barrier
   real(sgl), dimension(0:numZ,0:numN,numbar)   :: fwidth          ! width of fission barrier
@@ -683,6 +703,17 @@ module A0_talys_mod
   logical                                 :: filetotal    ! flag for total cross sections on separate file
   logical                                 :: flagbinspec  ! flag for output of emission spectrum per excitation bin
   logical                                 :: flagblock    ! flag to block spectra, angle and gamma files
+  logical                                 :: flagblockddx ! flag to block DDX files
+  logical                                 :: flagblockspectra ! flag to block spectra files
+  logical                                 :: flagblockangle ! flag to block angle files
+  logical                                 :: flagblockbin ! flag to block binary files
+  logical                                 :: flagblockdirect ! flag to block direct reaction files
+  logical                                 :: flagblocklevels ! flag to block discrete level files
+  logical                                 :: flagblockomp ! flag to block optical model files
+  logical                                 :: flagblockpreeq ! flag to block preequilibrium files
+  logical                                 :: flagblockastro ! flag to block astro reaction rate files
+  logical                                 :: flagblockyield ! flag to block isotopic yield files
+  logical                                 :: flagblockZA  ! flag to block residual nuclide files
   logical                                 :: flagcheck    ! flag for output of numerical checks
   logical                                 :: flagcompo    ! flag for output of cross section components
   logical                                 :: flagddx      ! flag for output of double-differential cross sections
@@ -742,6 +773,7 @@ module A0_talys_mod
   logical, dimension(2, numelem, numneu, -1:1)        :: fpexist      ! flag for existence of fission product
   logical, dimension(0:numpar)                        :: nubarexist   ! flag for existence of nubar file
   logical, dimension(0:numZ, 0:numN)                  :: fisexist     ! flag for existence of fission cross section
+  logical, dimension(0:numZ, 0:numN)                  :: tfisexist    ! flag for existence of fission transmission coefficients
   logical, dimension(0:numZ,0:numN,0:numlev,0:numlev) :: gamexist     ! flag for existence of gamma production cross section
   logical, dimension(0:numpar,0:numpar,0:numlev)      :: legexist     ! logical to determine existence of Legendre coefficients
   logical, dimension(0:numZ, 0:numN)                  :: recexist     ! flag for existence of recoils
@@ -783,6 +815,7 @@ module A0_talys_mod
   real(sgl), dimension(0:numpar)               :: Q           ! Q-value
   real(sgl), dimension(numpar)                 :: Smyers      ! Myers-Swiatecki separation energy
   real(sgl), dimension(numT)                   :: T9          ! Temperature grid in 10**9 K
+  real(sgl), dimension(numT)                   :: ET9         ! Energy for temperature grid in MeV
   real(sgl)                                    :: targetE     ! excitation energy of target
   real(dbl)                                    :: tarmass     ! mass of target nucleus
   real(sgl)                                    :: targetspin  ! spin of target
@@ -802,7 +835,7 @@ module A0_talys_mod
   real(dbl), dimension(0:numZ,0:numN,0:numpar) :: specmass ! specific mass for residual nucleus
   real(dbl), dimension(0:numZ+4,0:numN+4)      :: thmass   ! theoretical mass
   real(dbl), dimension(0:numZ+4,0:numN+4)      :: thmexc   ! theoretical mass excess
-  real(sgl), dimension(0:numZ,0:numN,0:numpar) :: S ! separation energy
+  real(dbl), dimension(0:numZ,0:numN,0:numpar) :: S ! separation energy
 !
 !-----------------------------------------------------------------------------------------------------------------------------------
 ! Variables for levels
@@ -810,6 +843,7 @@ module A0_talys_mod
 !
   character(len=1), dimension(0:numZ,0:numN,0:numlev,0:numlev) :: bassign     ! flag for assignment of branching ratio
   character(len=18), dimension(0:numZ,0:numN,0:numlev)         :: ENSDF       ! string from original ENSDF discrete level file
+  character(len=1), dimension(0:numZ,0:numN,0:numlev2)         :: eassign     ! flag for assignment of energy
   character(len=1), dimension(0:numZ,0:numN,0:numlev2)         :: jassign     ! flag for assignment of spin
   character(len=1), dimension(0:numZ,0:numN,0:numlev2)         :: passign     ! flag for assignment of parity
   integer, dimension(0:numZ,0:numN,0:numlev,0:numlev)          :: branchlevel ! level to which branching takes place
@@ -819,6 +853,7 @@ module A0_talys_mod
   integer, dimension(0:numZ,0:numN,0:numlev)                   :: nbranch     ! number of branching levels
   integer, dimension(-1:numZ,-1:numN)                          :: Nisomer     ! number of isomers for this nuclide
   integer, dimension(0:numZ,0:numN)                            :: nlevmax2    ! maximum number of levels
+  integer, dimension(0:numZ,0:numN)                            :: branchdone  ! flag for applying branching ratio normalization
   integer, dimension(0:numZ,0:numN,0:numlev2)                  :: levnum      ! number of level
   integer, dimension(0:numZ,0:numN,0:numlev2)                  :: parlev      ! parity of level
   real(sgl), dimension(0:numZ,0:numN,0:numlev,0:numlev)        :: branchratio ! gamma-ray branching ratio to level
@@ -826,6 +861,7 @@ module A0_talys_mod
   real(sgl), dimension(0:numZ,0:numN,0:numlev2)                :: edis        ! energy of level
   real(sgl), dimension(0:numZ,0:numN,0:numlev2)                :: jdis        ! spin of level
   real(sgl), dimension(0:numZ,0:numN,0:numlev2)                :: tau         ! lifetime of state in seconds
+  real(sgl), dimension(0:numZ,0:numN,0:numlev2)                :: tauripl     ! lifetime of state in seconds from RIPL
 !
 !-----------------------------------------------------------------------------------------------------------------------------------
 ! Variables for deformation parameters
@@ -852,16 +888,37 @@ module A0_talys_mod
   real(sgl), dimension(0:3,2)                          :: betagr     ! deformation parameter for giant resonance
   real(sgl), dimension(0:3,2)                          :: Egrcoll    ! energy of giant resonance
   real(sgl), dimension(0:3,2)                          :: Ggrcoll    ! width of giant resonance
+  real(sgl)                                            :: GMRadjustE ! adjustable factor for GMR energy
+  real(sgl)                                            :: GQRadjustE ! adjustable factor for GQR energy
+  real(sgl)                                            :: LEORadjustE! adjustable factor for LEOR energy
+  real(sgl)                                            :: HEORadjustE! adjustable factor for HEOR energy
+  real(sgl)                                            :: GMRadjustG ! adjustable factor for GMR width
+  real(sgl)                                            :: GQRadjustG ! adjustable factor for GQR width
+  real(sgl)                                            :: LEORadjustG! adjustable factor for LEOR width
+  real(sgl)                                            :: HEORadjustG! adjustable factor for HEOR width
+  real(sgl)                                            :: GMRadjustD ! adjustable factor for GMR deformation parameter
+  real(sgl)                                            :: GQRadjustD ! adjustable factor for GQR deformation parameter
+  real(sgl)                                            :: LEORadjustD! adjustable factor for LEOR deformation parameter
+  real(sgl)                                            :: HEORadjustD! adjustable factor for HEOR deformation parameter
 !
 !-----------------------------------------------------------------------------------------------------------------------------------
 ! Variables for resonance parameters
 !-----------------------------------------------------------------------------------------------------------------------------------
 !
   integer, dimension(0:numZ,0:numN)            :: Nrr      ! number of resonances
+  real(sgl), dimension(0:numZ,0:numN)          :: S0       ! neutron strength function
+  real(sgl), dimension(0:numZ,0:numN)          :: dS0      ! uncertainty in S0
+  real(sgl), dimension(0:numZ,0:numN)          :: S1       ! neutron strength function
+  real(sgl), dimension(0:numZ,0:numN)          :: dS1      ! uncertainty in S0
   real(sgl), dimension(0:numZ,0:numN)          :: dD0      ! uncertainty in D0
+  real(sgl), dimension(0:numZ,0:numN)          :: dD1r     ! uncertainty in D1
   real(sgl), dimension(0:numZ,0:numN)          :: dgamgam  ! uncertainty in gamgam
+  real(sgl), dimension(0:numZ,0:numN)          :: Rscat    ! potential scattering radius
+  real(sgl), dimension(0:numZ,0:numN)          :: dRscat   ! uncertainty in Rscat
   real(sgl)                                    :: Eavres   ! average resonance energy
   real(sgl), dimension(0:numZ, 0:numN)         :: D0theo   ! mean s-wave resonance spacing
+  real(sgl), dimension(0:numZ, 0:numN)         :: D0global ! global mean s-wave resonance spacing
+  real(sgl), dimension(0:numZ, 0:numN)         :: dD0global! uncertainty in global mean s-wave resonance spacing
   real(sgl), dimension(0:numZ, 0:numN)         :: D1theo   ! mean p-wave resonance spacing
   real(sgl), dimension(0:numl)                 :: Dl       ! mean resonance spacing per l value
   real(sgl), dimension(0:numl, 0:numJ)         :: Dlj      ! mean resonance spacing per J,l value
@@ -939,6 +996,7 @@ module A0_talys_mod
 !
 ! omppar
 !
+  logical                                                    :: flagompejec! flag for OMP for ejectile equal to projectile
   logical, dimension(0:numZ,0:numN,numpar)                   :: disp      ! flag for dispersive optical model
   logical, dimension(0:numZ,0:numN,numpar)                   :: ompglobal ! flag for use of global optical model
   integer, dimension(0:numZ,0:numN,numpar)                   :: omplines  ! number of lines in optical model file
@@ -961,6 +1019,7 @@ module A0_talys_mod
   real(sgl), dimension(0:numZ,0:numN,numpar)                 :: v1        ! parameter for real volume OMP
   real(sgl), dimension(0:numZ,0:numN,numpar)                 :: v2        ! parameter for real volume OMP
   real(sgl), dimension(0:numZ,0:numN,numpar)                 :: v3        ! parameter for real volume OMP
+  real(sgl), dimension(0:numZ,0:numN,numpar)                 :: v4        ! parameter for real volume OMP
   real(sgl), dimension(0:numZ,0:numN,numpar)                 :: vso1      ! parameter for real spin-orbit OMP
   real(sgl), dimension(0:numZ,0:numN,numpar)                 :: vso2      ! parameter for real spin-orbit OMP
   real(sgl), dimension(0:numZ,0:numN,numpar)                 :: w1        ! parameter for imaginary volume OMP
@@ -973,6 +1032,47 @@ module A0_talys_mod
   real(sgl), dimension(2)                                    :: Vjoin     ! V at joining energy
   real(sgl), dimension(0:numZph,0:numNph,numpar,0:numomp,19) :: vomp      ! optical model parameters from file
   real(sgl), dimension(2)                                    :: Wjoin     ! W at joining energy
+!
+! KD03 global parameters
+!
+  real(sgl)   :: rv_0      !
+  real(sgl)   :: rv_A      !
+  real(sgl)   :: av_0      !
+  real(sgl)   :: av_A      !
+  real(sgl)   :: v1_0      !
+  real(sgl)   :: v1_asymm  !
+  real(sgl)   :: v1_A      !
+  real(sgl)   :: v2_0      !
+  real(sgl)   :: v2_A      !
+  real(sgl)   :: v3_0      !
+  real(sgl)   :: v3_A      !
+  real(sgl)   :: v4_0      !
+  real(sgl)   :: w1_0      !
+  real(sgl)   :: w1_A      !
+  real(sgl)   :: w2_0      !
+  real(sgl)   :: w2_A      !
+  real(sgl)   :: rd_0      !
+  real(sgl)   :: rd_A      !
+  real(sgl)   :: ad_0      !
+  real(sgl)   :: ad_A      !
+  real(sgl)   :: d1_0      !
+  real(sgl)   :: d1_asymm  !
+  real(sgl)   :: d2_0      !
+  real(sgl)   :: d2_A      !
+  real(sgl)   :: d2_A2     !
+  real(sgl)   :: d2_A3     !
+  real(sgl)   :: d3_0      !
+  real(sgl)   :: rso_0     !
+  real(sgl)   :: rso_A     !
+  real(sgl)   :: aso_0     !
+  real(sgl)   :: vso1_0    !
+  real(sgl)   :: vso1_A    !
+  real(sgl)   :: vso2_0    !
+  real(sgl)   :: wso1_0    !
+  real(sgl)   :: wso2_0    !
+  real(sgl)   :: rc_0      !
+  real(sgl)   :: rc_A      !
+  real(sgl)   :: rc_A2     !
 !
 ! spr
 !
@@ -1026,7 +1126,6 @@ module A0_talys_mod
   real(sgl)                            :: d3disp      ! constant for imaginary potential
   real(sgl)                            :: efer        ! Fermi energy
   real(sgl), dimension(numlev2)        :: Elevel      ! energy of level
-  real(sgl)                            :: hint        ! integration step size h
   real(sgl), dimension(numlev2)        :: Jlevel      ! spin of level
   real(dbl)                            :: projmass    ! mass of projectile
   real(sgl)                            :: prodZ       ! product of charges of projectile and target nucleus
@@ -1089,7 +1188,7 @@ module A0_talys_mod
 ! Variables for WKB
 !-----------------------------------------------------------------------------------------------------------------------------------
 !
-  integer, dimension(0:2*numbar)                          :: iiextr    ! WKB counter
+  integer, dimension(0:2*numbar+1)                        :: iiextr    ! WKB counter
   integer                                                 :: nbeta     ! number of beta values
   integer                                                 :: nbinswkb  ! integration step for WKB calculation
   integer                                                 :: nextr     ! WKB counter
@@ -1100,6 +1199,7 @@ module A0_talys_mod
   real(sgl), dimension(0:numZ, 0:numN, 0:numbins, numbar) :: Twkbtrans ! transmission coefficient of WKB potential
   real(sgl), dimension(0:numZ, 0:numN, 0:numbins)         :: Uwkb      ! energy of WKB potential
   real(sgl), dimension(numbeta)                           :: vfis      ! adjustable factor for fission path height
+  real(sgl), dimension(numbeta)                           :: rmiufis   ! adjustable factor for inertia mass along fission path
   real(sgl), dimension(2*numbar)                          :: Vheight   ! height of WKB potential
   real(sgl), dimension(2*numbar)                          :: Vpos      ! position of WKB potential
   real(sgl), dimension(2*numbar)                          :: Vwidth    ! width of WKB potential
@@ -1141,9 +1241,25 @@ module A0_talys_mod
   integer, dimension(0:numZ, 0:numN)                                 :: nendens     ! number of energies for level density grid
   real(sgl), dimension(0:numdens)                                    :: edens       ! energy grid for tabulated level density
   real(sgl), dimension(0:numZ, 0:numN)                               :: Edensmax    ! maximum energy on level density table
+  real(dbl), dimension(0:numZ,0:numN,0:numdens,-1:1,0:numbar)        :: ldtableT    ! level density temperature from table
+  real(dbl), dimension(0:numZ,0:numN,0:numdens,-1:1,0:numbar)        :: ldtableN    ! level density cumulative levels from table
   real(dbl), dimension(0:numZ,0:numN,0:numdens,0:numJ,-1:1,0:numbar) :: ldtable     ! level density from table
   real(dbl), dimension(0:numZ,0:numN,0:numdens,0:numbar)             :: ldtottable  ! total level density from table
   real(dbl), dimension(0:numZ,0:numN,0:numdens,-1:1,0:numbar)        :: ldtottableP ! total level density per parity from table
+!
+! densitycum
+!
+  real(sgl), dimension(0:numZ,0:numN)            :: CED0       ! C/E of D0
+  real(sgl), dimension(0:numZ,0:numN)            :: CGD0       ! C/G of D0
+  real(sgl), dimension(0:numZ,0:numN)            :: chi2D0     ! chi2 of D0
+  real(sgl), dimension(0:numZ,0:numN)            :: FrmsD0     ! Frms of D0
+  real(sgl), dimension(0:numZ,0:numN)            :: ErmsD0     ! Erms of D0
+  real(dbl), dimension(0:numZ,0:numN)            :: chi2lev    ! chi2 of discrete levels
+  real(dbl), dimension(0:numZ,0:numN)            :: Frmslev    ! Frms of discrete levels
+  real(dbl), dimension(0:numZ,0:numN)            :: Ermslev    ! Erms of discrete levels
+  real(dbl), dimension(0:numZ,0:numN)            :: avdevlev   ! average deviation from  discrete levels
+  real(dbl), dimension(0:numZ,0:numN,0:numlev2)  :: Ncum       ! number of cumulative levels (integral of level density)
+  real(dbl), dimension(0:numZ,0:numN,0:numlev2)  :: rhoexp     ! level density of experimental discrete levels
 !
 !-----------------------------------------------------------------------------------------------------------------------------------
 ! Variables for particle-hole density tables
@@ -1266,7 +1382,7 @@ module A0_talys_mod
 !
 ! inversenorm
 !
-  real(sgl), dimension(0:numpar)        :: threshnorm ! normalization factor at trheshold
+  real(sgl), dimension(0:numpar)        :: threshnorm ! normalization factor at threshold
 !
 !-----------------------------------------------------------------------------------------------------------------------------------
 ! Variables for preequilibrium initialization
@@ -1733,6 +1849,7 @@ module A0_talys_mod
   real(sgl), dimension(numbinfis,numbar)             :: eintfis  ! excitation energy for fission
   real(dbl), dimension(0:numpar,0:numex,0:numJ,-1:1) :: rho0     ! integrated level density
   real(dbl), dimension(numbinfis,0:numJ,-1:1,numbar) :: rhofis   ! integrated level density corresponding to tfisA
+  real(sgl), dimension(0:numZ,0:numN)                :: discfactor! correction for discrete level weight for NL > NT
   real(sgl), dimension(0:numex,0:numgam,0:1)         :: Tgam     ! gamma transmission coefficients
   real(sgl), dimension(0:numpar,0:numex,-1:1,0:numl) :: Tjlnex   ! transmission coefficients for particle, energy, spin and l
   real(sgl), dimension(0:numpar,0:numex,0:numl)      :: Tlnex    ! transmission coefficients for particle, emergy and l
@@ -2174,3 +2291,4 @@ module A0_talys_mod
   real(sgl), dimension(numen6) :: xsreac6   ! reaction cross section for ENDF-6 file
   real(sgl), dimension(numen6) :: xstot6    ! total cross section (neutrons only) for ENDF-6 file
 end module A0_talys_mod
+! Copyright A.J. Koning 2025

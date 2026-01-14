@@ -83,7 +83,6 @@ subroutine inverseecis(Zcomp, Ncomp)
 !   Elevel          ! energy of level
 !   flagecisinp     ! flag for existence of ecis input file
 !   flaginvecis     ! logical for calculating inverse channel OMP
-!   hint            ! integration step size h
 !   iband           ! band number of level
 !   idvib           ! identifier for existence of vibrational state inside rotational
 !   iph             ! help variable
@@ -121,6 +120,7 @@ subroutine inverseecis(Zcomp, Ncomp)
 !   nucmass         ! mass of nucleus
 !   specmass        ! specific mass for residual nucleus
 ! Variables for optical model
+!   flaompejec      ! flag for OMP for ejectile equal to projectile
 !   av              ! real volume diffuseness
 !   avd             ! real surface diffuseness
 !   avso            ! real spin - orbit diffuseness
@@ -152,6 +152,13 @@ subroutine inverseecis(Zcomp, Ncomp)
   logical            :: jlmloc         ! flag for JLM OMP
   logical            :: rotational     ! flag for rotational input
   logical            :: vibrational    ! flag for vibrational input
+  character(len=3)   :: massstring !
+  character(len=6)   :: finalnuclide !
+  character(len=80)  :: ompfile !
+  character(len=15)  :: col(20)    ! header
+  character(len=15)  :: un(20)    ! header
+  character(len=80)  :: quantity   ! quantity
+  character(len=132) :: topline   ! topline
   character(len=132) :: outfile        ! output file
   integer            :: A              ! mass number of target nucleus
   integer            :: i              ! counter
@@ -160,6 +167,10 @@ subroutine inverseecis(Zcomp, Ncomp)
   integer            :: Ncomp          ! neutron number index for compound nucleus
   integer            :: nen            ! energy counter
   integer            :: Nix            ! neutron number index for residual nucleus
+  integer            :: Ncol
+  integer            :: indent
+  integer            :: id2
+  integer            :: id4
   integer            :: type           ! particle type
   integer            :: Z              ! charge number of target nucleus
   integer            :: Zcomp          ! proton number index for compound nucleus
@@ -170,9 +181,11 @@ subroutine inverseecis(Zcomp, Ncomp)
 !
 ! Specific ECIS flags:
 !
+  indent = 0
+  id2 = indent + 2
+  id4 = indent + 4
   flaginvecis = .true.
   legendre = .false.
-  hint = 0.
   rmatch = 0.
   anginc = 180.
   angend = 180.
@@ -180,16 +193,30 @@ subroutine inverseecis(Zcomp, Ncomp)
 ! Loop over all particle types and energies on standard energy grid.
 !
   if (flagoutomp) then
-    write(*, '(/" ######### OPTICAL MODEL PARAMETERS ##########")')
+    write(*, '(/" ######### OPTICAL MODEL PARAMETERS ##########",/)')
     if (jlmexist(Zcomp, Ncomp, 1) .or. jlmexist(Zcomp, Ncomp, 6)) then
-      write(*, '(/" Radial densities"/)')
-      write(*, '(" Radius   Protons     Neutrons"/)')
+      un=''
+      col(1)='radius'
+      un(1)='fm'
+      col(2)='protons'
+      col(3)='neutrons'
+      Ncol=3
+      quantity='radial density'
+      topline=trim(targetnuclide)//' '//trim(quantity)//' for OMP'
+      open (unit=1, file='radial.out', status='unknown')
+      call write_header(indent,topline,source,user,date,oformat)
+      call write_target(indent)
+      call write_quantity(id2,quantity)
+      call write_datablock(id2,Ncol,numjlm,col,un)
       do i = 1, numjlm
-        write(*, '(f7.3, 2es12.5)') 0.1*real(i), rhojlmp(Zcomp, Ncomp, i, 1), rhojlmn(Zcomp, Ncomp, i, 1)
+        write(1, '(3es15.6)') 0.1*real(i), rhojlmp(Zcomp, Ncomp, i, 1), rhojlmn(Zcomp, Ncomp, i, 1)
       enddo
+      close(unit =1)
+      call write_outfile('radial.out',flagoutall)
     endif
   endif
   flagecisinp = .false.
+  flagompejec = .true.
   if (flageciscalc) open (unit = 9, file = 'ecisinv.inp', status = 'unknown')
   do type = 1, 6
     if (parskip(type)) cycle
@@ -211,9 +238,51 @@ subroutine inverseecis(Zcomp, Ncomp)
 ! Output of optical model parameters, if requested.
 !
     if (flagoutomp .and. .not. jlmloc) then
-      write(*, '(/11x, a8, " on ", i3, a2/)') parname(type), A, nuc(Z)
-      write(*, '("  Energy", 5x, "V", 5x, "rv", 4x, "av", 4x, "W", 5x, "rw", 4x, "aw", 4x, "Vd", 3x, "rvd", 3x, "avd", 4x, &
- &      "Wd", 3x, "rwd", 3x, "awd", 3x, "Vso", 3x, "rvso", 2x, "avso", 2x, "Wso", 3x, "rwso", 2x, "awso", 2x, "rc", /)')
+      Nen =  eendmax(type) - ebegin(type) + 1
+      if (Nen > 0) then
+        un='fm'
+        col(1)='E'
+        un(1)='MeV'
+        col(2)='V'
+        un(2)='MeV'
+        col(3)='rv'
+        col(4)='av'
+        col(5)='W'
+        un(5)='MeV'
+        col(6)='rw'
+        col(7)='aw'
+        col(8)='Vd'
+        un(8)='MeV'
+        col(9)='rvd'
+        col(10)='avd'
+        col(11)='Wd'
+        un(11)='MeV'
+        col(12)='rwd'
+        col(13)='awd'
+        col(14)='Vso'
+        un(14)='MeV'
+        col(15)='rvso'
+        col(16)='avso'
+        col(17)='Wso'
+        un(17)='MeV'
+        col(18)='rwso'
+        col(19)='awso'
+        col(20)='rc'
+        Ncol=20
+        quantity='optical model parameters'
+        massstring='   '
+        write(massstring,'(i3)') A
+        finalnuclide=trim(nuc(Z))//adjustl(massstring)
+        topline=trim(finalnuclide)//' '//parname(type)//' '//trim(quantity)
+        ompfile='omppar_'//parsym(type)//'.out'
+        open (unit=1, file=ompfile, status='replace')
+        call write_header(indent,topline,source,user,date,oformat)
+        call write_residual(indent,Z,A,finalnuclide)
+        call write_char(id2,'parameters','')
+        call write_char(id4,'particle',parname(type))
+        call write_quantity(id2,quantity)
+        call write_datablock(id2,Ncol,Nen,col,un)
+      endif
     endif
 !
 ! Standard ECIS inputs for phenomenological optical potentials
@@ -243,7 +312,6 @@ subroutine inverseecis(Zcomp, Ncomp)
         ecis1(15:15) = 'T'
         ecis1(29:29) = 'T'
         ecis1(41:41) = 'T'
-        hint = 0.1
         rmatch = 18.
         nrad = 182
         jlmloc = .true.
@@ -346,7 +414,7 @@ subroutine inverseecis(Zcomp, Ncomp)
 !
       call optical(Zix, Nix, type, e)
       if (flagoutomp .and. .not. jlmloc) then
-        write(*, '(1x, f8.3, 1x, 6(f6.2, f6.3, f6.3), f6.3)') &
+        write(1, '(20es15.6)') &
  &        e, v, rv, av, w, rw, aw, vd, rvd, avd, wd, rwd, awd, vso, rvso, avso, wso, rwso, awso, rc
       endif
       if ( .not. flageciscalc) cycle
@@ -374,8 +442,13 @@ subroutine inverseecis(Zcomp, Ncomp)
       flagecisinp = .true.
       call ecisinput(Zix, Nix, type, e, rotational, vibrational, jlmloc)
     enddo
+    if (flagoutomp .and. .not. jlmloc) then
+      close(unit =1)
+      call write_outfile(ompfile,flagoutall)
+    endif
   enddo
   flaginvecis = .false.
+  flagompejec = .false.
   if ( .not. flageciscalc) return
   if ( .not. flagecisinp) then
     close (unit = 9)
@@ -393,7 +466,7 @@ subroutine inverseecis(Zcomp, Ncomp)
   else
     outfile = nulldev
   endif
-  call ecist('ecisinv.inp  ', outfile, csfile, 'ecis.invin   ', transfile, 'null         ', 'null         ')
+  call ecist('ecisinv.inp  ', outfile, csfile, 'ecis.invin   ', transfile, 'null         ', 'null         ', 'null         ')
   invexist(Zcomp, Ncomp) = .true.
   open (unit = 9, file = 'ecisinv.inp', status = 'unknown')
   close (unit = 9, status = ecisstatus)

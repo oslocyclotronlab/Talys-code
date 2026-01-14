@@ -59,15 +59,19 @@ subroutine preeqspindis
   enddo
 !
 ! Marc Dupuis: use a spin cut-off value inferred from JLM/QRPA calculations.
+! Microscopic description of target spin distribution after inelastic scattering to the continuum
+! Marc  Dupuis, Toshihiko  Kawano, Maelle  Kerveno, Stephane  Hilaire
+! EPJ Web of Conf. 284 03003 (2023)
+! DOI: 10.1051/epjconf/202328403003
 !
   if (pespinmodel == 4) then
     do n = 1, maxexc
       RnJsum(n) = 0.
       f = 0.d0 
       eta = sqrt(Rspincutpreeq) * newspin(Atarget,real(Einc,8),n,1,f)
-      do j = 0,maxJph
-        RnJ(n, J) =  spin_wigner(real(J,8),eta)
-        RnJsum(n) = RnJsum(n) + RnJ(n, J)
+      do J = 0,maxJph
+        RnJ(n, J) =  spin_wigner(real(J,8),eta) / (2. * J + 1)
+        RnJsum(n) = RnJsum(n) + (2. * J + 1) * RnJ(n, J)
       enddo
     enddo
   endif

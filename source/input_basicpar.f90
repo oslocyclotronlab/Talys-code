@@ -21,6 +21,7 @@ subroutine input_basicpar
 !   isomer       ! definition of isomer in seconds
 !   Lisoinp      ! user assignment of target isomer number
 !   outtype      ! type of outgoing particles
+!   flagfit          ! flag to use automatically fitted parameters
 ! Constants
 !   parsym          ! symbol of particle
 ! Variables for reading input lines
@@ -60,8 +61,9 @@ subroutine input_basicpar
   isomer = 1.
   Lisoinp = -1
   outtype = ' '
-  source = 'TALYS-2.0'
-  oformat = 'YANDF-0.1'
+  source = 'TALYS-2.2'
+  oformat = 'YANDF-0.4'
+  flagfit = .false.
 !
 ! **************** Read input variables *******************
 !
@@ -145,6 +147,12 @@ Loop1: do i2 = 2, 40
       oformat=trim(adjustl(line(ix:132)))
       cycle
     endif
+    if (key == 'fit') then
+      if (ch == 'n') flagfit = .false.
+      if (ch == 'y') flagfit = .true.
+      if (ch /= 'y' .and. ch /= 'n') call read_error(line, istat)
+      cycle
+    endif 
   enddo
   return
 end subroutine input_basicpar

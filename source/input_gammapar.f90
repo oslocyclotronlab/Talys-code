@@ -5,7 +5,7 @@ subroutine input_gammapar
 !
 ! Author    : Arjan Koning
 !
-! 2021-12-30: Original code
+! 2025-06-16: Current version
 !-----------------------------------------------------------------------------------------------------------------------------------
 !
 ! *** Use data from other modules
@@ -22,7 +22,6 @@ subroutine input_gammapar
 !   epradjust         ! adjustable factor for energy of PR
 !   etable            ! constant to adjust tabulated strength functions
 !   etableadjust      ! adjustable correction to adjust tabulated strength functions
-!   filepsf           ! flag for photon strength functions on separate files
 !   fiso              ! correction factor for isospin forbidden transitions
 !   fisom             ! correction factor for isospin forbidden transitions for multiple emission
 !   ftable            ! constant to adjust tabulated strength functions
@@ -109,9 +108,11 @@ subroutine input_gammapar
   gammax = 2
   spectfacexp = 0.
   spectfacth = 0.
+  upbendadjust = 1.
+  levinger = 6.5
   do Zix = 0, numZ
     do Nix = 0, numN
-      if (k0 <= 1) then
+      if (k0 <= 1 .and. flagglobalwtable) then
         if (strength == 8) then
           if (ldmodel(Zix,Nix) == 1 .and. flagcol(Zix, Nix)) wtable(Zix,Nix,1,1) = 1.052
           if (ldmodel(Zix,Nix) == 1 .and. .not.flagcol(Zix, Nix)) wtable(Zix,Nix,1,1) = 1.076
@@ -404,6 +405,30 @@ subroutine input_gammapar
       class = 5
       call getvalues(class, word, Zix, Nix, type, ibar, irad, lval, igr, val, ival, cval, flagassign)
       if (flagassign) upbend(Zix, Nix, irad, lval, 3) = val
+      cycle
+    endif
+    if (key == 'upbendcadjust') then
+      class = 5
+      call getvalues(class, word, Zix, Nix, type, ibar, irad, lval, igr, val, ival, cval, flagassign)
+      if (flagassign) upbendadjust(Zix, Nix, irad, lval, 1) = val
+      cycle
+    endif
+    if (key == 'upbendeadjust') then
+      class = 5
+      call getvalues(class, word, Zix, Nix, type, ibar, irad, lval, igr, val, ival, cval, flagassign)
+      if (flagassign) upbendadjust(Zix, Nix, irad, lval, 2) = val
+      cycle
+    endif
+    if (key == 'upbendfadjust') then
+      class = 5
+      call getvalues(class, word, Zix, Nix, type, ibar, irad, lval, igr, val, ival, cval, flagassign)
+      if (flagassign) upbendadjust(Zix, Nix, irad, lval, 3) = val
+      cycle
+    endif
+    if (key == 'levinger') then
+      class = 9
+      call getvalues(class, word, Zix, Nix, type, ibar, irad, lval, igr, val, ival, cval, flagassign)
+      if (flagassign) levinger = val
       cycle
     endif
     if (key == 'sfexp') then

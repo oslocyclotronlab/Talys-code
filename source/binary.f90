@@ -5,7 +5,7 @@ subroutine binary
 !
 ! Author    : Arjan Koning and Stephane Hilaire
 !
-! 2021-12-30: Original code
+! 2025-07-25: Original code
 !-----------------------------------------------------------------------------------------------------------------------------------
 !
 ! *** Use data from other modules
@@ -139,12 +139,24 @@ subroutine binary
 ! *** Declaration of local data
 !
   implicit none
+  character(len=18) :: reaction   ! reaction
+  character(len=132) :: topline    ! topline
+  character(len=21) :: binfile
+  character(len=12) :: Estr
+  character(len=15) :: col(200) 
+  character(len=15) :: un(200)   
+  character(len=80) :: quantity   ! quantity
   integer   :: A           ! mass number of target nucleus
   integer   :: J           ! spin of level
   integer   :: N           ! neutron number of residual nucleus
   integer   :: nen         ! energy counter
   integer   :: nex         ! excitation energy bin of compound nucleus
   integer   :: Nix         ! neutron number index for residual nucleus
+  integer   :: Ncol
+  integer   :: Nk
+  integer   :: indent
+  integer   :: id2
+  integer   :: id4
   integer   :: NL          ! last discrete level
   integer   :: odd         ! odd (1) or even (0) nucleus
   integer   :: parity      ! parity
@@ -169,6 +181,9 @@ subroutine binary
 !
 ! No binary reaction for initial excitation energy population.
 !
+  indent = 0
+  id2 = indent + 2
+  id4 = indent + 4
   xselastot = xselasinc
   if (flaginitpop) return
   if (flagomponly .and. .not. flagcomp) return
@@ -267,7 +282,7 @@ subroutine binary
           term=xsracappopex(nex)
           xspop(Zix, Nix, nex, J, parity) = xspop(Zix, Nix, nex, J, parity) + term
           xspopex(Zix, Nix, nex) = xspopex(Zix, Nix, nex) + term
-          xspopex0(type, nex) = xspopex(Zix, Nix, nex) + term
+          xspopex0(type, nex) = xspopex0(type, nex) + term
           if (flagpop) then
             xspopnucP(Zix, Nix, parity) = xspopnucP(Zix, Nix, parity) + term
             xspopexP(Zix, Nix, nex, parity) = xspopexP(Zix, Nix, nex, parity) + term
@@ -305,6 +320,7 @@ subroutine binary
   xscompall = max(xsreacinc - xsdirdiscsum - xspreeqsum - xsgrsum - xsracape, 0.)
   xscompnonel = xscompall - xscompel
   xscompnonel = max(xscompnonel, 0.)
+  if (k0 == 0) xstotinc = xselastot + xsnonel
 !
 ! ***************** Create binary feeding channels *********************
 !
@@ -364,6 +380,29 @@ subroutine binary
 ! ************ Output of population after binary emission **************
 !
   if (flagpop) then
+    quantity = 'emission spectrum'
+    reaction='('//parsym(k0)//',bin)'
+    Estr=''
+    write(Estr,'(es12.6)') Einc
+    if (flagblockbin) then
+      binfile='bin.out'//natstring(iso)
+      if (nin == Ninclow + 1) then
+        open (unit = 1, file = binfile, status = 'unknown')
+      else
+        open (unit = 1, file = binfile, status = 'unknown', position = 'append')
+      endif
+    else
+      binfile = 'binE0000.000.out'
+      write(binfile(5:12), '(f8.3)') Einc
+      write(binfile(5:8), '(i4.4)') int(Einc)
+      open (unit = 1, file = binfile, status = 'replace')
+    endif
+    topline=trim(targetnuclide)//trim(reaction)//' binary '//trim(quantity)//' at '//Estr//' MeV'
+    call write_header(indent,topline,source,user,date,oformat)
+    call write_target(indent)
+    call write_reaction(indent,reaction,0.D0,0.D0,0,0)
+    call write_char(id2,'parameters','')
+    call write_real(id4,'E-incident [MeV]',Einc)
     write(*, '(/" ########## BINARY CHANNELS ###########")')
     write(*, '(/" ++++++++++ BINARY CROSS SECTIONS ++++++++++"/)')
     if (flagfission) write(*, '(" fission  channel", 23x, ":", es12.5)') xsbinary( - 1)
@@ -377,21 +416,46 @@ subroutine binary
     enddo
     if (flagspec) then
       write(*, '(/" Binary emission spectra"/)')
-      write(*, '("  Energy ", 7(2x, a8, 2x)/)') (parname(type), type = 0, 6)
+      un = 'mb/MeV'
+      col(1) = 'E-out'
+      un(1) = 'MeV'
+      do type = 0, 6
+        col(2+type) = parname(type)
+      enddo
+      Ncol = 8
+      Nk = eendhigh - ebegin(0) + 1
+      call write_quantity(id2,quantity)
+      call write_datablock(id2,Ncol,Nk,col,un)
       do nen = ebegin(0), eendhigh
-        write(*, '(1x, f8.3, 7es12.5)') egrid(nen), (xsbinemis(type, nen), type = 0, 6)
+        write(1, '(8es15.6)') egrid(nen), (xsbinemis(type, nen), type = 0, 6)
       enddo
     endif
     if (flagspec .and. flagcheck) then
       write(*, '(/" ++++++++++ CHECK OF INTEGRATED ", "BINARY EMISSION SPECTRA ++++++++++"/)')
       write(*, '(13x, "Continuum cross section  Integrated", " spectrum  Compound normalization Average emission energy"/)')
+      un = 'mb'
+      col(1) = 'particle'
+      un(1) = ''
+      col(1) = 'particle'
+      col(2) = 'Continuum'
+      col(3) = 'Int. spectrum'
+      col(4) = 'Comp. norm.'
+      col(5) = 'Av. emission E.'
+      un(5) = 'MeV'
+      Ncol = 5
+      Nk = 7
+      quantity = 'check of binary emission spectra'
+      call write_quantity(id2,quantity)
+      call write_datablock(id2,Ncol,Nk,col,un)
       do type = 0, 6
         if (parskip(type)) cycle
-        write(*, '(1x, a8, 3(10x, es12.5), 10x, f8.3)') parname(type), &
+        write(1, '(3x, a8, 4x, 4es15.6)') parname(type), &
  &        xscompcont(type) + xspreeqtot(type) + xsgrtot(type), binemissum(type), binnorm(type), Eaveragebin(type)
       enddo
     endif
-    write(*, '(/" ++++++++++ POPULATION AFTER BINARY EMISSION", " ++++++++++")')
+    write(*, '(/" ++++++++++ POPULATION AFTER BINARY EMISSION ++++++++++",/)')
+    reaction='('//parsym(k0)//',x)' 
+    quantity='population'
     do type = 0, 6
       if (parskip(type)) cycle
       Zix = Zindex(0, 0, type)
@@ -402,20 +466,37 @@ subroutine binary
       A = AA(0, 0, type)
       if (xspopnuc(Zix, Nix) == 0.) cycle
       odd = mod(A, 2)
-      write(*, '(/" Population of Z=", i3, " N=", i3, " (", i3, a2, ") after binary ", a8, " emission:", es12.5)') &
- &      Z, N, A, nuc(Z), parname(type), xspopnuc(Zix, Nix)
+      call write_quantity(id2,quantity)
+      call write_char(id4,'ejectile',parname(type))
+      call write_double(id4,'post-binary population [mb]',xspopnuc(Zix, Nix))
+      call write_real(id4,'maximum excitation energy [MeV]',Exmax(Zix, Nix))
       if (maxex(Zix, Nix) > NL) then
-        write(*, '(" Maximum excitation energy:", f8.3, " Discrete levels:", i3, " Continuum bins:", i3, &
- &        " Continuum bin size:", f8.3/)') Exmax(Zix, Nix), NL, maxex(Zix, Nix) - NL, deltaEx(Zix, Nix, maxex(Zix, Nix))
-      else
-        write(*, '(" Maximum excitation energy:", f8.3, " Discrete levels:", i3/)') Exmax(Zix, Nix), NL
+        call write_integer(id4,'number of discrete levels',NL)
+        call write_integer(id4,'number of continuum bins',maxex(Zix, Nix) - NL)
+        call write_real(id4,'continuum bin size [MeV]',deltaEx(Zix, Nix, maxex(Zix, Nix)))
       endif
-      write(*, '(" bin    Ex    Popul. ", 5("   J=", f4.1, "-   J=", f4.1, "+")/)') (J+0.5*odd, J+0.5*odd, J = 0, 4)
+      un = 'mb'
+      col(1)='bin'
+      col(2)='Ex'
+      un(2) = ''
+      col(3)='population'
+      do J = 0, numJ
+        col(3+2*J+1)='JP=    -'
+        write(col(3+2*J+1)(4:7),'(f4.1)') J+0.5*odd
+        col(3+2*J+2)='JP=    +'
+        write(col(3+2*J+2)(4:7),'(f4.1)') J+0.5*odd
+      enddo
+      Ncol = 2*(numJ + 1) + 3
+      Nk = maxex(Zix, Nix) + 1
+      call write_quantity(id2,quantity)
+      call write_datablock(id2,Ncol,Nk,col,un)
       do nex = 0, maxex(Zix, Nix)
-        write(*, '(1x, i3, f8.3, 11es10.3)') nex, Ex(Zix, Nix, nex), &
- &        xspopex(Zix, Nix, nex), ((xspop(Zix, Nix, nex, J, parity), parity = - 1, 1, 2), J = 0, 4)
+        write(1, '(3x, i6, 6x, 200es15.6)') nex, Ex(Zix, Nix, nex), &
+ &        xspopex(Zix, Nix, nex), ((xspop(Zix, Nix, nex, J, parity), parity = - 1, 1, 2), J = 0, numJ)
       enddo
     enddo
+    close (unit = 1)
+    call write_outfile(binfile,flagoutall)
   endif
 !
 ! Remove compound elastic scattering from population of target state.

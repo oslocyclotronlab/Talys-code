@@ -19,6 +19,7 @@ subroutine strucinitial
 !   conv           ! conversion coefficient
 !   edis           ! energy of level
 !   ENSDF          ! string from original ENSDF discrete level file
+!   eassign        ! flag for assignment of energy
 !   jassign        ! flag for assignment of spin
 !   jdis           ! spin of level
 !   Lisomer        ! level number of isomer
@@ -28,6 +29,7 @@ subroutine strucinitial
 !   parlev         ! parity of level
 !   passign        ! flag for assignment of parity
 !   tau            ! lifetime of state in seconds
+!   tauripl        ! lifetime of state in seconds from RIPL
 ! Variables for energy grid
 !   angle        ! angle in degrees
 !   anglecont    ! angle in degrees for continuum
@@ -313,6 +315,7 @@ subroutine strucinitial
   branchlevel = 0
   branchratio = 0.
   conv = 0.
+  eassign = ' '
   jassign = ' '
   passign = ' '
   levnum = 0
@@ -320,11 +323,13 @@ subroutine strucinitial
   edis = 0.
   jdis = 0.
   tau = 0.
+  tauripl = 0.
   ENSDF = ' '
   Lisomer = 0
   nbranch = 0
   Nisomer = 0
   nlevmax2 = 0
+  branchdone = 0
   flagwidth = .false.
   flagpreeq = .false.
   flagcompang = .false.
@@ -351,6 +356,7 @@ subroutine strucinitial
   legexist = .false.
   angexist = .false.
   fisexist = .false.
+  tfisexist = .false.
   gamchanexist = .false.
   gamexist = .false.
   idnumfull = .false.
@@ -395,21 +401,6 @@ subroutine strucinitial
       endif
     enddo
   enddo
-  bassign = ' '
-  branchlevel = 0
-  branchratio = 0.
-  conv = 0.
-  jassign = ' '
-  passign = ' '
-  parlev = 1
-  edis = 0.
-  jdis = 0.
-  tau = 0.
-  ENSDF = ' '
-  Lisomer = 0
-  nbranch = 0
-  Nisomer = 0
-  nlevmax2 = 0
   betagr = 0.
   colltype = ' '
   deform = 0.
@@ -434,11 +425,21 @@ subroutine strucinitial
   D0theo = 0.
   D1theo = 0.
   dD0 = 0.
+  D0global = 0.
+  dD0global = 0.
+  Ncum = 0.
+  rhoexp = 0.
   dgamgam = 0.
   Dl = 0.
   Dlj = 0.
   gamgamth = 0.
   Nrr = 0
+  S0 = 0.
+  dS0 = 0.
+  S1 = 0.
+  dS1 = 0.
+  Rscat = 0.
+  dRscat = 0.
   swaveth = 0.
   aldcrit = 0.
   Dcrit = 0.
@@ -475,6 +476,8 @@ subroutine strucinitial
   ldexist = .false.
   ldparexist = .false.
   ldtable = 0.
+  ldtableT = 0.
+  ldtableN = 0.
   ldtottable = 0.
   ldtottableP = 0.
   Nlast = 0
@@ -586,6 +589,35 @@ subroutine strucinitial
   vso2 = 0.
   wso1 = 0.
   wso2 = 0.
+  if (v1adjust(0) == 1.) v1adjust(0) = v1adjust(k0)
+  if (v2adjust(0) == 1.) v2adjust(0) = v2adjust(k0)
+  if (v3adjust(0) == 1.) v3adjust(0) = v3adjust(k0)
+  if (v4adjust(0) == 1.) v4adjust(0) = v4adjust(k0)
+  if (rvadjust(0) == 1.) rvadjust(0) = rvadjust(k0)
+  if (avadjust(0) == 1.) avadjust(0) = avadjust(k0)
+  if (w1adjust(0) == 1.) w1adjust(0) = w1adjust(k0)
+  if (w2adjust(0) == 1.) w2adjust(0) = w2adjust(k0)
+  if (w3adjust(0) == 1.) w3adjust(0) = w3adjust(k0)
+  if (w4adjust(0) == 1.) w4adjust(0) = w4adjust(k0)
+  if (rwadjust(0) == 1.) rwadjust(0) = rwadjust(k0)
+  if (awadjust(0) == 1.) awadjust(0) = awadjust(k0)
+  if (rvdadjust(0) == 1.) rvdadjust(0) = rvdadjust(k0)
+  if (avdadjust(0) == 1.) avdadjust(0) = avdadjust(k0)
+  if (d1adjust(0) == 1.) d1adjust(0) = d1adjust(k0)
+  if (d2adjust(0) == 1.) d2adjust(0) = d2adjust(k0)
+  if (d3adjust(0) == 1.) d3adjust(0) = d3adjust(k0)
+  if (rwdadjust(0) == 1.) rwdadjust(0) = rwdadjust(k0)
+  if (awdadjust(0) == 1.) awdadjust(0) = awdadjust(k0)
+  if (vso1adjust(0) == 1.) vso1adjust(0) = vso1adjust(k0)
+  if (vso2adjust(0) == 1.) vso2adjust(0) = vso2adjust(k0)
+  if (rvsoadjust(0) == 1.) rvsoadjust(0) = rvsoadjust(k0)
+  if (avsoadjust(0) == 1.) avsoadjust(0) = avsoadjust(k0)
+  if (wso1adjust(0) == 1.) wso1adjust(0) = wso1adjust(k0)
+  if (wso2adjust(0) == 1.) wso2adjust(0) = wso2adjust(k0)
+  if (rwsoadjust(0) == 1.) rwsoadjust(0) = rwsoadjust(k0)
+  if (awsoadjust(0) == 1.) awsoadjust(0) = awsoadjust(k0)
+  if (rcadjust(0) == 1.) rcadjust(0) = rcadjust(k0)
+  flagompejec = .false.
   disp = .false.
   jlmexist = .false.
   omplines = 0

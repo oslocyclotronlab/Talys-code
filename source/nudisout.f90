@@ -41,7 +41,7 @@ subroutine nudisout
   implicit none
   character(len=18) :: reaction   ! reaction
   character(len=132) :: topline    ! topline
-  character(len=15) :: Estr
+  character(len=12) :: Estr
   character(len=15) :: col(4)     ! header
   character(len=15) :: un(4)     ! header
   character(len=80) :: quantity   ! quantity
@@ -55,11 +55,17 @@ subroutine nudisout
   integer           :: iz        ! charge number
   integer           :: Ncol      ! number of columns
   integer           :: type      ! particle type
+  integer           :: indent
+  integer           :: id2
+  integer           :: id4
 !
 ! Write results to separate files
 !
 ! nu per number, P(nu) and nubar as function of Z and A
 !
+  indent = 0
+  id2 = indent + 2
+  id4 = indent + 4
   Estring = '0000.000'
   if (Einc0 < 0.001) then
     write(Estring(1:8), '(es8.2)') Einc0
@@ -74,7 +80,7 @@ subroutine nudisout
     write(Eline(16:23), '(f8.3)') Einc0
   endif
   Estr=''
-  write(Estr,'(es13.6)') Einc0
+  write(Estr,'(es12.6)') Einc0
   write(*, '(/" +++ NUMBER OF PROMPT FISSION NEUTRONS AND GAMMAS +++")')
   un = ''
   do type = 0, 6
@@ -84,36 +90,37 @@ subroutine nudisout
 !
 ! P(nu)
 !
+    write(*, '(/" Average P(nu) for ", a8/)') parname(type)
     nufile = 'Pnux'//Estring//'.fis'//natstring(iso)
     nufile(4:4) = parsym(type)
     open (unit = 1, file = nufile, status = 'replace')
     quantity='multiplicity'
     reaction='('//parsym(k0)//',f)'
-    topline=trim(targetnuclide)//trim(reaction)//' prompt '//trim(adjustl(parname(type)))//' '//trim(quantity)//' at '//Estr//' MeV'
+    topline=trim(targetnuclide)//trim(reaction)//' prompt '//trim(adjustl(parname(type)))//' '//trim(quantity)// &
+ &    ' - P(nu) at '//Estr//' MeV'
     col(1)='number'
     col(2)='nu'
     Ncol=2
-    call write_header(topline,source,user,date,oformat)
-    call write_target
-    call write_reaction(reaction,0.d0,0.d0,0,0)
-    call write_real(2,'E-incident [MeV]',Einc0)
-    call write_char(2,'ejectile',parname(type))
-    call write_real(2,'nubar-prompt',nubar(type))
-    call write_real(2,'average P(nu)',Pdisnuav(type))
-    call write_datablock(quantity,Ncol,numnu+1,col,un)
-    write(*, '(/" P(nu) for ", a8/)') parname(type)
-    write(*, '(" number    nu ")')
+    call write_header(indent,topline,source,user,date,oformat)
+    call write_target(indent)
+    call write_reaction(indent,reaction,0.d0,0.d0,0,0)
+    call write_real(id2,'E-incident [MeV]',Einc0)
+    call write_char(id2,'ejectile',parname(type))
+    call write_real(id2,'nubar-prompt',nubar(type))
+    call write_real(id2,'average P(nu)',Pdisnuav(type))
+    call write_quantity(id2,quantity)
+    call write_datablock(id2,Ncol,numnu+1,col,un)
     do i = 0, numnu
       if (Pdisnu(type, i) > 0. .or. i <= 4) then
-        write(*, '(i3, es15.6)') i, Pdisnu(type, i)
         write(1, '(i6, 9x, es15.6)') i, Pdisnu(type, i)
       endif
     enddo
     close (unit = 1)
-    write(*, '(/" Average P(nu) for ", a8, f10.5/)') parname(type), Pdisnuav(type)
+    call write_outfile(nufile,flagoutall)
 !
 ! nu(A)
 !
+    write(*, '(/"  nu(A) for ", a8/)') parname(type)
     nufile = 'nuxA'//Estring//'.fis'//natstring(iso)
     nufile(3:3) = parsym(type)
     open (unit = 1, file = nufile, status = 'replace')
@@ -124,41 +131,39 @@ subroutine nudisout
     col(1)='A'
     col(2)='nu'
     Ncol=2
-    call write_header(topline,source,user,date,oformat)
-    call write_target
-    call write_reaction(reaction,0.d0,0.d0,0,0)
-    call write_real(2,'E-incident [MeV]',Einc0)
-    call write_char(2,'ejectile',parname(type))
-    call write_real(2,'nubar-prompt',nubar(type))
-    call write_datablock(quantity,Ncol,Atarget,col,un)
-    write(*, '(/"  nu(A) for ", a8/)') parname(type)
-    write(*, '("  A        nu   ")')
+    call write_header(indent,topline,source,user,date,oformat)
+    call write_target(indent)
+    call write_reaction(indent,reaction,0.d0,0.d0,0,0)
+    call write_real(id2,'E-incident [MeV]',Einc0)
+    call write_char(id2,'ejectile',parname(type))
+    call write_real(id2,'nubar-prompt',nubar(type))
+    call write_quantity(id2,quantity)
+    call write_datablock(id2,Ncol,Atarget,col,un)
     do ia = 1, Atarget
-      write(*, '(i3, es17.6)') ia, nuA(type, ia)
       write(1, '(i6, 9x, es15.6)') ia, nuA(type, ia)
     enddo
     close (unit = 1)
+    call write_outfile(nufile,flagoutall)
 !
 ! nu(Z,A)
 !
+    write(*, '(/"  nu(Z,A) for ", a8/)') parname(type)
     nufile = 'nuxZA'//Estring//'.fis'//natstring(iso)
     nufile(3:3) = parsym(type)
     open (unit = 1, file = nufile, status = 'replace')
     quantity='multiplicity'
     reaction='('//parsym(k0)//',f)'
     topline=trim(targetnuclide)//trim(reaction)//' prompt '//trim(adjustl(parname(type)))//' '//trim(quantity)// &
- &    ' as function of nuclide - nu(Z,A)'//' at '//Estr//' MeV'
+ &    ' as function of nuclide at '//Estr//' MeV'
     col(1)='Z'
     col(2)='A'
     col(3)='nu'
     Ncol=3
-    call write_header(topline,source,user,date,oformat)
-    call write_target
-    call write_reaction(reaction,0.d0,0.d0,0,0)
-    call write_real(2,'E-incident [MeV]',Einc0)
-    call write_char(2,'ejectile',parname(type))
-    write(*, '(/"  nu(Z,A) for ", a8/)') parname(type)
-    write(*, '("  Z   A       nu")')
+    call write_header(indent,topline,source,user,date,oformat)
+    call write_target(indent)
+    call write_reaction(indent,reaction,0.d0,0.d0,0,0)
+    call write_real(id2,'E-incident [MeV]',Einc0)
+    call write_char(id2,'ejectile',parname(type))
     k = 0
     do iz = 1, Ztarget
       do ia = iz + 1, Atarget
@@ -168,30 +173,32 @@ subroutine nudisout
         endif
       enddo
     enddo
-    call write_datablock(quantity,Ncol,k,col,un)
+    call write_quantity(id2,quantity)
+    call write_datablock(id2,Ncol,k,col,un)
     do iz = 1, Ztarget
       do ia = iz + 1, Atarget
         in = ia - iz
         if (in < numneu) then
           if (nuZA(type, iz, in) > 0.) then
-            write(*, '(i3, i4, es17.6)') iz, ia, nuZA(type, iz, in)
             write(1, '(2(i6, 9x), es15.6)') iz, ia, nuZA(type, iz, in)
           endif
         endif
       enddo
     enddo
     close (unit = 1)
+    call write_outfile(nufile,flagoutall)
   enddo
   if (fymodel <=2) return
 !
 ! E-average(Z,A) and E-average(A)
 !
+  write(*,'(/"  Average emission energy per (Z,A)")')
   nufile = 'EavZA'//Estring//'.fis'//natstring(iso)
   open (unit=1, file=nufile, status='replace')
   quantity='emission energy'
   reaction='('//parsym(k0)//',f)'
-  topline=trim(targetnuclide)//trim(reaction)//' average '//trim(quantity)//'  as function of nuclide - E-av(Z,A)'// &
- &  ' at '//Estr//' MeV'
+  topline=trim(targetnuclide)//trim(reaction)//' average '//trim(quantity)//' as function of nuclide at '// &
+ &  Estr//' MeV'
   col(1)='Z'
   col(2)='A'
   col(3)='gamma'
@@ -199,12 +206,10 @@ subroutine nudisout
   col(4)='neutron'
   un(4)='MeV'
   Ncol=4
-  call write_header(topline,source,user,date,oformat)
-  call write_target
-  call write_reaction(reaction,0.d0,0.d0,0,0)
-  call write_real(2,'E-incident [MeV]',Einc0)
-  write(*,'(/"  Average emission energy per (Z,A)")')
-  write(*,'(/"  Z  A      gamma    neutron"/)')
+  call write_header(indent,topline,source,user,date,oformat)
+  call write_target(indent)
+  call write_reaction(indent,reaction,0.d0,0.d0,0,0)
+  call write_real(id2,'E-incident [MeV]',Einc0)
   k = 0
   do iz = 1, Ztarget
     do ia = iz+1, Atarget
@@ -214,40 +219,41 @@ subroutine nudisout
       endif
     enddo
   enddo
-  call write_datablock(quantity,Ncol,k,col,un)
+  call write_quantity(id2,quantity)
+  call write_datablock(id2,Ncol,k,col,un)
   do iz = 1, Ztarget
     do ia = iz+1, Atarget
       in = ia - iz
       if (in < numneu) then
         if (EaverageZA(0,iz,in) > 0. .or. EaverageZA(1,iz,in) > 0.) then
-          write(*, '(i3,i4,2es12.5)') iz, ia, (EaverageZA(type,iz,in), type=0,1)
           write(1, '(2(i6,9x),2es15.6)') iz, ia, (EaverageZA(type,iz,in), type=0,1)
         endif
       endif
     enddo
   enddo
   close (unit = 1)
+  call write_outfile(nufile,flagoutall)
+  write(*,'(/"  Average emission energy per A")')
   nufile='EavA'//Estring//'.fis'//natstring(iso)
   open (unit=1, file=nufile, status='replace')
   quantity='emission energy'
   reaction='('//parsym(k0)//',f)'
-  topline=trim(targetnuclide)//trim(reaction)//' average '//trim(quantity)//' as function of mass - E-av(A)'//' at '//Estr//' MeV'
+  topline=trim(targetnuclide)//trim(reaction)//' average '//trim(quantity)//' as function of mass at '//Estr//' MeV'
   col(1)='A'
   col(2)='gamma'
   col(3)='neutron'
   Ncol=3
-  call write_header(topline,source,user,date,oformat)
-  call write_target
-  call write_reaction(reaction,0.d0,0.d0,0,0)
-  call write_real(2,'E-incident [MeV]',Einc0)
-  call write_datablock(quantity,Ncol,Atarget,col,un)
-  write(*,'(/"  Average emission energy per A")')
-  write(*,'(/"  A     gamma    neutron"/)')
+  call write_header(indent,topline,source,user,date,oformat)
+  call write_target(indent)
+  call write_reaction(indent,reaction,0.d0,0.d0,0,0)
+  call write_real(id2,'E-incident [MeV]',Einc0)
+  call write_quantity(id2,quantity)
+  call write_datablock(id2,Ncol,Atarget,col,un)
   do ia = 1, Atarget
-    write(*, '(i3,2es12.5)') ia, (EaverageA(type,ia), type=0,1)
     write(1, '(i6,9x,2es15.6)') ia, (EaverageA(type,ia), type=0,1)
   enddo
   close (unit = 1)
+  call write_outfile(nufile,flagoutall)
   return
 end subroutine nudisout
 ! Copyright A.J. Koning 2021

@@ -30,7 +30,7 @@ subroutine talysreaction
 !   flagmassdis     ! flag for calculation of fission fragment mass yields
 !   flagreaction    ! flag for calculation of nuclear reactions
 !   flagrecoil      ! flag for calculation of recoils
-!   flagrpevap      ! flag for evaporation of residual products at high inccident energies
+!   flagrpevap      ! flag for evaporation of residual products at high incident energies
 ! Variables for best files
 !   flagrescue      ! flag for final rescue: normalization to data
 ! Variables for basic parameters
@@ -86,7 +86,6 @@ subroutine talysreaction
 !
   if (flagreaction) then
     if (.not. flagompall) call basicxs(0, 0)
-    if (parinclude(0)) call gamma(0, 0)
     if (enincmax >= epreeq .or. flagracap) call preeqinit
     if (flagracap) call racapinit
     if (flagcomp) call compoundinit
@@ -104,6 +103,7 @@ subroutine talysreaction
       Einc = eninc(nin)
       call energies
       call reacinitial
+      if (parinclude(0)) call gamma(0, 0)
       if (Einc < eninclow) cycle
 !
 ! Optical model
@@ -224,6 +224,10 @@ subroutine talysreaction
     if (flagintegral) call integral
     if (flagsacs) call sacs
     if (flagendf) call endf
+  else
+    nin = 1
+    Einc = 1.
+    call gamma(0, 0)
   endif
   if (flagprod) call isoprod
   if (flagmain) call timer
