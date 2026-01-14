@@ -5,7 +5,7 @@ subroutine input_best
 !
 ! Author    : Arjan Koning
 !
-! 2021-12-30: Original code
+! 2025-07-10: Original code
 !-----------------------------------------------------------------------------------------------------------------------------------
 !
 ! *** Use data from other modules
@@ -21,7 +21,6 @@ subroutine input_best
 !   nummt       ! number of MT numbers
 ! Variables for best files
 !   flagbest         ! flag to use best set of adjusted parameters
-!   flagfit          ! flag to use automatically fitted parameters
 !   flagbestend      ! flag to put best set of parameters at end of input file
 !   flagrescue       ! flag for final rescue: normalization to data
 !   rescuefile       ! file with incident energy dependent adjustment factors
@@ -45,6 +44,7 @@ subroutine input_best
   character(len=132) :: key                  ! keyword
   character(len=132) :: word(40)             ! words on input line
   character(len=132) :: line                 ! input line
+  character(len=132) :: value   
   integer            :: i                    ! counter
   integer            :: istat                ! logical for file access
   integer            :: is                   ! counter for isomer
@@ -56,8 +56,8 @@ subroutine input_best
 !
   flagbest = .false.
   flagbestend = .false.
-  flagfit = .false.
   flagrescue = .false.
+  bestfile = ' '
   rescuefile = ' '
   grescue = 1.
 !
@@ -74,6 +74,7 @@ subroutine input_best
     call getkeywords(line, word)
     key = word(1)
     ch = word(2)(1:1)
+    value = word(2)
 !
 ! Test for keywords
 !
@@ -97,10 +98,8 @@ subroutine input_best
       if (ch /= 'y' .and. ch /= 'n') call read_error(line, istat)
       cycle
     endif
-    if (key == 'fit') then
-      if (ch == 'n') flagfit = .false.
-      if (ch == 'y') flagfit = .true.
-      if (ch /= 'y' .and. ch /= 'n') call read_error(line, istat)
+    if (key == 'bestfile') then
+      bestfile = value
       cycle
     endif
     if (key == 'rescuefile') then

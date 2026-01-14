@@ -82,7 +82,6 @@ subroutine incidentecis
 !   ecis2          ! 50 input flags ('T' or 'F') for ECIS
 !   efer           ! Fermi energy
 !   Elevel         ! energy of level
-!   hint           ! integration step size h
 !   iband          ! band number of level
 !   idvib          ! identifier for existence of vibrational state inside rotational
 !   iph            ! help variable
@@ -152,12 +151,12 @@ subroutine incidentecis
   logical            :: vibrational    ! flag for vibrational input
   character(len=132) :: inelfile       ! file for inelastic scattering cross sections
   character(len=132) :: outfile        ! output file
-  integer            :: A              ! mass number of target nucleus
   integer            :: i              ! counter
+  integer            :: A              ! mass number of target nucleus
+  integer            :: Z              ! charge number of target nucleus
   integer            :: i1             ! value
   integer            :: ii             ! counter
   integer            :: Nix            ! neutron number index for residual nucleus
-  integer            :: Z              ! charge number of target nucleus
   integer            :: Zix            ! charge number index for residual nucleus
   real(sgl)          :: Ein            ! incident energy
 !
@@ -168,7 +167,6 @@ subroutine incidentecis
   if (flaginccalc) open (unit = 9, file = 'ecisinc.inp', status = 'unknown')
   legendre = .true.
   Ein = Einc
-  hint = 0.
   rmatch = 0.
 !
 ! We use a simple formula to estimate the required number of j-values:
@@ -218,7 +216,6 @@ subroutine incidentecis
       ecis1(15:15) = 'T'
       ecis1(29:29) = 'T'
       ecis1(41:41) = 'T'
-      hint = 0.1
       rmatch = 18.
       nrad = 182
       njmax = 1600
@@ -322,24 +319,23 @@ subroutine incidentecis
 !
 ! Output of optical model parameters, if requested.
 !
-  if (flagoutomp) then
+  if (flagoutomp .and. flaginccalc) then
+    ecis2(1:1) = 'T'
     Z = ZZ(0, 0, k0)
     A = AA(0, 0, k0)
     if (jlmexist(0, 0, k0)) then
       if (k0 <= 2) then
         call mom(Zix, Nix, dble(prodZ), dble(Ein))
-        write(*, '(/" +++++++++ JLM OPTICAL MODEL POTENTIAL FOR INCIDENT CHANNEL ++++++++++")')
+        write(*, '(/" +++++++++ JLM OPTICAL MODEL POTENTIAL FOR INCIDENT CHANNEL ++++++++++",/)')
       else
         call foldalpha(Zix, Nix, Ein)
-        write(*, '(/" +++++++++ DOUBLE FOLDING OPTICAL MODEL POTENTIAL FOR INCIDENT CHANNEL ++++++++++")')
+        write(*, '(/" +++++++++ DOUBLE FOLDING OPTICAL MODEL POTENTIAL FOR INCIDENT CHANNEL ++++++++++",/)')
       endif
-      write(*, '(/11x, a8, " on ", i3, a2/)') parname(k0), A, nuc(Z)
-      write(*, '("  Radius ", 4x, "V", 6x, "W", 7x, "Vso", 5x, "Wso"/)')
-      do i = 1, numjlm
-      write(*, '(f7.3, 2x, 4(f8.3))') radjlm(Zix, Nix, i), normjlm(Zix, Nix, 1) * potjlm(Zix, Nix, i, 1), &
- &      normjlm(Zix, Nix, 2) * potjlm(Zix, Nix, i, 2), normjlm(Zix, Nix, 5) * potjlm(Zix, Nix, i, 5), &
- &      normjlm(Zix, Nix, 6) * potjlm(Zix, Nix, i, 6)
-      enddo
+!     do i = 1, numjlm
+!       write(1, '(5es15.6)') radjlm(Zix, Nix, i), normjlm(Zix, Nix, 1) * potjlm(Zix, Nix, i, 1), &
+!&        normjlm(Zix, Nix, 2) * potjlm(Zix, Nix, i, 2), normjlm(Zix, Nix, 5) * potjlm(Zix, Nix, i, 5), &
+!&        normjlm(Zix, Nix, 6) * potjlm(Zix, Nix, i, 6)
+!     enddo
     else
       write(*, '(/" +++++++++ OPTICAL MODEL PARAMETERS FOR INCIDENT CHANNEL ++++++++++")')
       write(*, '(/11x, a8, " on ", i3, a2/)') parname(k0), A, nuc(Z)
@@ -370,7 +366,7 @@ subroutine incidentecis
   else
     outfile = nulldev
   endif
-  call ecist('ecisinc.inp  ', outfile, 'ecis.inccs   ', inelfile, 'ecis.inctr   ', 'ecis.incang  ', 'ecis.incleg  ')
+  call ecist('ecisinc.inp  ',outfile,'ecis.inccs   ',inelfile,'ecis.inctr   ','ecis.incang  ','ecis.incleg  ','ecis.pot     ')
   open (unit = 9, file = 'ecisinc.inp', status = 'unknown')
   close (unit = 9, status = ecisstatus)
   return

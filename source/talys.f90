@@ -1,16 +1,16 @@
 program talys
 !
 !-----------------------------------------------------------------------------------------------------------------------------------
-! Purpose   : Main program
+! Purpose   : Simulation of nuclear reactions
 !
 ! Author    : Arjan Koning, Stephane Hilaire and Stephane Goriely
 !
-! 2021-12-30: Original code
-! 2023-12-29: Current revision
+! 2023-12-30: Original code
+! 2025-12-18: Current revision
 !-----------------------------------------------------------------------------------------------------------------------------------
 !
 !   |-------------------------------------------------------|
-!   |                 TALYS-2.0                             |
+!   |                 TALYS-2.2                             |
 !   |                 Arjan Koning                          |
 !   |                 Stephane Hilaire                      |
 !   |                 Stephane Goriely                      |
@@ -20,7 +20,7 @@ program talys
 !
 ! MIT License
 !
-! Copyright (c) 2023 Arjan Koning
+! Copyright (c) 2025 Arjan Koning
 !
 ! Permission is hereby granted, free of charge, to any person obtaining a copy
 ! of this software and associated documentation files (the "Software"), to deal
@@ -63,4 +63,4 @@ program talys
   call talysreaction
   if (flagnatural) call natural
 end program talys
-! Copyright A.J. Koning 2023
+! Copyright A.J. Koning 2025

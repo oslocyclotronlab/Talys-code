@@ -20,27 +20,15 @@ The following are the prerequisites for compiling TALYS:
 ### Downloads:
 
 To download TALYS, you can use one of the following options:
-#### 1. Download the entire tar file:
+#### 1. Download the entire tar file (frozen version TALYS-2.2):
 ```
 https://nds.iaea.org/talys/talys.tar
 tar zxf talys.tar
 ```
-#### 2. Using git:
+#### 2. Using git (latest beta version):
 ```
 git clone https://github.com/arjankoning1/talys.git
 ```
-The TALYS structure database and sample cases do not fall under the git repository. Hence, to get a  working system you need to download
-```
-https://nds.iaea.org/talys/misc/structure.tar
-https://nds.iaea.org/talys/samples/talys_samples.tar
-```
-and after
-```
-tar zxf structure.tar
-tar zxf talys_samples.tar
-```
-you should move both *structure/* and *samples/* inside the *talys/* directory.
-
 ### Installation instructions :
 
 To install TALYS, you can use one of the following options:
@@ -49,18 +37,20 @@ To install TALYS, you can use one of the following options:
 cd talys/source
 make
 ```
-#### 2. Using the code_build script:
+#### 2. Using the install_talys.bash script:
 ```
 cd talys
-code_build talys
+install_talys.bash 
 ```
+after which you will be prompted for your name, which will appear in the output files.
 
 The above will produce a *talys* executable in the *talys/bin* directory. 
-The compiler and its flags can be set in either *source/Makefile* or in *code_build*.
+The compiler and its flags can be set in either *source/Makefile* or in *code_build.bash*.
 
 ### Memory restrictions:
 
-For computers with (very) small RAM, or for installation on Windows, the total allocated memory may be too large. In that case, edit *A0_talys_mod.f90* in the source directory and reduce the value of the *memorypar* variable.
+For computers with (very) small RAM, or for installation on Windows, the total allocated memory may be too large. 
+In that case, edit *A0_talys_mod.f90* in the source directory and reduce the value of the *memorypar* variable.
 
 ## The TALYS package
 
@@ -68,7 +58,7 @@ The *talys/* directory contains the following directories and files:
 
 + `README.md` this README file
 + `LICENSE` the License file
-+ `code_build` and `path_change` installation scripts
++ `install_talys.bash` and `code_build.bash` installation scripts
 + `source/` the Fortran source code of TALYS and the Makefile
 + `bin/` the *talys* executable after successful installation
 + `structure/` the nuclear structure and reaction database in various subdirectories

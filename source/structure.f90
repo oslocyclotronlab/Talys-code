@@ -64,6 +64,7 @@ subroutine structure(Zix, Nix)
 ! densitypar    : subroutine for level density parameters
 ! densitytable  : subroutine for tabulated level densities
 ! densitymatch  : subroutine for level density matching solution
+! densitycum    : subroutine for cumulative level density and spin distribution
 ! phdensitytable: subroutine for tabulated particle-hole state densities
 ! thermalxs     : subroutine for cross sections at thermal energies
 ! partable      : subroutine to write model parameters per nucleus to separate file
@@ -71,7 +72,10 @@ subroutine structure(Zix, Nix)
 ! All the nuclear structure info is read and/or calculated for the nucleus under consideration.
 !
   call levels(Zix, Nix)
-  if (flagendf .and. primary) call gammadecay(Zix, Nix)
+  if (flagendf .or. flagbasic) then
+    call levelsout(Zix, Nix)
+    call gammadecay(Zix, Nix)
+  endif
   call deformpar(Zix, Nix)
   if (flagfit .and. Zix == 0 .and. Nix == 0) call xsfit(Ztarget, Atarget)
   if (parinclude(0) .or. flagcomp) then
@@ -85,6 +89,7 @@ subroutine structure(Zix, Nix)
   call densitypar(Zix, Nix)
   if (ldmodel(Zix, Nix) >= 4) call densitytable(Zix, Nix)
   call densitymatch(Zix, Nix)
+  call densitycum(Zix, Nix)
   if (phmodel == 2 .and. Zix <= numZph .and. Nix <= numNph) call phdensitytable(Zix, Nix)
   if (k0 == 1 .and. Zix == parZ(k0) .and. Nix == parN(k0)) call thermalxs
   if (flagpartable) call partable(Zix, Nix)

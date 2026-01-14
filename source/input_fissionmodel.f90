@@ -20,6 +20,7 @@ subroutine input_fissionmodel
 !   fismodel          ! fission model alternative fission model for default barriers
 !   fismodelalt       ! alternative fission model for default barriers
 !   flagfispartdamp   ! flag for fission partial damping
+!   flagsffactor      ! flag to constrain vfiscor and rmiufiscor by sp. fis. half-life
 !   flagclass2        ! flag for class2 states in fission
 !   flagffevap        ! flag for calculation of particle evaporation per FF
 !   flagffspin        ! flag to use spin distribution in initial FF population
@@ -81,21 +82,12 @@ subroutine input_fissionmodel
   yieldfile = ' '
   hbtransfile = ' '
   fisadjust = .false.
-  if (flagmicro) then
-    fismodel = 5
-  else
-    fismodel = 1
-  endif
-  if (k0 <= 1 .and. Atarget > fislim) then
-    fismodel = 5
-    fismodelalt = 4
-  else
-    fismodel = 3
-    fismodelalt = 3
-  endif
+  fismodel = 6
+   fismodelalt = 3
   flaghbstate = .false.
   flagclass2 = .false.
   flagfispartdamp = .false.
+  flagsffactor = .false.
   flagffevap = .true.
   flagfisfeed = .false.
   flagffspin = .false.
@@ -172,6 +164,12 @@ subroutine input_fissionmodel
     if (key == 'fispartdamp') then
       if (ch == 'n') flagfispartdamp = .false.
       if (ch == 'y') flagfispartdamp = .true.
+      if (ch /= 'y' .and. ch /= 'n') call read_error(line, istat)
+      cycle
+    endif
+    if (key == 'sffactor') then
+      if (ch == 'n') flagsffactor = .false.
+      if (ch == 'y') flagsffactor = .true.
       if (ch /= 'y' .and. ch /= 'n') call read_error(line, istat)
       cycle
     endif

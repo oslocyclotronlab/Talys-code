@@ -90,24 +90,26 @@ subroutine input_levels
   branchlevel = 0
   branchratio = 0.
   Risomer = 1.
+  flagpseudores = .false.
   flagelectron = .true.
   if (flagendf) flagelectron = .true.
   deformfile = ' '
   levelfile = ' '
   disctable = 1
-  flagbestbr = .true.
+  flagbestbr = .false.
   flaglevels = flagbasic
   nbranch = 0
   nlev = 0
   nlevmax = max(30, Ltarget)
-  nlevmaxres = 10
-  do type = 0, 6
-    if (type <= 2 .or. type == 6) then
-      nlevbin(type) = 10
-    else
-      nlevbin(type) = 5
-    endif
-  enddo
+  nlevbin = 30
+  nlevmaxres = 30
+! do type = 0, 6
+!   if (type <= 2 .or. type == 6) then
+!     nlevbin(type) = 10
+!   else
+!     nlevbin(type) = 5
+!   endif
+! enddo
   nlevbin(k0) = nlevmax
 !
 ! **************** Read input variables *******************
@@ -197,6 +199,12 @@ subroutine input_levels
     if (key == 'electronconv') then
       if (ch == 'n') flagelectron = .false.
       if (ch == 'y') flagelectron = .true.
+      if (ch /= 'y' .and. ch /= 'n') call read_error(line, istat)
+      cycle
+    endif
+    if (key == 'pseudoresonances') then
+      if (ch == 'n') flagpseudores = .false.
+      if (ch == 'y') flagpseudores = .true.
       if (ch /= 'y' .and. ch /= 'n') call read_error(line, istat)
       cycle
     endif

@@ -33,9 +33,9 @@ subroutine machine
 !
 ! The code directory can be changed here via a script, or manually.
 !
-  codedir = '/Users/vetlewi/talys2/'
+  codedir = '/Users/koning/talys/'
   i = len_trim(codedir)
-  if (codedir(i:i) /= '/') codedir = codedir//'/'
+  if (codedir(i:i) /= '/') codedir = trim(codedir)//'/'
 !
 ! Another option is to set an environment variable TALYSDIR, e.g. put
 ! export TALYSDIR=/Users/koning/talys/     

@@ -5,7 +5,7 @@ subroutine inputout
 !
 ! Author    : Arjan Koning
 !
-! 2023-05-29: Original code
+! 2025-10-08: Original code
 !-----------------------------------------------------------------------------------------------------------------------------------
 !
 ! *** Use data from other modules
@@ -41,11 +41,12 @@ subroutine inputout
 !   flaglabddx      ! flag for calculation of DDX in LAB system
 !   flagmassdis     ! flag for calculation of fission fragment mass yields
 !   flagmicro       ! flag for completely microscopic Talys calculation
-!   flagngfit       ! flag for using fitted nuclear model parameters
+!   flagfit         ! flag for using fitted nuclear model parameters
 !   flagngfit       ! flag for using fitted (n,g) nuclear model parameters
 !   flagnffit       ! flag for using fitted (n,f) nuclear model parameters
 !   flagnnfit       ! flag for using fitted (n,n'), (n,2n) and (n,p) nuclear model parameters
 !   flagnafit       ! flag for using fitted (n,a) nuclear model parameters
+!   flagndfit       ! flag for using fitted (n,d) nuclear model parameters
 !   flagpnfit       ! flag for using fitted (p,n) nuclear model parameters
 !   flaggnfit       ! flag for using fitted (g,n) nuclear model parameters
 !   flagdnfit       ! flag for using fitted (d,n) nuclear model parameters
@@ -54,7 +55,8 @@ subroutine inputout
 !   flagrecoil      ! flag for calculation of recoils
 !   flagrecoilav    ! flag for average velocity in recoil calculation
 !   flagrel         ! flag for relativistic kinematics
-!   flagrpevap      ! flag for evaporation of residual products at high inccident energies
+!   flagrpevap      ! flag for evaporation of residual products at high incident energies
+!   flaglegacy      ! flag to run legacy models
 ! Variables for best files
 !   flagbest        ! flag to use best set of adjusted parameters
 !   flagbestend     ! flag to put best set of parameters at end of input file
@@ -151,7 +153,8 @@ subroutine inputout
 !   flagffevap      ! flag for calculation of particle evaporation from fissi
 !   flagffspin      ! flag to use spin distribution in initial FF population
 !   flagfisout      ! flag for output of fission information
-!   flagfispartdamp   ! flag for fission partial damping
+!   flagfispartdamp ! flag for fission partial damping
+!   flagsffactor    ! flag to constrain vfiscor and rmiufiscor by sp. fis. half-life
 !   flagfisfeed     ! flag for output of fission per excitation bin
 !   flagfission     ! flag for fission
 !   flaghbstate     ! flag for head band states in fission
@@ -182,6 +185,7 @@ subroutine inputout
 !   flagracap       ! flag for radiative capture model
 !   flagupbend      ! flag for low-energy upbend of photon strength function
 !   flagpsfglobal   ! flag for global photon strength functions only
+!   flagglobalwtable  ! flag for global average wtable value instead of 1.   
 !   flaggnorm       ! flag to normalize PSF to average radiative width
 !   gammax          ! number of l - values for gamma multipolarity
 !   ldmodelracap    ! level density model for direct radiative capture
@@ -190,12 +194,14 @@ subroutine inputout
 ! Variables for discrete levels
 !   disctable       ! table with discrete levels
 !   flagbestbr      ! flag to use only best set of branching ratios
+!   flagpseudores   ! flag for using light nuclide discrete levels for resonances
 !   flagelectron    ! flag for application of electron conversion coefficient
 !   flaglevels      ! flag for output of discrete level information
 !   nlevbin         ! number of excited levels for binary nucleus
 !   nlevmax         ! maximum number of included discrete levels for target
 !   nlevmaxres      ! maximum number of included discrete levels for residual nuclides
 ! Variables for level density
+!   flagldglobal    ! flag for global level density model
 !   flagasys        ! flag for all level density parameters a from systematic
 !   flagcolall      ! flag for collective enhancement of level density
 !   flagcolldamp    ! flag for damping of coll. effects in eff. level density (without explicit coll. enh.)
@@ -334,6 +340,8 @@ subroutine inputout
  &  " parameters")') yesno(flagnnfit)
   write(*, '(" nafit               ", a1, "     flagnafit    flag for using fitted (n,a) nuclear model parameters")') &
  &  yesno(flagnafit)
+  write(*, '(" ndfit               ", a1, "     flagndfit    flag for using fitted (n,d) nuclear model parameters")') &
+ &  yesno(flagndfit)
   write(*, '(" pnfit               ", a1, "     flagpnfit    flag for using fitted (p,n) nuclear model parameters")') &
  &  yesno(flagpnfit)
   write(*, '(" dnfit               ", a1, "     flagdnfit    flag for using fitted (d,n) nuclear model parameters")') &
@@ -364,10 +372,11 @@ subroutine inputout
   write(*, '(" Estop            ", f8.3, " Estop        incident energy above which TALYS stops")') Estop
   write(*, '(" rpevap              ", a1, "     flagrpevap   flag for evaporation of residual products at high", &
  &  " incident energies")') yesno(flagrpevap)
+  write(*, '(" legacy              ", a1, "     flaglegacy   flag to run legacy models")') yesno(flaglegacy)
   write(*, '(" maxZrp            ", i3, "     maxZrp       maximal number of protons from the initial", &
- &  " compound nucleus before residual evaporation")') maxZrp
+ &  " CN before residual evaporation")') maxZrp
   write(*, '(" maxNrp            ", i3, "     maxNrp       maximal number of neutrons from the initial", &
- &  " compound nucleus before residual evaporation")') maxNrp
+ &  " CN before residual evaporation")') maxNrp
   write(*, '(" user      ", a, t28, "user         user for this calculation")') trim(user)
   write(*, '(" source    ", a, t28, "source       source for this calculation")') trim(source)
   write(*, '(" format    ", a, t28, "oformat      format for output")') trim(oformat)
@@ -398,6 +407,8 @@ subroutine inputout
   write(*, '(" localomp            ", a1, "     flaglocalomp flag for local (y) or global (n) optical model")') yesno(flaglocalomp)
   write(*, '(" dispersion          ", a1, "     flagdisp     flag for dispersive optical model")') yesno(flagdisp)
   write(*, '(" jlmomp              ", a1, "     flagjlm      flag for using semi-microscopic JLM OMP")') yesno(flagjlm)
+  write(*, '(" pruitt              ", a1, "     flagpruitt   identifier for Pruitt parameters for KD03")') pruitt
+  write(*, '(" pruittset         ", i3, "     pruittset    random set for Pruitt et al OMP")') pruittset
   write(*, '(" riplomp             ", a1, "     flagriplomp  flag for RIPL OMP")') yesno(flagriplomp)
   write(*, '(" riplrisk            ", a1, "     flagriplrisk flag for going outside RIPL mass validity range")') yesno(flagriplrisk)
   write(*, '(" optmodall           ", a1, "     flagompall   flag for new optical model calculation for all residual nuclei")') &
@@ -444,9 +455,10 @@ subroutine inputout
   write(*, '(" radialmodel        ", i2, "     radialmodel  model for radial matter densities (JLM OMP only)")') radialmodel
   write(*, '(" jlmmode            ", i2, "     jlmmode      option for JLM imaginary potential normalization")') jlmmode
   write(*, '(" alphaomp           ", i2, "     alphaomp     alpha OMP (1=normal, 2= McFadden-Satchler,", &
- &  " 3-5= folding potential, 6,8= Avrigeanu, 7=Nolte)")') alphaomp
+ &  " 3-5= folding pot., 6,8= Avrigeanu, 7=Nolte)")') alphaomp
   write(*, '(" deuteronomp        ", i2, "     deuteronomp  deuteron OMP (1=normal, 2=Daehnick,", &
  &  " 3=Bojowald, 4=Han-Shi-Shen, 5=An-Cai)")') deuteronomp
+  write(*, '(" ecisstep        ", es9.2, " ecisstep     integration step size for ECIS OMP calculation")') ecisstep
 !
 ! 4. Compound nucleus
 !
@@ -457,8 +469,8 @@ subroutine inputout
     write(*, '(" widthfluc           ", a1, "     flagwidth    flag for width fluctuation calculation")') yesno(flagwidth)
   endif
   write(*, '(" widthmode          ", i2, "     wmode        designator for width fluctuation model")') wmode
-  write(*, '(" WFCfactor          ", i2, "     WFCfactor    enhancement factor for WFC: 1: Original, 2: Ernebjerg and Herman")') &
- &  WFCfactor
+  write(*, '(" WFCfactor          ", i2, "     WFCfactor    enhancement factor for WFC: 1: Original, 2: Ernebjerg and Herman", &
+ &  " 3: Kawano")') WFCfactor
   write(*, '(" compound            ", a1, "     flagcomp     flag for compound nucleus model")') yesno(flagcomp)
   write(*, '(" fullhf              ", a1, "     flagfullhf   ", &
  &  "flag for full spin dependence of transmission coefficients")') yesno(flagfullhf)
@@ -480,6 +492,8 @@ subroutine inputout
   write(*, '(" gammax             ", i2, "     gammax       number of l-values for gamma multipolarity")') gammax
   write(*, '(" strength           ", i2, "     strength     model for E1 gamma-ray strength function")') strength
   write(*, '(" strengthM1         ", i2, "     strengthM1   model for M1 gamma-ray strength function")') strengthM1
+  write(*, '(" pseudoresonances    ", a1, "    flagpseudores flag for using light nuclide discrete levels for resonances")') &
+ &  yesno(flagpseudores)
   write(*, '(" electronconv        ", a1, "     flagelectron flag for application of electron conversion coefficient")') &
  &  yesno(flagelectron)
   write(*, '(" racap               ", a1, "     flagracap    flag for radiative capture model")') yesno(flagracap)
@@ -487,6 +501,8 @@ subroutine inputout
   write(*, '(" upbend              ", a1, "     flagupbend   flag for low-energy upbend of photon strength function")') &
  &  yesno(flagupbend)
   write(*, '(" psfglobal           ", a1, "    flagpsfglobal flag for global photon strength functions only")') yesno(flagpsfglobal)
+  write(*, '(" globalwtable        ", a1, "    flagglobalwtable flag for global average wtable value instead of 1.")') &
+ & yesno(flagglobalwtable)
   write(*, '(" gnorm               ", a1, "     flaggnorm    flag to normalize PSF to average radiative width")') yesno(flaggnorm)
 !
 ! 6. Pre-equilibrium
@@ -524,6 +540,7 @@ subroutine inputout
   write(*, '(" shellmodel         ", i2, "     shellmodel   model for shell correction energies")') shellmodel
   write(*, '(" kvibmodel          ", i2, "     kvibmodel    model for vibrational enhancement")') kvibmodel
   write(*, '(" spincutmodel       ", i2, "     spincutmodel model for spin cutoff factor for ground state")') spincutmodel
+  write(*, '(" ldglobal            ", a1, "     flagldglobal flag for global level density model")') yesno(flagldglobal)
   write(*, '(" asys                ", a1, "     flagasys     flag for all level density parameters a from systematics")') &
  &  yesno(flagasys)
   write(*, '(" parity              ", a1, "     flagparity   flag for non-equal parity distribution")') yesno(flagparity)
@@ -545,6 +562,8 @@ subroutine inputout
   write(*, '(" hbstate             ", a1, "     flaghbstate  flag for head band states in fission")') yesno(flaghbstate)
   write(*, '(" class2              ", a1, "     flagclass2   flag for class2 states in fission")') yesno(flagclass2)
   write(*, '(" fispartdamp         ", a1, "  flagfispartdamp flag for fission partial damping")') yesno(flagfispartdamp)
+  write(*, '(" sffactor            ", a1, "     flagsffactor flag to constrain vfiscor and rmiufiscor by sp. fis. half-life")') &
+ &  yesno(flagsffactor)
   write(*, '(" massdis             ", a1, "     flagmassdis  flag for calculation of fission fragment mass yields")') &
  &  yesno(flagmassdis)
   write(*, '(" ffevaporation       ", a1, "     flagffevap   flag for calculation of particle evaporation", &
@@ -604,6 +623,19 @@ subroutine inputout
   write(*, '(" outdwba             ", a1, "     flagoutdwba  flag for output of DWBA cross sections for MSD")') yesno(flagoutdwba)
   write(*, '(" outgamdis           ", a1, "     flaggamdis   flag for output of discrete gamma-ray intensities")') yesno(flaggamdis)
   write(*, '(" outexcitation       ", a1, "     flagexc      flag for output of excitation functions")') yesno(flagexc)
+  write(*, '(" filedensity         ", a1, "     filedensity  flag for level densities on separate files")') yesno(filedensity)
+  write(*, '(" filepsf             ", a1, "     filepsf      flag for photon strength functions on separate files")') & 
+ &  yesno(filepsf)
+  write(*, '(" filechannels        ", a1, "     filechannels flag for exclusive channel cross sections on separate file")') &
+ &  yesno(filechannels)
+  write(*, '(" fileelastic         ", a1, "     fileelastic  flag for elastic angular distribution on separate file")') &
+ &  yesno(fileelastic)
+  write(*, '(" filefission         ", a1, "     filefission  flag for fission cross sections on separate file")') yesno(filefission)
+  write(*, '(" filegamdis          ", a1, "     filegamdis   flag for gamma-ray intensities on separate file")') yesno(filegamdis)
+  write(*, '(" filerecoil          ", a1, "     filerecoil   flag for recoil spectra on separate file")') yesno(filerecoil)
+  write(*, '(" fileresidual        ", a1, "     fileresidual flag for residual production cross sections on separate file")') &
+ &  yesno(fileresidual)
+  write(*, '(" filetotal           ", a1, "     filetotal    flag for total cross sections on separate file")') yesno(filetotal)
   write(*, '(" components          ", a1, "     flagcompo    flag for output of cross section components")') yesno(flagcompo)
   write(*, '(" endf                ", a1, "     flagendf     flag for information for ENDF-6 file")') yesno(flagendf)
   write(*, '(" endfdetail          ", a1, "     flagendfdet  flag for detailed ENDF-6 information per channel")') yesno(flagendfdet)
@@ -611,6 +643,17 @@ subroutine inputout
   write(*, '(" partable            ", a1, "     flagpartable flag for output of model parameters on separate file")') &
  &  yesno(flagpartable)
   write(*, '(" block               ", a1, "     flagblock    flag to block spectra, angle and gamma files")') yesno(flagblock)
+  write(*, '(" blockddx            ", a1, "     flagblockddx flag to block DDX files")') yesno(flagblockddx)
+  write(*, '(" blockspectra        ", a1, " flagblockspectra flag to block spectra files")') yesno(flagblockspectra)
+  write(*, '(" blockangle          ", a1, "   flagblockangle flag to block angle files")') yesno(flagblockangle)
+  write(*, '(" blockdirect         ", a1, "  flagblockdirect flag to block direct reaction files")') yesno(flagblockdirect)
+  write(*, '(" blockbin            ", a1, "     flagblockbin flag to block binary files")') yesno(flagblockbin)
+  write(*, '(" blocklevels         ", a1, "  flagblocklevels flag to block discrete level files")') yesno(flagblocklevels)
+  write(*, '(" blockomp            ", a1, "     flagblockomp flag to block optical model files")') yesno(flagblockomp)
+  write(*, '(" blockpreeq          ", a1, "   flagblockpreeq flag to block preequilibrium files")') yesno(flagblockpreeq)
+  write(*, '(" blockastro          ", a1, "   flagblockastro flag to block astro reaction rate files")') yesno(flagblockastro)
+  write(*, '(" blockyield          ", a1, "   flagblockyield flag to block isotopic yield files")') yesno(flagblockyield)
+  write(*, '(" blockZA             ", a1, "     flagblockZA  flag to block residual nuclide files")') yesno(flagblockZA)
   return
 end subroutine inputout
 ! Copyright A.J. Koning 2021

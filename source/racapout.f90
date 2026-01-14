@@ -83,6 +83,9 @@ subroutine racapout
   integer           :: Acpracap     ! compound nucleus A
   integer           :: i            ! counter
   integer           :: Ncol
+  integer           :: indent
+  integer           :: id2
+  integer           :: id4
   integer           :: istat        ! error code
   integer           :: JJJ          ! spin
   integer           :: nracapout    ! energy index
@@ -93,6 +96,9 @@ subroutine racapout
 !
 !************************************************************************
 !
+  indent = 0
+  id2 = indent + 2
+  id4 = indent + 4
   nracapout = nin
   Acpracap = Atarget + parA(k0)
   Zcpracap = ZZ(0, 0, 0)
@@ -102,7 +108,7 @@ subroutine racapout
   cpar = '+'
   if (partar == -1) cpar = '-'
   if (nin == Ninclow + 1) then
-    open (unit = 2, file = 'racap.tot', status = 'unknown')
+    open (unit = 2, file = 'racap.out', status = 'unknown')
     write(2, '("Direct capture reaction on target ", a, " (Z =", i3, ") with projectile ", a1, " (Qvalue=", f7.3, " MeV)"/)') &
  &    trim(targetnuclide), Ztarget, parsym(k0), Q(0)
     write(2, '("Characteristics of the Direct Radiative Capture", " calculation:")')
@@ -125,7 +131,7 @@ subroutine racapout
     enddo
     write(2, * )
   else
-    open (unit = 2, file = 'racap.tot', status = 'unknown')
+    open (unit = 2, file = 'racap.out', status = 'unknown')
     do
       read(2, * , iostat = istat)
       if (istat /= 0) exit
@@ -162,7 +168,7 @@ subroutine racapout
 !
 ! write output racap.out with summary of reaction cross section
 !
-  racapfile = 'racap.out'
+  racapfile = 'racap.tot'
   un = 'mb'
   if (nin == Ninclow + 1) then
     open(unit = 1, file = racapfile, status = 'unknown')
@@ -174,19 +180,21 @@ subroutine racapout
     topline=trim(targetnuclide)//trim(reaction)//trim(finalnuclide)//' direct capture '//trim(quantity)
     col(1)='E'
     un(1)='MeV'
-    col(2)='xs'
+    col(2)='xs(dir. cap.)'
     col(3)='xs(E1)'
     col(4)='xs(E2)'
     col(5)='xs(M1)'
     col(6)='xs(tot)'
     Ncol=6
-    call write_header(topline,source,user,date,oformat)
-    call write_target
-    call write_reaction(reaction,Qres(0, 0, 0),0.D0,0,0)
-    call write_residual(Zcpracap,Acpracap,finalnuclide)
-    call write_real(2,'E-max [MeV]',S(0, 0, k0))
-    call write_integer(2,'number of levels',nlevracap(0, 0))
-    call write_datablock(quantity,Ncol,Ninc-Ninclow,col,un)
+    call write_header(indent,topline,source,user,date,oformat)
+    call write_target(indent)
+    call write_reaction(indent,reaction,Qres(0, 0, 0),0.D0,0,0)
+    call write_residual(id2,Zcpracap,Acpracap,finalnuclide)
+    call write_char(id2,'parameters','')
+    call write_double(id4,'E-max [MeV]',S(0, 0, k0))
+    call write_integer(id4,'number of levels',nlevracap(0, 0))
+    call write_quantity(id2,quantity)
+    call write_datablock(id2,Ncol,Ninc-Ninclow,col,un)
 !   write(1, '("# ", a1, " + ", a, ": Direct Capture to ", i3, a2)') &
 !&    parsym(k0), trim(targetnuclide), Acpracap, nuc(Zcpracap)
 !   write(1, '("# Q-value    =", es12.5, " mass=", f11.6, " Emax=", f11.6)') Qres(0, 0, 0), nucmass(0, 0), S(0, 0, k0)

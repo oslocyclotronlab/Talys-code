@@ -5,7 +5,7 @@ subroutine getvalues(class, word, Zix, Nix, type, ibar, irad, lval, igr, val, iv
 !
 ! Author    : Arjan Koning
 !
-! 2021-12-30: Original code
+! 2024-12-08: Original code
 !-----------------------------------------------------------------------------------------------------------------------------------
 !
 ! *** Use data from other modules
@@ -45,7 +45,7 @@ subroutine getvalues(class, word, Zix, Nix, type, ibar, irad, lval, igr, val, iv
 ! *** Declaration of local data
 !
   implicit none
-  integer, parameter :: numEkey=81         ! number of keywords
+  integer, parameter :: numEkey=90         ! number of keywords
   logical            :: flagassign         ! flag to assign value or not
   logical            :: flagoutside        ! flag for value outside range
   logical            :: lexist             ! logical to determine existence
@@ -83,16 +83,18 @@ subroutine getvalues(class, word, Zix, Nix, type, ibar, irad, lval, igr, val, iv
 ! Several keywords may be altered over local energy ranges
 !
   data (keyword(i), i = 1, numEkey) / 'adepthcor', 'aradialcor', &
-    'avadjust', 'avdadjust', 'avsoadjust', 'awadjust', 'awdadjust', 'awsoadjust', 'bdamp', 'bdampadjust', &
-    'betafiscor', 'betafiscoradjust', 'cbreak', 'cfermi', 'cknock', &
-    'cstrip', 'ctable', 'ctableadjust', 'd1adjust', 'd2adjust', 'd3adjust', 'egr', 'egradjust', 'epr', 'epradjust', 'etable', &
-    'fisbar', 'fisbaradjust', 'fishw', 'fishwadjust', 'fsadjust', 'ftable', 'ftableadjust', &
-    'ggr', 'ggradjust', 'gpr', 'gpradjust', 'krotconstant', 'lv1adjust', 'lvadjust', 'lvsoadjust', &
-    'lw1adjust', 'lwadjust', 'lwsoadjust', 'm2constant', 'ptable', 'ptableadjust', 'rcadjust', 'rspincut', 'rspincutff', &
-    'rspincutpreeq', 'rvadjust', 'rvdadjust', 'rvsoadjust', 'rwadjust', 'rwdadjust', 'rwsoadjust', 's2adjust', 'sgr', 'sgradjust', &
-    'spr', 'spradjust', 'tjadjust', 'tmadjust', 'ufermi', 'v1adjust', 'v2adjust', 'v3adjust', 'v4adjust', 'vfiscor', &
-    'vfiscoradjust', 'vso1adjust', 'vso2adjust', 'w1adjust', 'w2adjust', 'w3adjust', 'w4adjust', 'wso1adjust', 'wso2adjust', &
-    'wtable', 'wtableadjust'/
+ &  'avadjust', 'avdadjust', 'avsoadjust', 'awadjust', 'awdadjust', 'awsoadjust', 'bdamp', 'bdampadjust', &
+ &  'betafiscor', 'betafiscoradjust', 'cbreak', 'cfermi', 'cknock', &
+ &  'cstrip', 'ctable', 'ctableadjust', 'd1adjust', 'd2adjust', 'd3adjust', 'egr', 'egradjust', 'epr', 'epradjust', 'etable', &
+ &  'fisbar', 'fisbaradjust', 'fishw', 'fishwadjust', 'fsadjust', 'ftable', 'ftableadjust', &
+ &  'ggr', 'ggradjust', 'gpr', 'gpradjust', 'krotconstant', 'levinger', 'lv1adjust', 'lvadjust', 'lvsoadjust', 'lw1adjust', &
+ &  'lwadjust', 'lwsoadjust', 'm2constant', 'ptable', 'ptableadjust', 'rcadjust', 'rmiufiscor', 'rmiufiscoradjust', &
+ &  'rspincut', 'rspincutff', &
+ &  'rspincutpreeq', 'rvadjust', 'rvdadjust', 'rvsoadjust', 'rwadjust', 'rwdadjust', 'rwsoadjust', 's2adjust', 'sgr', 'sgradjust', &
+ &  'spr', 'spradjust', 'tjadjust', 'tmadjust', 'ufermi', 'upbendc', 'upbendcadjust', 'upbende', 'upbendeadjust', 'upbendf', &
+ &  'upbendfadjust','v1adjust', 'v2adjust', 'v3adjust', 'v4adjust', 'vfiscor', &
+ &  'vfiscoradjust', 'vso1adjust', 'vso2adjust', 'w1adjust', 'w2adjust', 'w3adjust', 'w4adjust', 'wso1adjust', 'wso2adjust', &
+ &  'wtable', 'wtableadjust'/
 !
 ! ************************ Read values for keywords ********************
 !
@@ -124,6 +126,7 @@ subroutine getvalues(class, word, Zix, Nix, type, ibar, irad, lval, igr, val, iv
   flagassign = .false.
   key = word(1)
   ch = word(2)(1:1)
+  if (ch == 'e') ch = 'g'
   val = 1.
   ival = -1
   cval = '                                                           '
@@ -149,15 +152,17 @@ subroutine getvalues(class, word, Zix, Nix, type, ibar, irad, lval, igr, val, iv
       Nix = ia - iz
       iz = Zinit - Zix
       in = Ninit - Nix
+      ia = iz + in
     else
       in = ia - iz
       Zix = Zinit - iz
       Nix = Ninit - in
+      ia = iz + in
     endif
     call range_index_error(key, 'Z', iz, max(Zinit - numZ,0), Zinit, error = 'continue', flagoutside = flagoutside)
     if (.not. flagoutside) &
  &    call range_index_error(key, 'N', in, max(Ninit - numN,0), Ninit, error = 'continue', flagoutside = flagoutside)
-    if (flagoutside) write(*,'("Z= ",i3," A= ",i3," out of range")')  iz, ia
+    if (flagoutside) write(*,'(a,": Z= ",i3," A= ",i3," out of range")') trim(key), iz, ia
     i = 4
 !
 ! Z,A dependent keywords with possible fission barriers

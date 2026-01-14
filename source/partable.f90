@@ -27,6 +27,7 @@ subroutine partable(Zix, Nix)
 !   bdampadjust      ! correction for fission partial damping parameter
 !   betafiscor       ! adjustable factor for fission path width
 !   betafiscoradjust ! adjustable factor for fission path width
+!   rmiufiscor       ! adjustable factor for inertia mass along fission path 
 !   fbaradjust       ! adjustable factor for fission parameters
 !   fbarrier         ! height of fission barrier
 !   fismodelx        ! fission model
@@ -97,6 +98,8 @@ subroutine partable(Zix, Nix)
 ! *** Declaration of local data
 !
   implicit none
+  character(len=3)  :: massstring
+  character(len=6)  :: finalnuclide
   integer :: A                 ! mass number of target nucleus
   integer :: ibar              ! fission barrier
   integer :: l                 ! multipolarity
@@ -108,14 +111,17 @@ subroutine partable(Zix, Nix)
 !
   Z = ZZ(Zix, Nix, 0)
   A = AA(Zix, Nix, 0)
-  write(51, '("##")')
-  write(51, '("## Parameters for ", i3, a2)')  A, nuc(Z)
-!
+  massstring = '   '
+  write(massstring,'(i3)') A
+  finalnuclide=trim(nuc(Z))//adjustl(massstring)
+  write(51, '("## residual:")')
+  write(51, '("##   Z: ", i0)') Z
+  write(51, '("##   A: ", i0)') A
+  write(51, '("##   nuclide: ", a)') finalnuclide
 ! ********************** Level density parameters **********************
 !
-  write(51, '("##")')
-  write(51, '("## Level density")')
-  write(51, '("##")')
+  write(51, '("## parameters: ")')
+  write(51, '("##   level density")')
   write(51, '("a              ", 2i4, f10.5)') Z, A, alev(Zix, Nix)
   write(51, '("aadjust        ", 2i4, f10.5)') Z, A, aadjust(Zix, Nix)
   write(51, '("gammald        ", 2i4, f10.5)') Z, A, gammald(Zix, Nix)
@@ -156,9 +162,8 @@ subroutine partable(Zix, Nix)
 !
 ! ************************ Gamma-ray parameters ************************
 !
-  write(51, '("##")')
-  write(51, '("## Gamma-ray")')
-  write(51, '("##")')
+  write(51, '("## parameters: ")')
+  write(51, '("##   photon strength function")')
   write(51, '("gamgam         ", 2i4, f10.5)') Z, A, gamgam(Zix, Nix)
   write(51, '("gamgamadjust   ", 2i4, f10.5)') Z, A, gamgamadjust(Zix, Nix)
   do l = 1, gammax
@@ -187,6 +192,11 @@ subroutine partable(Zix, Nix)
     endif
     if (strengthM1 >= 3) then
       write(51, '("upbendc        ", 2i4, es12.5, " M", i1)') Z, A, upbend(Zix, Nix, 0, l, 1), l
+      write(51, '("upbende        ", 2i4, es12.5, " M", i1)') Z, A, upbend(Zix, Nix, 0, l, 2), l
+      write(51, '("upbendf        ", 2i4, es12.5, " M", i1)') Z, A, upbend(Zix, Nix, 0, l, 3), l
+      write(51, '("upbendcadjust  ", 2i4, es12.5, " M", i1)') Z, A, upbendadjust(Zix, Nix, 0, l, 1), l
+      write(51, '("upbendeadjust  ", 2i4, es12.5, " M", i1)') Z, A, upbendadjust(Zix, Nix, 0, l, 2), l
+      write(51, '("upbendfadjust  ", 2i4, es12.5, " M", i1)') Z, A, upbendadjust(Zix, Nix, 0, l, 3), l
     endif
     if (ngr(Zix, Nix, 1, l) == 2) then
       write(51, '("sgr            ", 2i4, f8.3, " E", i1, " 2")') Z, A, sgr(Zix, Nix, 1, l, 2), l
@@ -208,15 +218,19 @@ subroutine partable(Zix, Nix)
 !
   if (flagfission) then
     write(51, '("##")')
-    write(51, '("## Fission parameters")')
+    write(51, '("## parameters: ")')
+    write(51, '("##   fission")')
     write(51, '("##")')
     do ibar = 1, nfisbar(Zix, Nix)
-      if (fismodelx(Zix, Nix) == 5) then
+      if (fismodelx(Zix, Nix) >= 5) then
         if (ibar == 1) then
           write(51, '("betafiscor     ", 2i4, f10.5)') Z, A, betafiscor(Zix, Nix)
           write(51, '("vfiscor        ", 2i4, f10.5)') Z, A, vfiscor(Zix, Nix)
+          write(51, '("rmiufiscor     ", 2i4, f10.5)') Z, A, rmiufiscor(Zix, Nix)
+          if (flagsffactor) write(51, '("sffactor       ", 2i4, f10.5)') Z, A, sffactor(Zix, Nix)
           write(51, '("betafiscoradjust ", 2i4, f10.5)') Z, A, betafiscoradjust(Zix, Nix)
           write(51, '("vfiscoradjust  ", 2i4, f10.5)') Z, A, vfiscoradjust(Zix, Nix)
+          write(51, '("rmiufiscoradjust ", 2i4, f10.5)') Z, A, rmiufiscoradjust(Zix, Nix)
         endif
         write(51, '("bdamp          ", 2i4, f10.5, i3)') Z, A, bdamp(Zix, Nix, ibar), ibar
         write(51, '("bdampadjust    ", 2i4, f10.5, i3)') Z, A, bdampadjust(Zix, Nix, ibar), ibar
@@ -231,7 +245,6 @@ subroutine partable(Zix, Nix)
       write(51, '("Rclass2mom     ", 2i4, f10.5, i3)') Z, A, Rclass2mom(Zix, Nix, ibar), ibar
     enddo
   endif
-  write(51, '("##--------------------------------------------")')
   return
 end subroutine partable
 ! Copyright A.J. Koning 2021
