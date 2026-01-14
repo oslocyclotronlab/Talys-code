@@ -21,13 +21,13 @@ subroutine input_densitymodel
 !   col                  ! flag for collective enhancement of level density
 !   colall               ! flag for collective enhancement of level density
 !   filedensity          ! flag for level densities on separate files
+!   flagldglobal         ! flag for global level density model
 !   flagasys             ! flag for all level density parameters a from systematic
 !   flagcol              ! flag for collective enhancement of level density
 !   flagcolall           ! flag for collective enhancement of level density
 !   flagcolldamp         ! flag for damping of coll. effects in eff. level density (without explicit coll. enh.)
 !   flagctmglob          ! flag for global CTM model (no discrete level info)
 !   flagdensity          ! flag for output of level densities
-!   flagparity           ! flag for non - equal parity distribution
 !   kvibmodel            ! model for vibrational enhancement
 !   ldmodel              ! level density model
 !   ldmodelCN            ! level density model for compound nucleus
@@ -83,11 +83,10 @@ subroutine input_densitymodel
 !
   if (flagmicro) then
     ldmodelall = 5
-    strength= 8
   else
     ldmodelall = 1
-    strength= 9
   endif
+  strength= 9
   if (k0 <= 1 .and. Atarget > fislim) ldmodelall = 5
   ldmodelCN = 0
   shellmodel = 1
@@ -102,10 +101,10 @@ subroutine input_densitymodel
   flagcolldamp = .false.
   ldmodel = 0
   col = 0.
+  flagldglobal = .false.
   flagasys = .false.
   flagctmglob = .false.
   flagdensity = flagbasic
-  filedensity = .false.
   cglobal = 1.e-20
   pglobal = 1.e-20
   Rspincutff = 4.
@@ -174,6 +173,12 @@ subroutine input_densitymodel
       if (ch /= 'y' .and. ch /= 'n') call read_error(line, istat)
       cycle
     endif
+    if (key == 'ldglobal') then
+      if (ch == 'n') flagldglobal = .false.
+      if (ch == 'y') flagldglobal = .true.
+      if (ch /= 'y' .and. ch /= 'n') call read_error(line, istat)
+      cycle
+    endif
     if (key == 'ldmodelcn') then
       read(value, * , iostat = istat) ldmodelCN
       if (istat /= 0) call read_error(line, istat)
@@ -220,18 +225,6 @@ subroutine input_densitymodel
       class = 9
       call getvalues(class, word, Zix, Nix, type, ibar, irad, lval, igr, val, ival, cval, flagassign)
       if (flagassign) Rspincutff = val
-      cycle
-    endif
-    if (key == 'filedensity') then
-      if (ch == 'n') filedensity = .false.
-      if (ch == 'y') filedensity = .true.
-      if (ch /= 'y' .and. ch /= 'n') call read_error(line, istat)
-      cycle
-    endif
-    if (key == 'parity') then
-      if (ch == 'n') flagparity = .false.
-      if (ch == 'y') flagparity = .true.
-      if (ch /= 'y' .and. ch /= 'n') call read_error(line, istat)
       cycle
     endif
     if (key == 'outdensity') then

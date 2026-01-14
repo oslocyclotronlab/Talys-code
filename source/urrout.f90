@@ -71,7 +71,7 @@ subroutine urrout
 !
   implicit none
   character(len=3)  :: lstring              ! string for l value
-  character(len=13) :: Estr
+  character(len=12) :: Estr
   character(len=20) :: urrfile              ! file with URR parameters
   character(len=250) :: urrline(1000)
   character(len=18) :: reaction   ! reaction
@@ -87,6 +87,9 @@ subroutine urrout
   integer           :: Ne
   integer           :: Nurr
   integer           :: Ncol
+  integer           :: indent
+  integer           :: id2
+  integer           :: id4
   integer           :: l                    ! multipolarity
   integer           :: nen                  ! energy counter
   integer           :: odd                  ! odd (1) or even (0) nucleus
@@ -97,6 +100,9 @@ subroutine urrout
 !
 ! General output file
 !
+  indent = 0
+  id2 = indent + 2
+  id4 = indent + 4
   urrline = ''
   reaction = '('//parsym(k0)//',urr)'
   quantity='URR parameter'
@@ -124,34 +130,34 @@ subroutine urrout
   col(13)='Ga(l,J)'
   un(13)='eV'
   Ncol=13
-  if (nin == Ninclow+1) then
+  if (.not.flagurrendf) then
     flagurrendf = .true.
-    open (unit = 21, file = 'urr.dat', status = 'unknown')
+    open (unit = 121, file = 'urr.dat', status = 'unknown')
   endif
   Estr=''
-  write(Estr,'(es13.6)') Einc
+  write(Estr,'(es12.6)') Einc
   topline=trim(targetnuclide)//trim(reaction)//' '//trim(quantity)//' at '//Estr//' MeV'
   open (unit = 1, file = 'urr.tmp', status = 'unknown')
-  call write_header(topline,source,user,date,oformat)
-  call write_target
-  call write_reaction(reaction,0.d0,0.d0,0,0)
-  call write_real(2,'E-incident [MeV]',Einc)
-  write(1,'("# parameters:")')
-  call write_real(2,'neutron separation energy [MeV]',S(0, 0, 1))
-  write(1,'("# observables:")')
-  call write_real(2,'thermal capture cross section [mb]',xscaptherm(-1))
-  call write_real(2,'potential scattering radius [fm]',Rprime)
+  call write_header(indent,topline,source,user,date,oformat)
+  call write_target(indent)
+  call write_reaction(indent,reaction,0.d0,0.d0,0,0)
+  call write_char(id2,'parameters','')
+  call write_double(id4,'neutron separation energy [MeV]',S(0, 0, 1))
+  call write_real(id4,'thermal capture cross section [mb]',xscaptherm(-1))
   Ne = 0
   do l = 0, lurr
     do J = JminU(l), JmaxU(l)
       Ne = Ne + 1
     enddo
   enddo
-  call write_datablock(quantity,Ncol,Ne,col,un)
+  call write_quantity(id2,quantity)
+  call write_real(id4,'E-incident [MeV]',Einc)
+  call write_real(id4,'potential scattering radius [fm]',Rprime)
+  call write_datablock(id2,Ncol,Ninc,col,un)
   odd = mod(Atarget + 1, 2)
   do l = 0, lurr
     do J = JminU(l), JmaxU(l)
-      write(1, '(i6,9x,es15.6,i6,9x,10es15.6)') l, J+0.5*odd, Purrlj(l, J), Dl(l), Dlj(l, J), strengthl(l), &
+      write(1, '(3x,i6,12x,f5.1,9x,i6,4x,10es15.6)') l, J+0.5*odd, Purrlj(l, J), Dl(l), Dlj(l, J), strengthl(l), &
  &      strengthlj(l, J), urrwidth(1, l, J), urrwidth(3, l, J), &
  &      urrwidth(0, l, J), urrwidth( - 1, l, J), urrwidth(2, l, J), urrwidth(6, l, J)
     enddo
@@ -166,14 +172,18 @@ subroutine urrout
   enddo
   Nurr = k - 1
   close (unit = 1, status = 'delete')
-  do k = 1, Nurr
-    write(21,'(a)') trim(urrline(k))
-  enddo
-  if (nin == Ninc) close (unit = 21)
+print*," flagurrendf B ",flagurrendf
+  if (flagurrendf) then
+    do k = 1, Nurr
+      write(121,'(a)') trim(urrline(k))
+    enddo
+    if (nin == Ninc) close (unit = 121)
+  endif
 !
 ! Output of (l,J) dependent widths, spacings and strength functions in separate files
 !
-  do type = - 1, 6
+  do type = -1, 6
+    if (type == -1 .and. .not.flagfission) cycle
     if (type == 5 .and. Q(2) <= 0.) cycle
     if (type == 6 .and. Q(6) <= 0.) cycle
     do l = 0, lurr
@@ -202,7 +212,7 @@ subroutine urrout
       endif
       if (type == 0) then
         urrfile = 'urrgamwidth.'//lstring
-        extension='average radiation width'
+        extension='average radiative width'
       endif
       if (type == 1) then
         urrfile = 'urrcomwidth.'//lstring
@@ -244,11 +254,12 @@ subroutine urrout
         urrexist(type, l) = .true.
         topline=trim(targetnuclide)//trim(reaction)//' '//trim(quantity)//' - '//extension
         open (unit = 1, file = urrfile, status = 'replace')
-        call write_header(topline,source,user,date,oformat)
-        call write_target
-        call write_reaction(reaction,0.d0,0.d0,0,0)
-        call write_integer(2,'l-value',l)
-        call write_datablock(quantity,Ncol,Ninc,col,un)
+        call write_header(indent,topline,source,user,date,oformat)
+        call write_target(indent)
+        call write_reaction(indent,reaction,0.d0,0.d0,0,0)
+        call write_integer(id2,'l-value',l)
+        call write_quantity(id2,quantity)
+        call write_datablock(id2,Ncol,Ninc,col,un)
         do nen = 1, Ninclow
           write(1, '(100es15.6)') eninc(nen), (J + 0.5 * odd, x(l, J), y(l, J), J = JminU(l), JmaxU(l))
         enddo
@@ -289,11 +300,12 @@ subroutine urrout
         urrexist(type, l) = .true.
         topline=trim(targetnuclide)//trim(reaction)//' '//trim(quantity)//' - '//extension
         open (unit = 1, file = urrfile, status = 'replace')
-        call write_header(topline,source,user,date,oformat)
-        call write_target
-        call write_reaction(reaction,0.d0,0.d0,0,0)
-        call write_integer(2,'l-value',l)
-        call write_datablock(quantity,Ncol,Ninc,col,un)
+        call write_header(indent,topline,source,user,date,oformat)
+        call write_target(indent)
+        call write_reaction(indent,reaction,0.d0,0.d0,0,0)
+        call write_integer(id2,'l-value',l)
+        call write_quantity(id2,quantity)
+        call write_datablock(id2,Ncol,Ninc,col,un)
         do nen = 1, Ninclow
           write(1, '(2es15.6)') eninc(nen), xx(1)
         enddo
@@ -350,14 +362,15 @@ subroutine urrout
     if ( .not. urrexist(type, 0)) then
       urrexist(type, 0) = .true.
       open (unit = 1, file = urrfile, status = 'replace')
-      call write_header(topline,source,user,date,oformat)
-      call write_target
-      call write_reaction(reaction,0.d0,0.d0,0,0)
-      write(1,'("# observables:")')
-      if (type == 9) call write_real(2,'potential scattering radius [fm]',RprimeU)
-      if (type == 10) call write_real(2,'potential scattering radius [fm]',Rprime)
-      if (type == 11) call write_real(2,'ratio of potential scattering radius ',Rprime/RprimeU)
-      call write_datablock(quantity,Ncol,Ninc,col,un)
+      call write_header(indent,topline,source,user,date,oformat)
+      call write_target(indent)
+      call write_reaction(indent,reaction,0.d0,0.d0,0,0)
+      call write_char(id2,'parameters','')
+      if (type == 9) call write_real(id4,'potential scattering radius [fm]',RprimeU)
+      if (type == 10) call write_real(id4,'potential scattering radius [fm]',Rprime)
+      if (type == 11) call write_real(id4,'ratio of potential scattering radius ',Rprime/RprimeU)
+      call write_quantity(id2,quantity)
+      call write_datablock(id2,Ncol,Ninc,col,un)
       do nen = 1, Ninclow
         write(1, '(5es15.6)') eninc(nen), xx(1), xx(2), xx(4), xx(3)
       enddo

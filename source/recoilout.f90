@@ -16,7 +16,7 @@ subroutine recoilout
 !   dbl           ! double precision kind
 ! Variables for output
 !   filerecoil    ! flag for recoil spectra on separate file
-!   flagblock     ! flag to block spectra, angle and gamma files
+!   flagblockspectra  ! flag to block spectra files
 ! Variables for existence libraries
 !   recexist      ! flag for existence of recoils
 ! Variables for numerics
@@ -52,7 +52,7 @@ subroutine recoilout
   implicit none
   character(len=3)  :: massstring !
   character(len=6)  :: finalnuclide !
-  character(len=13) :: Estr
+  character(len=12) :: Estr
   character(len=18) :: reaction   ! reaction
   character(len=132) :: topline    ! topline
   character(len=15) :: col(2)     ! header
@@ -68,14 +68,20 @@ subroutine recoilout
   integer           :: nen        ! energy counter
   integer           :: Z          ! charge number of target nucleus
   integer           :: Zcomp      ! proton number index for compound nucleus
+  integer           :: indent
+  integer           :: id2
+  integer           :: id4
   real(dbl)         :: sumcm      ! total residual production in the CM frame
 !
 ! ***************************** Spectra ********************************
 !
+  indent = 0
+  id2 = indent + 2
+  id4 = indent + 4
   MF = 6
   MT = 5
   Estr=''
-  write(Estr,'(es13.6)') Einc
+  write(Estr,'(es12.6)') Einc
   col(1)='E-out'
   un(1)='MeV'
   col(2)='xs'
@@ -92,25 +98,19 @@ subroutine recoilout
       massstring='   '
       write(massstring,'(i3)') A
       finalnuclide=trim(nuc(Z))//adjustl(massstring)
-      write(*, '(/" Recoil Spectrum for ", i3, a2/)') A, nuc(Z)
-      write(*, '("   Energy   Cross section"/)')
-      do nen = 0, maxenrec
-        write(*, '(1x, f8.3, es12.5)') Erec(Zcomp, Ncomp, nen), specrecoil(Zcomp, Ncomp, nen)
-      enddo
-      write(*, '(/" Integrated recoil spectrum       : ", es12.5)') recoilint(Zcomp, Ncomp)
       if (Zcomp == parZ(k0) .and. Ncomp == parN(k0)) then
         sumcm = xspopnuc(Zcomp, Ncomp) + xselasinc
       else
         sumcm = xspopnuc(Zcomp, Ncomp)
       endif
-      write(*, '(" Residual production cross section: ", es12.5)') sumcm
+      write(*, '(/" Recoil Spectrum for ", a/)') trim(finalnuclide)
 !
 ! Write results to separate file
 !
       if (filerecoil) then
         recstring = 'rec000000'
         write(recstring(4:9), '(2i3.3)') Z, A
-        if (flagblock) then
+        if (flagblockspectra) then
           recfile = recstring//'.tot'//natstring(iso)
           if (.not. recexist(Zcomp,Ncomp)) then
             recexist(Zcomp, Ncomp) = .true.
@@ -125,16 +125,21 @@ subroutine recoilout
           open (unit=1,file=recfile,status='unknown')
         endif
         topline=trim(targetnuclide)//trim(reaction)//' recoil '//trim(quantity)//' at '//Estr//' MeV'
-        call write_header(topline,source,user,date,oformat)
-        call write_target
-        call write_reaction(reaction,0.D0,0.D0,MF,MT)
-        call write_real(2,'E-incident [MeV]',Einc)
-        call write_residual(Z,A,finalnuclide)
-        call write_datablock(quantity,Ncol,maxenrec+1,col,un)
+        call write_header(indent,topline,source,user,date,oformat)
+        call write_target(indent)
+        call write_reaction(indent,reaction,0.D0,0.D0,MF,MT)
+        call write_char(id2,'parameters','')
+        call write_real(id4,'E-incident [MeV]',Einc)
+        call write_real(id4,'Integrated recoil spectrum [mb]',recoilint(Zcomp, Ncomp))
+        call write_double(id4,'Residual production cross section [mb]',sumcm)
+        call write_residual(id2,Z,A,finalnuclide)
+        call write_quantity(id2,quantity)
+        call write_datablock(id2,Ncol,maxenrec+1,col,un)
         do nen = 0, maxenrec
           write(1, '(2es15.6)') Erec(Zcomp, Ncomp, nen), specrecoil(Zcomp, Ncomp, nen)
         enddo
         close (unit = 1)
+        call write_outfile(recfile,(flagoutall .and. .not.flagblockspectra))
       endif
     enddo
   enddo

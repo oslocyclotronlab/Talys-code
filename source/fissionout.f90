@@ -59,12 +59,16 @@ subroutine fissionout
   integer           :: nen         ! energy counter
   integer           :: Z           ! charge number of target nucleus
   integer           :: Zcomp       ! proton number index for compound nucleus
+  integer           :: indent
+  integer           :: id2
   real(sgl)         :: x1(numpfns) ! help variable
   real(sgl)         :: x2(numpfns) ! help variable
   real(sgl)         :: x3(numpfns) ! help variable
 !
 ! *********************** Fission cross sections ***********************
 !
+  indent = 0
+  id2 = indent + 2
   write(*, '(/" 4b. Fission cross section per fissioning", " nuclide"/)')
   do Acomp = 0, maxA
     do Zcomp = 0, maxZ
@@ -104,11 +108,12 @@ subroutine fissionout
           col(2)='xs'
           un(2)='mb'
           Ncol=2
-          call write_header(topline,source,user,date,oformat)
-          call write_target
-          call write_reaction(reaction,0.D0,0.D0,0,0)
-          call write_residual(Z,A,finalnuclide)
-          call write_datablock(quantity,Ncol,Ninc,col,un)
+          call write_header(indent,topline,source,user,date,oformat)
+          call write_target(indent)
+          call write_reaction(indent,reaction,0.D0,0.D0,0,0)
+          call write_residual(id2,Z,A,finalnuclide)
+          call write_quantity(id2,quantity)
+          call write_datablock(id2,Ncol,Ninc,col,un)
           do nen = 1, Ninclow
             write(1, '(2es15.6)') eninc(nen), 0.
           enddo
@@ -120,6 +125,7 @@ subroutine fissionout
         endif
         write(1, '(2es15.6)') Einc, xsfeed(Zcomp, Ncomp, -1)
         close (unit = 1)
+        call write_outfile(rpfile,flagoutall)
       enddo
     enddo
   endif
@@ -127,7 +133,7 @@ subroutine fissionout
 ! Phenomenological PFNS (Iwamoto model)
 !
   if (pfnsmodel == 1) then
-    call iwamoto(Zinit, Ainit, S(0,0,1), Einc, Tmadjust, Fsadjust, Epfns, NEpfns, x1, x2, x3, Eavpfns(1))
+    call iwamoto(Zinit, Ainit, real(S(0,0,1)), Einc, Tmadjust, Fsadjust, Epfns, NEpfns, x1, x2, x3, Eavpfns(1))
     do nen = 1, NEpfns
       pfns(1,nen) = x1(nen)
       maxpfns(1,nen) = x2(nen)

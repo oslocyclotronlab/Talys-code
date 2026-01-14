@@ -5,7 +5,7 @@ subroutine spr
 !
 ! Author    : Arjan Koning
 !
-! 2021-12-30: Original code
+! 2025-12-13: Original code
 !-----------------------------------------------------------------------------------------------------------------------------------
 !
 ! *** Use data from other modules
@@ -45,26 +45,48 @@ subroutine spr
   character(len=80) :: quantity   ! quantity
   real(sgl) :: Efac ! help variable
   real(sgl) :: r2k2 ! help variable
-  real(sgl) :: Rpot ! standard value for R
+  real(sgl) :: Rpo  ! standard value for R
+  integer   :: indent
+  integer   :: id2
+  integer   :: id4
 !
 ! **************** S, P and R' resonance parameters ********************
 !
+  indent = 0
+  id2 = indent + 2
+  id4 = indent + 4
   Rprime = 10.*sqrt(0.001*max(xselasinc, 0.)/fourpi)
   Efac = 1. / (sqrt(1.e6 * Einc) * twopi)
-  Rpot = 1.35 * Atarget **onethird
-  r2k2 = Rpot * Rpot * wavenum * wavenum
+  Rpo = 1.35 * Atarget **onethird
+  r2k2 = Rpo * Rpo * wavenum * wavenum
   Sstrength(0) = Tlinc(0) * Efac
   Sstrength(1) = Tlinc(1) * Efac * (1. + r2k2) / r2k2
   Sstrength(2) = Tlinc(2) * Efac * (9. + 3. * r2k2 + r2k2 * r2k2) / (r2k2 * r2k2)
-  if (flagendf .and. flagendfdet .and. (Einc <= 0.1 .or. nin == Ninclow + 1)) then
+  if ((flagoutomp .or. (flagendf .and. flagendfdet)) .and. (Einc <= 0.1 .or. nin == Ninclow + 1)) then
     open (unit = 1, file = 'spr.opt', status = 'replace')
     quantity='basic OMP quantities'
     topline=trim(targetnuclide)//' '//trim(quantity)
-    call write_header(topline,source,user,date,oformat)
-    call write_target
-    call write_real(2,'S0',Sstrength(0)*1.e4)
-    call write_real(2,'S1',Sstrength(1)*1.e4)
-    call write_real(2,'Rprime [fm]',Rprime)
+    call write_header(indent,topline,source,user,date,oformat)
+    call write_target(indent)
+    call write_char(id2,'parameters','')
+    call write_real(id4,'S0',Sstrength(0)*1.e4)
+    if (S0(0,0) > 0.) then
+      call write_real(id4,'experimental S0',S0(0,0))
+      call write_real(id4,'experimental S0 unc.',dS0(0,0))
+      call write_real(id4,'C/E S0',Sstrength(0)*1.e4/S0(0, 0))
+    endif
+    call write_real(id4,'S1',Sstrength(1)*1.e4)
+    if (S1(0,0) > 0.) then
+      call write_real(id4,'experimental S1',S1(0,0))
+      call write_real(id4,'experimental S1 unc.',dS1(0,0))
+      call write_real(id4,'C/E S1',Sstrength(1)*1.e4/S1(0, 0))
+    endif
+    call write_real(id4,'Rprime [fm]',Rprime)
+    if (Rscat(0,0) > 0.) then
+      call write_real(id4,'experimental Rprime [fm]',Rscat(0,0))
+      call write_real(id4,'experimental Rprime unc. [fm]',dRscat(0,0))
+      call write_real(id4,'C/E Rprime',Rprime/Rscat(0, 0))
+    endif
 !   write(1, '(2i4, 3f8.4)') Atarget, Ztarget, Sstrength(0)*1.e4, Sstrength(1) * 1.e4, Rprime
     close (unit = 1)
   endif

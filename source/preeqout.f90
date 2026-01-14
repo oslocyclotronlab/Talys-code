@@ -59,6 +59,18 @@ subroutine preeqout
 !
   implicit none
   logical   :: surfwell  ! flag for surface effects in finite well
+  character(len=3)  :: massstring !
+  character(len=6)  :: finalnuclide !
+  character(len=20) :: phdfile    ! file for output
+  character(len=30) :: preeqfile  ! file for output
+  character(len=18) :: reaction   ! reaction
+  character(len=132):: topline    ! topline
+  character(len=15) :: col(14)     ! header
+  character(len=15) :: un(14)     ! units
+  character(len=80) :: quantity   ! quantity
+  integer           :: Z             ! charge number of target nucleus
+  integer           :: A             ! mass number of target nucleus
+  integer           :: Ncol       ! number of columns
   integer   :: h         ! help variable
   integer   :: J         ! spin of level
   integer   :: k         ! designator for particle
@@ -68,6 +80,9 @@ subroutine preeqout
   integer   :: p         ! particle number
   integer   :: type      ! particle type
   integer   :: Zix       ! charge number index for residual nucleus
+  integer   :: indent
+  integer   :: id2
+  integer   :: id4
   real(sgl) :: damp      ! shell damping factor
   real(sgl) :: Eex       ! excitation energy
   real(sgl) :: gs        ! single-particle level density parameter
@@ -86,73 +101,173 @@ subroutine preeqout
 ! ignatyuk  : function for energy dependent level density parameter a
 ! phdens2   : function for two-component particle-hole state density
 !
+  indent = 0
+  id2 = indent + 2
+  id4 = indent + 4
   Zix = 0
   Nix = 0
   surfwell = .false.
-  write(*, '(/" ++++++++++ PARTIAL STATE DENSITIES ++++++++++")')
-  if ( .not. flag2comp) then
-    write(*, '(/" Particle-hole state densities"/)')
-    write(*, '("     Ex    P(n=3)     gs    ", 8(i1, "p", i1, "h", 6x)/)') ((h + k, h, k = 0, 1), h = 1, 4)
-    do nen = 1, int(Etotal)
-      Eex = real(nen)
-      gs = g(0, 0)
-      if (flaggshell) gs = gs * ignatyuk(Zix, Nix, Eex, 0) / alev(0, 0)
-      write(*, '(1x, 3f8.3, 8es10.3)') Eex, preeqpair(Zix, Nix, 3, Eex, pairmodel), gs, &
- &      ((phdens(Zix, Nix, h + k, h, gs, Eex, Efermi, surfwell), k = 0, 1), h = 1, 4)
+  if (nin == Ninc) then
+    Z = ZZ(Zix, Nix, 0) 
+    A = AA(Zix, Nix, 0) 
+    massstring='   '  
+    write(massstring,'(i3)') A
+    finalnuclide=trim(nuc(Z))//adjustl(massstring)
+    write(*, '(/," ++++++++++ PARTICLE-HOLE STATE DENSITIES ++++++++++",/)')
+    phdfile = 'ph_density.out'
+    quantity = 'particle-hole state density'
+    topline=trim(finalnuclide)//' '//trim(quantity)
+    open (unit = 1, file = phdfile, status = 'replace')
+    call write_header(indent,topline,source,user,date,oformat)
+    call write_residual(indent,Z,A,finalnuclide)
+    un='MeV^-1'
+    col=''
+    un(1)='MeV'
+    un(2)='MeV'
+    col(1)='Ex'
+    col(2)='P(3)'
+    if ( .not. flag2comp) then
+      col(3)='g'
+      col(4)='1p1h'
+      col(5)='2p1h'
+      col(6)='2p2h'
+      col(7)='3p2h'
+      col(8)='3p3h'
+      col(9)='4p3h'
+      col(10)='4p4h'
+      col(11)='5p4h'
+      Ncol=11
+      call write_quantity(id2,quantity)
+      call write_datablock(id2,Ncol,int(Etotal),col,un)
+      do nen = 1, int(Etotal)
+        Eex = real(nen)
+        gs = g(0, 0)
+        if (flaggshell) gs = gs * ignatyuk(Zix, Nix, Eex, 0) / alev(0, 0)
+        write(1, '(11es15.6)') Eex, preeqpair(Zix, Nix, 3, Eex, pairmodel), gs, &
+ &        ((phdens(Zix, Nix, h + k, h, gs, Eex, Efermi, surfwell), k = 0, 1), h = 1, 4)
+      enddo
+    else
+      col(3)='g(p)'
+      col(4)='g(n)'
+      col(5)='1p1h0p0h'
+      col(6)='0p0h1p1h'
+      col(7)='1p1h1p0h'
+      col(8)='1p0h1p1h'
+      col(9)='2p1h0p0h'
+      col(10)='0p0h2p1h'
+      col(11)='2p2h0p0h'
+      col(12)='0p0h2p2h'
+      col(13)='1p1h1p1h'
+      Ncol=13
+      call write_quantity(id2,quantity)
+      call write_datablock(id2,Ncol,int(Etotal),col,un)
+      do nen = 1, int(Etotal)
+        Eex = real(nen)
+        gsp = gp(0, 0)
+        gsn = gn(0, 0)
+        if (flaggshell) then
+          damp = ignatyuk(Zix, Nix, Eex, 0) / alev(0, 0)
+          gsp = gsp * damp
+          gsn = gsn * damp
+        endif
+        write(1, '(13es15.6)') Eex, preeqpair(Zix, Nix, 3, Eex, pairmodel), gsp, gsn, &
+ &        phdens2(Zix, Nix, 1, 1, 0, 0, gsp, gsn, Eex, Efermi, surfwell), &
+ &        phdens2(Zix, Nix, 0, 0, 1, 1, gsp, gsn, Eex, Efermi, surfwell), &
+          phdens2(Zix, Nix, 1, 1, 1, 0, gsp, gsn, Eex, Efermi, surfwell), &
+          phdens2(Zix, Nix, 1, 0, 1, 1, gsp, gsn, Eex, Efermi, surfwell), &
+          phdens2(Zix, Nix, 2, 1, 0, 0, gsp, gsn, Eex, Efermi, surfwell), &
+          phdens2(Zix, Nix, 0, 0, 2, 1, gsp, gsn, Eex, Efermi, surfwell), &
+          phdens2(Zix, Nix, 2, 2, 0, 0, gsp, gsn, Eex, Efermi, surfwell), &
+          phdens2(Zix, Nix, 0, 0, 2, 2, gsp, gsn, Eex, Efermi, surfwell), &
+          phdens2(Zix, Nix, 1, 1, 1, 1, gsp, gsn, Eex, Efermi, surfwell)
+      enddo
+    endif
+    quantity = 'spin distribution'
+    un = ''
+    col(1)='n'
+    do J = 0, 8
+      col(2+J)='J=  '
+      write(col(2+J)(3:4),'(i2)') J
     enddo
-  else
-    write(*, '(/" Particle-hole state densities", /)')
-    write(*, '("     Ex    P(n=3)    gp      gn   ", 26x, "Configuration p(p) h(p) p(n) h(n)")')
-    write(*, '(28x, 9(2x, 4i2)/)') 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, &
- &    2, 1, 0, 0, 0, 0, 2, 1, 2, 2, 0, 0, 0, 0, 2, 2, 1, 1, 1, 1
-    do nen = 1, int(Etotal)
-      Eex = real(nen)
-      gsp = gp(0, 0)
-      gsn = gn(0, 0)
-      if (flaggshell) then
-        damp = ignatyuk(Zix, Nix, Eex, 0) / alev(0, 0)
-        gsp = gsp * damp
-        gsn = gsn * damp
-      endif
-      write(*, '(1x, 4f8.3, 9es10.3)') Eex, preeqpair(Zix, Nix, 3, Eex, pairmodel), gsp, gsn, &
- &      phdens2(Zix, Nix, 1, 1, 0, 0, gsp, gsn, Eex, Efermi, surfwell), &
- &      phdens2(Zix, Nix, 0, 0, 1, 1, gsp, gsn, Eex, Efermi, surfwell), &
-        phdens2(Zix, Nix, 1, 1, 1, 0, gsp, gsn, Eex, Efermi, surfwell), &
-        phdens2(Zix, Nix, 1, 0, 1, 1, gsp, gsn, Eex, Efermi, surfwell), &
-        phdens2(Zix, Nix, 2, 1, 0, 0, gsp, gsn, Eex, Efermi, surfwell), &
-        phdens2(Zix, Nix, 0, 0, 2, 1, gsp, gsn, Eex, Efermi, surfwell), &
-        phdens2(Zix, Nix, 2, 2, 0, 0, gsp, gsn, Eex, Efermi, surfwell), &
-        phdens2(Zix, Nix, 0, 0, 2, 2, gsp, gsn, Eex, Efermi, surfwell), &
-        phdens2(Zix, Nix, 1, 1, 1, 1, gsp, gsn, Eex, Efermi, surfwell)
+    col(11)='Sum'
+    Ncol=11
+    call write_quantity(id2,quantity)
+    call write_datablock(id2,Ncol,maxexc,col,un)
+    do n = 1, maxexc
+      write(1, '(3x, i6, 6x, 10es15.6)') n, ((2* J + 1)*RnJ(n, J), J = 0, 8), RnJsum(n)
     enddo
+    close(1)
+    call write_outfile(phdfile,flagoutall)
   endif
-  write(*, '(/" Particle-hole spin distributions"/)')
-  write(*, '("   n    ", 9(" J=", i2, "       "), " Sum"/)') (J, J = 0, 8)
-  do n = 1, maxexc
-    write(*, '(1x, i3, 10es12.4)') n, (RnJ(n, J), J = 0, 8), RnJsum(n)
-  enddo
-  write(*, '(/" Effective well depth for surface interaction:", f12.5, " MeV")') Esurf
 !
 ! 2. Output of pre-equilibrium cross sections
 !
-  write(*, '(/" ++++++++++ TOTAL PRE-EQUILIBRIUM CROSS SECTIONS ++++++++++")')
+  if (flagblockpreeq) then
+    preeqfile='preeq.out'//natstring(iso)
+    if (nin == Ninclow + 1) then
+      open (unit = 1, file = preeqfile, status = 'unknown')
+    else
+      open (unit = 1, file = preeqfile, status = 'unknown', position = 'append')
+    endif
+  else
+    preeqfile='preeq0000.000.out'//natstring(iso)
+    write(preeqfile(6:13), '(f8.3)') Einc
+    write(preeqfile(6:9), '(i4.4)') int(Einc)
+    open (unit = 1, file = preeqfile, status = 'unknown')
+  endif
+  un='mb'
+  col=''
+  col(2)='Total'
+  col(3)='p=1'
+  col(4)='p=2'
+  col(5)='p=3'
+  col(6)='p=4'
+  col(7)='p=5'
+  col(8)='p=6'
+  col(9)='Exciton model'
+  col(10)='Pickup/strip'
+  col(11)='Knockout'
+  col(12)='Breakup'
+  Ncol=12
+  write(*, '(/" ++++++++++ TOTAL PRE-EQUILIBRIUM CROSS SECTIONS ++++++++++",/)')
   if (preeqnorm /= 0.) write(*, '(/" Pre-equilibrium normalization factor: ", f8.5/)') preeqnorm
+  col(1)='particle'
+  un(1)=''
+  reaction='('//parsym(k0)//',x)'
+  quantity = 'cross section'
+  topline=trim(targetnuclide)//trim(reaction)//' pre-equilibrium cross section and spectrum'
+  call write_header(indent,topline,source,user,date,oformat)
+  call write_target(indent)
+  call write_reaction(indent,reaction,0.D0,0.D0,0,0)
+  call write_real(id2,'E-incident [MeV]',Einc)
+  call write_real(id2,'Pre-equilibrium cross section [mb]', xspreeqsum)
+  call write_quantity(id2,quantity)
+  call write_datablock(id2,Ncol,7,col,un)
+  do type = 0, 6
+    nonpski = xspreeqtot(type) - xspreeqtotps(type) - xspreeqtotki(type) - xspreeqtotbu(type)
+    write(1, '(4x, a8, 4x, 11es15.6)') parname(type),xspreeqtot(type), (xssteptot(type, p), p = 1, maxpar), nonpski, &
+   &    xspreeqtotps(type), xspreeqtotki(type), xspreeqtotbu(type)
+  enddo
+  quantity = 'emission spectrum'
   do type = 0, 6
     if (parskip(type)) cycle
     if (ebegin(type) >= eend(type)) cycle
-    write(*, '(/" Pre-equilibrium cross sections for ", a8/)') parname(type)
-    write(*, '("     E     Total", 6("       p=", i1), "     Total  Pickup/Strip Knockout Breakup", /)') (p, p = 1, maxpar)
+    col(1)='E-out'
+    un(1)='MeV'
+    call write_char(id2,'parameters','')
+    call write_char(id4,'particle',parname(type))
+    call write_real(id4,'pre-equilibrium cross section [mb]', xspreeqtot(type))
+    call write_quantity(id2,quantity)
+    call write_datablock(id2,Ncol,eend(type)-ebegin(type)+1,col,un)
     do nen = ebegin(type), eend(type)
       nonpski = xspreeq(type, nen) - xspreeqps(type, nen) - xspreeqki(type, nen) - xspreeqbu(type, nen)
-      write(*, '(1x, f8.3, 11es10.3)') egrid(nen), xspreeq(type, nen), (xsstep(type, p, nen), p = 1, maxpar), nonpski, &
+      write(1, '(12es15.6)') egrid(nen), xspreeq(type, nen), (xsstep(type, p, nen), p = 1, maxpar), nonpski, &
  &      xspreeqps(type, nen), xspreeqki(type, nen), xspreeqbu(type, nen)
     enddo
-    nonpski = xspreeqtot(type) - xspreeqtotps(type) - xspreeqtotki(type) - xspreeqtotbu(type)
-    write(*, '(/9x, 11es10.3)') xspreeqtot(type), (xssteptot(type, p), p = 1, maxpar), nonpski, xspreeqtotps(type), &
- &    xspreeqtotki(type), xspreeqtotbu(type)
-    write(*, '(/" Integrated:", f12.5/)') xspreeqtot(type)
   enddo
-  write(*, '(" Total pre-equilibrium cross section:", f12.5)') xspreeqsum
+  close (unit = 1)  
+  call write_outfile(preeqfile,flagoutall)
+  write(*, '(/," Total pre-equilibrium cross section:", f12.5)') xspreeqsum
   return
 end subroutine preeqout
 ! Copyright A.J. Koning 2021

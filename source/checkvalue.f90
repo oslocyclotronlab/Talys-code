@@ -5,7 +5,7 @@ subroutine checkvalue
 !
 ! Author    : Arjan Koning
 !
-! 2021-12-30: Original code
+! 2025-11-13: Current version
 !-----------------------------------------------------------------------------------------------------------------------------------
 !
 ! *** Use data from other modules
@@ -332,6 +332,7 @@ subroutine checkvalue
 !   w4adjust          ! adjustable factor for OMP (default 1.)
 !   wso1adjust        ! adjustable factor for OMP (default 1.)
 !   wso2adjust        ! adjustable factor for OMP (default 1.)
+!   ecisstep          ! integration step size for ECIS OMP calculation
 ! Variables for files
 !   path              ! directory containing files to be read
 ! Constants
@@ -429,7 +430,7 @@ subroutine checkvalue
     write(*,'(" TALYS-error: Excited level for target not possible for natural targets")')
     stop
   endif
-  if (Lisoinp ==  - 1) then
+  if (Lisoinp ==  -1) then
     call range_integer_error('maxlevelstar', nlevmax, 0, numlev)
     call range_integer_error('maxlevelsres', nlevmaxres, 0, numlev)
     do type = 0, 6
@@ -460,7 +461,7 @@ subroutine checkvalue
     inquire (file = massfile, exist = lexist)
     if (.not.lexist) write(*, '(" TALYS-warning: Non-existent mass file ",a)') trim(massfile)
   endif
-  if (Lisoinp ==  - 1) call range_integer_error('Ltarget', Ltarget, 0, numlev)
+  if (Lisoinp ==  -1) call range_integer_error('Ltarget', Ltarget, 0, numlev)
   call range_integer_error('Liso', Lisoinp, 0, 9, default = -1)
   call range_real_error('isomer', isomer, 0., 1.e38, unit ='s')
   call range_integer_error('core', core, -1, 1)
@@ -495,12 +496,12 @@ subroutine checkvalue
       write(*, '(" TALYS-error: isotope production not yet enabled for incident photons or neutrons)")')
       stop
     endif
-    if (Ebeam ==  - 1.) then
+    if (Ebeam ==  -1.) then
       write(*, '(" TALYS-error: accelerator energy Ebeam must be given for isotope production (production y)")')
       stop
     endif
     call range_real_error('Ebeam', Ebeam, 0., Emaxtalys, unit = 'MeV')
-    if (Eback ==  - 1.) then
+    if (Eback ==  -1.) then
       Eback = max(Ebeam - 5., 0.1)
     else
       call range_real_error('Eback', Eback, 0., Emaxtalys, unit = 'MeV')
@@ -669,7 +670,7 @@ subroutine checkvalue
 !
 ! Check adjustable OMP parameters
 !
-  do type = 1, 6
+  do type = 0, 6
     call range_real_error('rvadjust', rvadjust(type), 0.1, 10., index1 = type, name1 = 'type')
     call range_real_error('avadjust', avadjust(type), 0.1, 10., index1 = type, name1 = 'type')
     call range_real_error('v1adjust', v1adjust(type), 0.1, 10., index1 = type, name1 = 'type')
@@ -698,6 +699,7 @@ subroutine checkvalue
     call range_real_error('wso1adjust', wso1adjust(type), 0.1, 10., index1 = type, name1 = 'type')
     call range_real_error('wso2adjust', wso2adjust(type), 0.1, 10., index1 = type, name1 = 'type')
     call range_real_error('rcadjust', rcadjust(type), 0.1, 10., index1 = type, name1 = 'type')
+    call range_real_error('ecisstep', ecisstep, 0.01, 1., default = 0.)
     do omptype = 1, numompadj
       do nr = 1, ompadjustN(type, omptype)
         call range_real_error('ompadjustE1', ompadjustE1(type, omptype, nr), 0., Emaxtalys, &
@@ -735,6 +737,7 @@ subroutine checkvalue
     call range_real_error('Ejoin', Ejoin(type), 0., Emaxtalys, index1 = type, name1 = 'type')
     call range_real_error('Vinfadjust', Vinfadjust(type), 0.01, 10., index1 = type, name1 = 'type')
   enddo
+  call range_integer_error('pruittset', pruittset, 0, 416)
 !
 ! Check direct reaction parameters
 !
@@ -780,17 +783,25 @@ subroutine checkvalue
 ! 5. Check of values for gamma emission
 !
   call range_integer_error('gammax', gammax, 1, 6)
-  call range_integer_error('strength', strength, 1, 10)
-  if (strength == 3 .or. strength == 4) then
-    inquire (file = trim(path)//'gamma/hfb/Sn.psf', exist = lexist)
-    if ( .not. lexist) then
-      write(*, '(" TALYS-error: Microscopic HFB tables are not installed: download the full TALYS package from www.talys.eu")')
+  call range_integer_error('strength', strength, 1, 13)
+  if (strength == 11) then
+    write(*,'(" TALYS-error: strength = 1-10 or 12-13")')
+    stop
+  endif
+  if ((strengthM1 < 1 .or. strengthM1 > 4) .and. strengthM1 /= 8 .and. strengthM1 /= 10 .and. &
+ &  strengthM1 /= 12) then
+    write(*,'(" TALYS-error: strengthM1 = 1, 2, 3, 4, 8, 10, or 12")')
+    stop
+  endif
+  if (.not. flaglegacy) then
+    if (strength <= 7) then
+      write(*,'(" TALYS-error: strength = 8, 9, 10, 11, 12 or 13 are recommended. If you want to use legacy models put legacy y")')
       stop
     endif
-  endif
-  if ((strengthM1 < 1 .or. strengthM1 > 4) .and. strengthM1 /= 8 .and. strengthM1 /= 10) then
-    write(*,'(" TALYS-error: strengthM1 = 1, 2, 3, 4, 8 or 10")')
-    stop
+    if (strengthM1 /= 3 .and. strengthM1 /= 8 .and. strengthM1 /= 10 .and. strengthM1 /= 11 .and. strengthM1 /= 12) then
+      write(*,'(" TALYS-error: strengthM1 = 3, 8, 10, 11 or 12 are recommended. If you want to use legacy models put legacy y")')
+      stop
+    endif
   endif
   do Zix = 0, numZ
     do Nix = 0, numN
@@ -842,6 +853,12 @@ subroutine checkvalue
  &          index2 = A, name2 = 'A', index3 = irad, name3 = 'irad', index4 = lval, name4 = 'L', index5 = 2, name5 = 'igr')
           call range_real_error('upbendf', upbend(Zix, Nix, irad, lval, 3), -10., 10., index1 = Z, name1 = 'Z', &
  &          index2 = A, name2 = 'A', index3 = irad, name3 = 'irad', index4 = lval, name4 = 'L', index5 = 2, name5 = 'igr')
+          call range_real_error('upbendcadjust', upbendadjust(Zix, Nix, irad, lval, 1), 0.05, 20., index1 = Z, name1 = 'Z', &
+ &          index2 = A, name2 = 'A', index3 = irad, name3 = 'irad', index4 = lval, name4 = 'L', index5 = 1, name5 = 'igr')
+          call range_real_error('upbendeadjust', upbendadjust(Zix, Nix, irad, lval, 2), 0.05, 20., index1 = Z, name1 = 'Z', &
+ &          index2 = A, name2 = 'A', index3 = irad, name3 = 'irad', index4 = lval, name4 = 'L', index5 = 2, name5 = 'igr')
+          call range_real_error('upbendfadjust', upbendadjust(Zix, Nix, irad, lval, 3), 0.05, 20., index1 = Z, name1 = 'Z', &
+ &          index2 = A, name2 = 'A', index3 = irad, name3 = 'irad', index4 = lval, name4 = 'L', index5 = 2, name5 = 'igr')
         enddo
       enddo
       call range_real_error('gamgam', gamgam(Zix, Nix), 0., 10., default = 0., index1 = Z, name1 = 'Z', index2 = A, name2 = 'A')
@@ -862,6 +879,7 @@ subroutine checkvalue
     stop
   endif
   call range_integer_error('ldmodelracap', ldmodelracap, 1, 3)
+  call range_real_error('levinger', levinger, 0.01, 100.)
   do Zix = 0, numZ
     do Nix = 0, numN
       call range_real_error('sfth', spectfacth(Zix, Nix), 0., 10., index1 = Z, name1 = 'Z', index2 = A, name2 = 'A')
@@ -906,18 +924,42 @@ subroutine checkvalue
     call range_real_error('Cknock', Cknock(type), 0., 100., index1 = type, name1 = 'type')
     call range_real_error('Cbreak', Cbreak(type), 0., 100., index1 = type, name1 = 'type')
   enddo
+  call range_real_error('GMRadjustE', GMRadjustE, 0.1, 10.)
+  call range_real_error('GQRadjustE', GQRadjustE, 0.1, 10.)
+  call range_real_error('LEORadjustE', LEORadjustE, 0.1, 10.)
+  call range_real_error('HEORadjustE', HEORadjustE, 0.1, 10.)
+  call range_real_error('GMRadjustG', GMRadjustG, 0.1, 10.)
+  call range_real_error('GQRadjustG', GQRadjustG, 0.1, 10.)
+  call range_real_error('LEORadjustG', LEORadjustG, 0.1, 10.)
+  call range_real_error('HEORadjustG', HEORadjustG, 0.1, 10.)
+  call range_real_error('GMRadjustD', GMRadjustD, 0.1, 10.)
+  call range_real_error('GQRadjustD', GQRadjustD, 0.1, 10.)
+  call range_real_error('LEORadjustD', LEORadjustD, 0.1, 10.)
+  call range_real_error('HEORadjustD', HEORadjustD, 0.1, 10.)
 !
 ! 7. Check of values for level densities
 !
   call range_integer_error('spincutmodel', spincutmodel, 1, 2)
   call range_integer_error('shellmodel', shellmodel, 1, 2)
   call range_integer_error('kvibmodel', kvibmodel, 1, 2)
-  call range_integer_error('ldmodelcn', ldmodelCN, 1, 6)
+  call range_integer_error('ldmodelcn', ldmodelCN, 1, 7)
+  if (.not. flaglegacy) then
+    if (ldmodelCN == 3 .or. ldmodelCN == 4 .or. ldmodelCN == 6) then
+      write(*,'(" TALYS-error: ldmodelCN = 1, 2, 5, or 7 are recommended. If you want to use legacy models put legacy y")')
+      stop
+    endif
+  endif
   do Zix = 0, numZ
     do Nix = 0, numN
       Z = Zinit - Zix
       A = Ainit - Zix - Nix
-      call range_integer_error('ldmodel', ldmodel(Zix, Nix), 1, 6, index1 = Z, name1 = 'Z', index2 = A, name2 = 'A')
+      call range_integer_error('ldmodel', ldmodel(Zix, Nix), 1, 7, index1 = Z, name1 = 'Z', index2 = A, name2 = 'A')
+      if (.not. flaglegacy) then
+        if (ldmodel(Zix, Nix) == 3 .or. ldmodel(Zix, Nix) == 4 .or. ldmodel(Zix, Nix) == 6) then
+          write(*,'(" TALYS-error: ldmodel = 1, 2, 5, or 7 are recommended. If you want to use legacy models put legacy y")')
+          stop
+        endif
+      endif
       if (ldmodel(Zix, Nix) >= 4) then
         inquire (file = trim(path) // 'density/ground/hilaire/Sn.tab', exist = lexist)
         if ( .not. lexist) then
@@ -1027,10 +1069,10 @@ subroutine checkvalue
     write(*, '(" TALYS-error: Fission yield calculation not possible for natural targets")')
     stop
   endif
-  call range_integer_error('fismodel', fismodel, 1, 5)
+  call range_integer_error('fismodel', fismodel, 1, 6)
   call range_integer_error('fismodelalt', fismodelalt, 3, 4)
-  if (fismodel /= 5 .and. flagfispartdamp) then
-    write(*,'(" TALYS-error: Fission partial damping only allowed for fismodel 5")')
+  if (fismodel < 5 .and. flagfispartdamp) then
+    write(*,'(" TALYS-error: Fission partial damping only allowed for fismodel 5 or 6")')
     stop
   endif
   call range_integer_error('fymodel', fymodel, 1, 5)
@@ -1073,12 +1115,25 @@ subroutine checkvalue
       enddo
       call range_real_error('betafiscor', betafiscor(Zix, Nix), 0.05, 20., default = 0., index1 = Z, name1 = 'Z', &
  &      index2 = A, name2 = 'A')
-      call range_real_error('vfiscor', vfiscor(Zix, Nix), 0.05, 20., default = 0., index1 = Z, name1 = 'Z', &
+      call range_real_error('rmiufiscor', rmiufiscor(Zix, Nix), 0.01, 50., default = -1., index1 = Z, name1 = 'Z', &
+ &      index2 = A, name2 = 'A')
+      call range_real_error('vfiscor', vfiscor(Zix, Nix), 0.05, 20., default = -1., index1 = Z, name1 = 'Z', &
  &      index2 = A, name2 = 'A')
       call range_real_error('betafiscoradjust', betafiscoradjust(Zix, Nix), 0.1, 10., default = 0., index1 = Z, name1 = 'Z', &
  &      index2 = A, name2 = 'A')
       call range_real_error('vfiscoradjust', vfiscoradjust(Zix, Nix), 0.1, 10., default = 0., index1 = Z, name1 = 'Z', &
  &      index2 = A, name2 = 'A')
+      call range_real_error('rmiufiscoradjust', rmiufiscoradjust(Zix, Nix), 0.01, 50., default = 0., index1 = Z, name1 = 'Z', &
+ &      index2 = A, name2 = 'A')
+      if (flagsffactor) then
+        if (rmiufiscor(Zix, Nix) /= -1. .and. vfiscor(Zix, Nix) /= -1.) then
+          write(*,'(" TALYS-error: if sffactor y one can not give both vfiscor and rmiufiscor in the input")')
+          stop
+        endif
+      else
+        if (vfiscor(Zix, Nix) == -1.) vfiscor(Zix, Nix) = 1.
+        if (rmiufiscor(Zix, Nix) == -1.) rmiufiscor(Zix, Nix) = 1.
+      endif
     enddo
   enddo
 !
@@ -1129,8 +1184,9 @@ subroutine checkvalue
 !
   if (flagres) then
     if (trim(reslib) == 'tendl.2023') return
-    if (trim(reslib) == 'jeff3.3') return
-    if (trim(reslib) == 'endfb8.0') return
+    if (trim(reslib) == 'tendl.2025') return
+    if (trim(reslib) == 'jeff4.0') return
+    if (trim(reslib) == 'endfb8.1') return
     if (trim(reslib) == 'cendl3.2') return
     if (trim(reslib) == 'jendl5.0') return
     write(*, '(" TALYS-error: Wrong library name: ", a)') trim(reslib)

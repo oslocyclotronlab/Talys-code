@@ -5,7 +5,7 @@ subroutine input_gammamodel
 !
 ! Author    : Arjan Koning
 !
-! 2021-12-30: Original code
+! 2025-08-23: Original code
 !-----------------------------------------------------------------------------------------------------------------------------------
 !
 ! *** Use data from other modules
@@ -21,6 +21,7 @@ subroutine input_gammamodel
 !   flagracap         ! flag for radiative capture model
 !   flagupbend        ! flag for low-energy upbend of photon strength function
 !   flagpsfglobal     ! flag for global photon strength functions only
+!   flagglobalwtable  ! flag for global average wtable value instead of 1.    
 !   flaggnorm         ! flag to normalize PSF to average radiative width
 !   ldmodelracap      ! level density model for direct radiative capture
 !   strength          ! E1 strength function model
@@ -66,12 +67,15 @@ subroutine input_gammamodel
     flagupbend = .false.
   endif
   flagpsfglobal = .false.
+  flagglobalwtable = .true.
   flaggnorm = .false.
-  if (strength == 8) then
-    strengthM1 = 8
-  else
-    strengthM1 = 3
-  endif
+  strengthM1 = 3
+  if (strength == 8) strengthM1 = 8
+  if (strength == 10) strengthM1 = 10
+  if (strength == 11) strengthM1 = 11
+  if (strength == 12) strengthM1 = 12
+  if (strength == 13) strengthM1 = 8
+  if (strength <= 2) strengthM1 = 2
   ldmodelracap = 3
 !
 ! **************** Read input variables *******************
@@ -148,6 +152,12 @@ subroutine input_gammamodel
     if (key == 'psfglobal') then
       if (ch == 'n') flagpsfglobal = .false.
       if (ch == 'y') flagpsfglobal = .true.
+      if (ch /= 'y' .and. ch /= 'n') call read_error(line, istat)
+      cycle
+    endif
+    if (key == 'globalwtable') then
+      if (ch == 'n') flagglobalwtable = .false.
+      if (ch == 'y') flagglobalwtable = .true.
       if (ch /= 'y' .and. ch /= 'n') call read_error(line, istat)
       cycle
     endif

@@ -101,9 +101,15 @@ subroutine residualout
   integer           :: nex        ! excitation energy bin of compound nucleus
   integer           :: Z          ! charge number of target nucleus
   integer           :: Zcomp      ! proton number index for compound nucleus
+  integer           :: indent
+  integer           :: id2
+  integer           :: id4
 !
 ! *************** Residual production cross sections *******************
 !
+  indent = 0
+  id2 = indent + 2
+  id4 = indent + 4
   un = 'mb'
   col(1)='E'
   un(1)='MeV'
@@ -196,18 +202,20 @@ subroutine residualout
           else
             Ncol=2
           endif
-          call write_header(topline,source,user,date,oformat)
-          call write_target
-          call write_reaction(reaction,Qres(Zcomp, Ncomp, nex),Ethresh(Zcomp, Ncomp, nex),6,5)
-          call write_residual(Z,A,finalnuclide)
-          call write_double(2,'mass [amu]',nucmass(Zcomp, Ncomp))
-          call write_datablock(quantity,Ncol,Ninc,col,un)
+          call write_header(indent,topline,source,user,date,oformat)
+          call write_target(indent)
+          call write_reaction(indent,reaction,Qres(Zcomp, Ncomp, nex),Ethresh(Zcomp, Ncomp, nex),6,5)
+          call write_residual(id2,Z,A,finalnuclide)
+          call write_char(id2,'parameters','')
+          call write_double(id4,'mass [amu]',nucmass(Zcomp, Ncomp))
+          call write_quantity(id2,quantity)
+          call write_datablock(id2,Ncol,Ninc,col,un)
           if (flagcompo) then
             do nen = 1, Ninclow
-              write(1, '(2es15.6, 12x, 3es15.6)') eninc(nen), fxspopnuc(nen, Zcomp, Ncomp), 0., 0., fxspopnuc(nen, Zcomp, Ncomp)
+              write(1, '(5es15.6)') eninc(nen), fxspopnuc(nen, Zcomp, Ncomp), 0., 0., fxspopnuc(nen, Zcomp, Ncomp)
             enddo
             do nen = Ninclow + 1, nin - 1
-              write(1, '(2es15.6, 12x, 3es15.6)') eninc(nen), 0., 0., 0., 0.
+              write(1, '(5es15.6)') eninc(nen), 0., 0., 0., 0.
             enddo
           else
             do nen = 1, Ninclow
@@ -221,7 +229,7 @@ subroutine residualout
           open (unit = 1, file = rpfile, status = 'old', position = 'append')
         endif
         if (flagcompo) then
-          write(1, '(2es15.6, 12x, 3es15.6)') Einc, xspopnuc(Zcomp, Ncomp), xspopdir(Zcomp, Ncomp), &
+          write(1, '(5es15.6)') Einc, xspopnuc(Zcomp, Ncomp), xspopdir(Zcomp, Ncomp), &
  &          xspoppreeq(Zcomp, Ncomp), xspopcomp(Zcomp, Ncomp)
         else
           write(1, '(2es15.6)') Einc, xspopnuc(Zcomp, Ncomp)
@@ -245,26 +253,25 @@ subroutine residualout
                 open (unit = 1, file = isofile, status = 'replace')
                 if (nex == 0) then
                   kiso = 0
-!                 write(1, '("# ", a1, " + ", a, ": Production of ", a, " - Ground state")') &
-!&                  parsym(k0), trim(targetnuclide), trim(finalnuclide)
                 else
                   kiso = kiso + 1
-!                 write(1, '("# ", a1, " + ", a, ": Production of ", a, " - Level", i3, f12.5, " MeV")') &
-!&                  parsym(k0), trim(targetnuclide), trim(finalnuclide), levnum(Zcomp, Ncomp, nex), edis(Zcomp, Ncomp, nex)
                 endif
-                finalnuclide=trim(nuc(Z))//trim(adjustl(massstring))//isochar(kiso)
+                kiso = min(kiso, numisom)
+                finalnuclide=trim(nuc(Z))//trim(adjustl(massstring))//isochar(min(kiso,numisom))
                 topline=trim(targetnuclide)//trim(reaction)//trim(finalnuclide)//' '//trim(quantity)
-                col(3)='Isomeric ratio'
+                col(3)='Isomeric_ratio'
                 un(3)=''
                 Ncol=3
-                call write_header(topline,source,user,date,oformat)
-                call write_target
-                call write_reaction(reaction,Qres(Zcomp, Ncomp, nex),Ethresh(Zcomp, Ncomp, nex),6,5)
-                call write_residual(Z,A,finalnuclide)
-                call write_double(2,'mass [amu]',nucmass(Zcomp, Ncomp))
-                call write_level(2,kiso,levnum(Zcomp, Ncomp, nex),edis(Zcomp, Ncomp, nex), &
+                call write_header(indent,topline,source,user,date,oformat)
+                call write_target(indent)
+                call write_reaction(indent,reaction,Qres(Zcomp, Ncomp, nex),Ethresh(Zcomp, Ncomp, nex),6,5)
+                call write_residual(id2,Z,A,finalnuclide)
+                call write_char(id2,'parameters','')
+                call write_double(id4,'mass [amu]',nucmass(Zcomp, Ncomp))
+                call write_level(id4,kiso,levnum(Zcomp, Ncomp, nex),edis(Zcomp, Ncomp, nex), &
  &                jdis(Zcomp, Ncomp, nex),parlev(Zcomp, Ncomp, nex),tau(Zcomp, Ncomp, nex))
-                call write_datablock(quantity,Ncol,Ninc,col,un)
+                call write_quantity(id2,quantity)
+                call write_datablock(id2,Ncol,Ninc,col,un)
                 do nen = 1, Ninclow
                   write(1, '(3es15.6)') eninc(nen), fxspopex(nen, Zcomp, Ncomp, nex), fxsbranch(nen, Zcomp, Ncomp, nex)
                 enddo

@@ -55,8 +55,7 @@ subroutine densitytable(Zix, Nix)
   integer           :: ibar             ! fission barrier
   integer           :: istat            ! error code
   integer           :: J                ! spin of level
-  integer           :: JJ               ! help variable
-  integer           :: Jmid             ! help variable
+  integer           :: Jtop             ! help variable
   integer           :: ldmod            ! level density model
   integer           :: nex              ! excitation energy bin of compound nucleus
   integer           :: Nix              ! neutron number index for residual nucleus
@@ -71,13 +70,13 @@ subroutine densitytable(Zix, Nix)
   real(sgl)         :: Ktriax           ! level density enhancement factor for triaxial shapes
   real(sgl)         :: spincut          ! spin cutoff factor
   real(sgl)         :: term             ! help variable
-  real(sgl)         :: dJ               ! help variable
-  real(sgl)         :: Jold             ! help variable
   real(sgl)         :: factor           ! help variable
   real(dbl)         :: sumJ             ! help variable
   real(dbl)         :: Rsum             ! help variable
   real(dbl)         :: Rd               ! help variable
   real(dbl)         :: jt               ! help variable
+  real(dbl)         :: Tn               ! help variable
+  real(dbl)         :: Nc               ! help variable
   real(dbl)         :: ldsum            ! help variable
   real(dbl)         :: Rdis(0:numJ)     ! spin dependent level density
   real(dbl)         :: Rdisnew(0:numJ)  ! spin dependent level density
@@ -93,8 +92,8 @@ subroutine densitytable(Zix, Nix)
   nloop = 0
   if (flagfission) nloop = nfisbar(Zix, Nix)
   ldmod = ldmodel(Zix, Nix)
-  if (ldmod == 5 .or. ldmod == 6) then
-    ploop = - 1
+  if (ldmod >= 5) then
+    ploop = -1
     pardisloc = 1.
   else
     ploop = 1
@@ -107,46 +106,34 @@ subroutine densitytable(Zix, Nix)
 ! Ground state
 !
     if (ibar == 0) then
-      if (ldmod == 4) then
-        denfile = trim(path)//'density/ground/goriely/'//trim(denchar)//'.tab'
-      endif
-      if (ldmod == 5) then
-        denfile = trim(path)//'density/ground/hilaire/'//trim(denchar)//'.tab'
-      endif
-      if (ldmod == 6) then
-        denfile = trim(path)//'density/ground/hilaireD1M/'// trim(denchar)//'.tab'
-      endif
+      if (ldmod == 4) denfile = trim(path)//'density/ground/goriely/'//trim(denchar)//'.tab'
+      if (ldmod == 5) denfile = trim(path)//'density/ground/hilaire/'//trim(denchar)//'.tab'
+      if (ldmod == 6) denfile = trim(path)//'density/ground/hilaireD1M/'// trim(denchar)//'.tab'
+      if (ldmod == 7) denfile = trim(path)//'density/ground/bskg3/'// trim(denchar)//'.tab'
       if (densfile(Zix, Nix)(1:1) /= ' ') denfile = densfile(Zix,Nix)
     endif
 !
 ! First barrier
 !
     if (ibar == 1) then
-      if (ldmod == 4) then
-        denfile = trim(path)//'density/fission/goriely/inner/' //trim(denchar)//'.ld'
-      else
-        denfile = trim(path)//'density/fission/hilaire/Max1/' //trim(denchar)//'.ld'
-      endif
+      if (ldmod == 4) denfile = trim(path)//'density/fission/goriely/inner/' //trim(denchar)//'.ld'
+      if (ldmod == 5 .or. ldmod == 6) denfile = trim(path)//'density/fission/hilaire/Max1/' //trim(denchar)//'.ld'
+      if (ldmod == 7) denfile = trim(path)//'density/fission/bskg3/Max1/' //trim(denchar)//'.ld'
     endif
 !
 ! Second barrier
 !
     if (ibar == 2) then
-      if (ldmod == 4) then
-        denfile = trim(path)//'density/fission/goriely/outer/' //trim(denchar)//'.ld'
-      else
-        denfile = trim(path)//'density/fission/hilaire/Max2/' //trim(denchar)//'.ld'
-      endif
+      if (ldmod == 4) denfile = trim(path)//'density/fission/goriely/outer/' //trim(denchar)//'.ld'
+      if (ldmod == 5 .or. ldmod == 6) denfile = trim(path)//'density/fission/hilaire/Max2/' //trim(denchar)//'.ld'
+      if (ldmod == 7) denfile = trim(path)//'density/fission/bskg3/Max2/' //trim(denchar)//'.ld'
     endif
 !
 ! Third barrier
 !
     if (ibar == 3) then
-      if (ldmod == 5) then
-        denfile = trim(path)//'density/fission/hilaire/Max3/' //trim(denchar)//'.ld'
-      else
-        cycle
-      endif
+      if (ldmod == 5 .or. ldmod == 6) denfile = trim(path)//'density/fission/hilaire/Max3/' //trim(denchar)//'.ld'
+      if (ldmod == 7) denfile = trim(path)//'density/fission/bskg3/Max3/' //trim(denchar)//'.ld'
     endif
 !
 ! Check existence of file and read data from the tables.
@@ -164,8 +151,10 @@ Loop1: do parity = 1, ploop, -2
             ldexist(Zix, Nix, ibar) = .true.
             do nex = 1, nendens(Zix, Nix)
               ld2j1=0.
-              read(2, '(24x, e9.2, 9x, 30e9.2)', iostat = istat) ldtot, (ld2j1(J), J = 0, 29)
+              read(2, '(7x, f7.3, e10.2, e9.2, 9x, 30e9.2)', iostat = istat) Tn, Nc, ldtot, (ld2j1(J), J = 0, 29)
               if (istat /= 0) call read_error(denfile, istat, ival = A, xval = real(ld2j1(0)))
+              ldtableT(Zix, Nix, nex, parity, ibar) = Tn
+              ldtableN(Zix, Nix, nex, parity, ibar) = Nc
 !
 ! Extend tabulated level densities up to numJ using linear extrapolation
 !
@@ -185,8 +174,8 @@ Loop1: do parity = 1, ploop, -2
 !
               if ((Rspincut /= 1. .or. s2adjust(Zix,Nix,ibar) /= 1.) .and. ldtot > 0.) then
                 jt=Rspincut * s2adjust(Zix,Nix,ibar)
-                Jmid=0
                 Rsum=0.
+                Rdis=0.
                 do J=0,numJ
                   Rdis(J)=ld2j1(J)/ldtot
                   Rsum=Rsum+Rdis(J)
@@ -195,23 +184,17 @@ Loop1: do parity = 1, ploop, -2
                   do J=0,numJ
                     Rdis(J)=Rdis(J)/Rsum
                   enddo
-                  sumJ=0.
-                  do J=0,numJ
-                    sumJ=sumJ+Rdis(J)
-                    if (sumJ >= 0.5) then
-                      Jmid=max(J-1,0)
-                      exit
-                    endif
+                  Jtop=0
+                  do J=1,numJ
+                    if (Rdis(J) > Rdis(Jtop)) Jtop = J
                   enddo
                   sumJ=0.
                   Rdisnew=0.
+!
+! Use exponential squeezing function
+!
                   do J = 0, numJ - 1
-                    dJ=real(J-Jmid)
-                    Jold=Jmid+dJ/jt
-                    JJ=int(Jold)
-                    if (JJ < 0) cycle
-                    if (JJ > 28) cycle
-                    Rd=Rdis(JJ)+(Jold-JJ)*(Rdis(JJ+1)-Rdis(JJ))
+                    Rd = Rdis(Jtop) * (Rdis(J)/Rdis(Jtop))** (1./jt)
                     Rdisnew(J)=Rd
                     sumJ=sumJ+Rdisnew(J)
                   enddo
@@ -243,14 +226,14 @@ Loop1: do parity = 1, ploop, -2
                 endif
               endif
               ldtottableP(Zix, Nix, nex, parity, ibar) = pardisloc * ldtot * Ktriax
-              if (ploop == 1) ldtottableP(Zix, Nix, nex, - 1, ibar) = pardisloc * ldtot * Ktriax
+              if (ploop == 1) ldtottableP(Zix, Nix, nex, -1, ibar) = pardisloc * ldtot * Ktriax
               ldtottable(Zix, Nix, nex, ibar) = ldtottable(Zix, Nix, nex, ibar) + ldtot
               do J = 0, numJ
                 ldtable(Zix, Nix, nex, J, parity, ibar) = pardisloc * ld2j1(J) * Ktriax
               enddo
               if (ploop == 1) then
                 do J = 0, numJ
-                  ldtable(Zix, Nix, nex, J, - 1, ibar) = pardisloc * ld2j1(J) * Ktriax
+                  ldtable(Zix, Nix, nex, J, -1, ibar) = pardisloc * ld2j1(J) * Ktriax
                 enddo
               endif
             enddo
@@ -269,11 +252,11 @@ Loop1: do parity = 1, ploop, -2
 ! Special case: make parity-independent level densities from parity-dependent tables (e.g. for testing the impact of
 ! parity-dependence).
 !
-    if (ldmod == 5 .and. ldexist(Zix, Nix, ibar) .and. .not. flagparity) then
+    if (ldmod >= 5 .and. ldexist(Zix, Nix, ibar) .and. .not. flagparity) then
       do nex = 1, nendens(Zix, Nix)
-        ldtottableP(Zix, Nix, nex, 1, ibar) = 0.5 * (ldtottableP(Zix, Nix, nex, - 1, ibar) + ldtottableP(Zix, Nix, nex, 1, ibar))
+        ldtottableP(Zix, Nix, nex, 1, ibar) = 0.5 * (ldtottableP(Zix, Nix, nex, -1, ibar) + ldtottableP(Zix, Nix, nex, 1, ibar))
         do J = 0, numJ
-          ldtable(Zix, Nix, nex, J, 1, ibar) = 0.5 * (ldtable(Zix, Nix, nex, J, - 1, ibar) + ldtable(Zix, Nix, nex, J, 1, ibar))
+          ldtable(Zix, Nix, nex, J, 1, ibar) = 0.5 * (ldtable(Zix, Nix, nex, J, -1, ibar) + ldtable(Zix, Nix, nex, J, 1, ibar))
         enddo
       enddo
     endif

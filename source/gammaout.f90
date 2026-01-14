@@ -6,7 +6,7 @@ subroutine gammaout(Zcomp, Ncomp)
 ! Author    : Arjan Koning
 !
 ! 2021-12-30: Original code
-! 2022-03-20: Added output for Gamma_gamma
+! 2024-12-08: revised version
 !-----------------------------------------------------------------------------------------------------------------------------------
 !
 ! *** Use data from other modules
@@ -69,11 +69,12 @@ subroutine gammaout(Zcomp, Ncomp)
   implicit none
   character(len=3)  :: massstring !
   character(len=6)  :: finalnuclide !
-  character(len=15) :: col(2)    ! header
-  character(len=15) :: un(2)    ! header
+  character(len=80) :: crossfile !
+  character(len=15) :: col(4)    ! header
+  character(len=15) :: un(4)    ! header
   character(len=80) :: quantity   ! quantity
   character(len=132) :: topline   ! topline
-  character(len=1 ) :: radtype      ! radiation type
+  character(len=2 ) :: radtype      ! radiation type
   character(len=12) :: psffile      ! photon strength function file
   character(len=25) :: modelM1      ! string for gamma-ray strength function
   character(len=25) :: modelE1      ! string for gamma-ray strength function
@@ -83,6 +84,9 @@ subroutine gammaout(Zcomp, Ncomp)
   integer           :: irad         ! counter
   integer           :: l            ! multipolarity
   integer           :: MM           ! model
+  integer           :: indent
+  integer           :: id2
+  integer           :: id4
   integer           :: N            ! neutron number of residual nucleus
   integer           :: Ncol       ! counter
   integer           :: Ncomp        ! neutron number index for compound nucleus
@@ -96,11 +100,17 @@ subroutine gammaout(Zcomp, Ncomp)
   real(sgl)         :: e            ! energy
   real(sgl)         :: Epsf(numen)  ! number of energy points
   real(sgl)         :: fstrength    ! gamma-ray strength function
+  real(sgl)         :: xsgamma      ! photo-absorption cross section
+  real(sgl)         :: xsgdr        ! photo-absorption cross section from GDR part
+  real(sgl)         :: xsqd         ! photo-absorption cross section from QD part
 !
 ! ***** Gamma-ray strength functions and transmission coefficients *****
 !
 ! fstrength : gamma-ray strength function
 !
+  indent = 0
+  id2 = indent + 2
+  id4 = indent + 4
   Z = ZZ(Zcomp, Ncomp, 0)
   N = NN(Zcomp, Ncomp, 0)
   A = AA(Zcomp, Ncomp, 0)
@@ -123,19 +133,10 @@ subroutine gammaout(Zcomp, Ncomp)
       endif
     endif
   endif
-  write(*, '(/" ########## GAMMA STRENGTH FUNCTIONS, TRANSMISSION", " COEFFICIENTS AND CROSS SECTIONS ##########")')
+  modelE1 = ''
+  modelM1 = ''
+  write(*, '(/" ########## GAMMA STRENGTH FUNCTIONS, TRANSMISSION COEFFICIENTS AND CROSS SECTIONS ##########")')
   write(*, '(/" Gamma-ray information for Z=", i3, " N=", i3, " (", i3, a2, ") "/)') Z, N, A, nuc(Z)
-  write(*, '(" S-wave strength function parameters:"/)')
-  write(*, '(" Exp. total radiative width=", f10.5, " eV +/-", f8.5, " Theor. total radiative width for l=0:", f15.5, " eV")') &
- &  gamgam(Zcomp, Ncomp), dgamgam(Zcomp, Ncomp), gamgamth(Zcomp, Ncomp, 0)
-  write(*, '(53x, " Theor. total radiative width for l=0:", f15.5, " eV")') gamgamth(Zcomp,Ncomp,0)
-  write(*, '(53x, " Theor. total radiative width for l=1:", f15.5, " eV")') gamgamth(Zcomp, Ncomp, 1)
-  write(*, '(" Exp. D0                   =", f10.2, " eV +/-", f8.2, " Theor. D0                   =", f15.5, " eV")') &
- &  D0(Zcomp, Ncomp), dD0(Zcomp, Ncomp), D0theo(Zcomp, Ncomp)
-  write(*, '(53x, " Theor. D1                   =", f15.5, " eV")') D1theo(Zcomp, Ncomp)
-  write(*, '(" Theor. S-wave strength f. =", f10.5, "E-4")') 1.e4 * swaveth(Zcomp, Ncomp)
-  write(*,'(" Average resonance energy  =", f13.2, " eV")') Eavres * 1.e6
-  write(*, '(/" Incident energy: E[MeV]=", f8.3)') Einc
   if (strength == 1) modelE1 = "Kopecky-Uhl              "
   if (strength == 2) modelE1 = "Brink-Axel               "
   if (strength == 3) modelE1 = "Goriely HFbcs tables     "
@@ -146,132 +147,142 @@ subroutine gammaout(Zcomp, Ncomp)
   if (strength == 8) modelE1 = "Gogny D1M HFB+QRPA Tables"
   if (strength == 9) modelE1 = "IAEA-CRP SMLO 2019 Tables"
   if (strength == 10) modelE1 = "BSk27+QRPA 2018 Tables   "
-  write(*, '(/" Gamma-ray strength function model for E1: ", a25)') modelE1
+  if (strength == 11) modelE1 = "D1M-Intra-E1             "
+  if (strength == 12) modelE1 = "Shellmodel-E1            "
+  if (strength == 13) modelE1 = "RQFAMz                   "
   if (strengthM1 == 1) modelM1 = "RIPL-1                   "
   if (strengthM1 == 2) modelM1 = "RIPL-2                   "
   if (strengthM1 == 3) modelM1 = "IAEA GSF CRP (2018)      "
   if (strengthM1 == 4) modelM1 = "RIPL-2+Scissors Kawano   "
   if (strengthM1 == 8) modelM1 = "Gogny D1M HFB+QRPA Tables"
   if (strengthM1 == 10) modelM1 = "BSk27+QRPA 2018 Tables   "
-  write(*, '(/" Gamma-ray strength function model for M1: ", a25)') modelM1
-  if (strength == 3 .or. strength == 4 .or. strength >= 6) then
-    write(*, '(/" Adjustable parameters for E1: etable=", f10.5, " ftable=", f10.5, " wtable=", f10.5, " number of T=", i3)') &
- &    etable(Zcomp, Ncomp, 1, 1), ftable(Zcomp, Ncomp, 1, 1), wtable(Zcomp, Ncomp, 1, 1), nTqrpa
-  endif
-  if (strengthM1 == 8 .or. strengthM1 == 10) then
-    write(*, '(/" Adjustable parameters for M1: etable=", f10.5, " ftable=", f10.5, " wtable=", f10.5)') &
- &    etable(Zcomp, Ncomp, 0, 1), ftable(Zcomp, Ncomp, 0, 1), wtable(Zcomp, Ncomp, 0, 1)
-  endif
-  if (flagupbend) then
-    write(*,'(/" Inclusion of an E1 upbend C x U*/ (1+exp(E-eta)) with  C=", es10.2, " eta=", f8.2)') &
- &    upbend(Zcomp, Ncomp, 1, 1, 1), upbend(Zcomp, Ncomp, 1, 1, 2)
-    write(*,'(/" Inclusion of an M1 upbend C exp(-F*|beta2|) exp(-eta*E) with C=",es10.2," eta=",f8.2," F=",f8.2)') &
- &    upbend(Zcomp, Ncomp, 0, 1, 1), upbend(Zcomp, Ncomp, 0, 1, 2), upbend(Zcomp, Ncomp, 0, 1, 3)
-  endif
-  do l = 1, gammax
-    write(*, '(/" Normalized gamma-ray strength functions and ", "transmission coefficients for l=", i2, /)') l
-    write(*, '(" Giant resonance parameters :"/)')
-    if (ngr(Zcomp, Ncomp, 1, l) == 2) then
-      write(*, '(" sigma0(M", i1, ") =", f8.3, "       sigma0(E", i1, ") =", f8.3, " and ", f8.3, &
- &      "    PR: sigma0(M", i1, ") =", f8.3, "       sigma0(E", i1, ") =", f8.3)') &
- &      l, sgr(Zcomp, Ncomp, 0, l, 1), l, sgr(Zcomp, Ncomp, 1, l, 1), sgr(Zcomp, Ncomp, 1, l, 2), &
-        l, tpr(Zcomp, Ncomp, 0, l, 1), l, tpr(Zcomp, Ncomp, 1, l, 1)
-    else
-      write(*, '(" sigma0(M", i1, ") =", f8.3, "       sigma0(E", i1, ") =", f8.3, &
- &      "    PR: sigma0(M", i1, ") =", f8.3, "       sigma0(E", i1, ") =", f8.3)') &
- &      l, sgr(Zcomp, Ncomp, 0, l, 1), l, sgr(Zcomp, Ncomp, 1, l, 1), &
-        l, tpr(Zcomp, Ncomp, 0, l, 1), l, tpr(Zcomp, Ncomp, 1, l, 1)
-    endif
-    if (ngr(Zcomp, Ncomp, 1, l) == 2) then
-      write(*, '("      E(M", i1, ") =", f8.3, "            E(E", i1, ") =", f8.3, " and ", f8.3, &
- &    "    PR:      E(M", i1, ") =", f8.3, "            E(E", i1, ") =", f8.3)') &
- &      l, egr(Zcomp, Ncomp, 0, l, 1), l, egr(Zcomp, Ncomp, 1, l, 1), egr(Zcomp, Ncomp, 1, l, 2), &
-        l, epr(Zcomp, Ncomp, 0, l, 1), l, epr(Zcomp, Ncomp, 1, l, 1)
-    else
-      write(*, '("      E(M", i1, ") =", f8.3, "            E(E", i1, ") =", f8.3, &
- &    "    PR:      E(M", i1, ") =", f8.3, "            E(E", i1, ") =", f8.3)') &
- &      l, egr(Zcomp, Ncomp, 0, l, 1), l, egr(Zcomp, Ncomp, 1, l, 1), &
-        l, epr(Zcomp, Ncomp, 0, l, 1), l, epr(Zcomp, Ncomp, 1, l, 1)
-    endif
-    if (ngr(Zcomp, Ncomp, 1, l) == 2) then
-      write(*, '("  gamma(M", i1, ") =", f8.3, "        gamma(E", i1, ") =", f8.3, " and ", f8.3, &
- &      "    PR:  gamma(M", i1, ") =", f8.3, "        gamma(E", i1, ") =", f8.3)') &
- &      l, ggr(Zcomp, Ncomp, 0, l, 1), l, ggr(Zcomp, Ncomp, 1, l, 1), ggr(Zcomp, Ncomp, 1, l, 2), &
-        l, gpr(Zcomp, Ncomp, 0, l, 1), l, gpr(Zcomp, Ncomp, 1, l, 1)
-    else
-      write(*, '("  gamma(M", i1, ") =", f8.3, "        gamma(E", i1, ") =", f8.3, &
- &      "    PR:  gamma(M", i1, ") =", f8.3, "        gamma(E", i1, ") =", f8.3)') &
- &      l, ggr(Zcomp, Ncomp, 0, l, 1), l, ggr(Zcomp, Ncomp, 1, l, 1), &
-        l, gpr(Zcomp, Ncomp, 0, l, 1), l, gpr(Zcomp, Ncomp, 1, l, 1)
-    endif
-    write(*, '("      k(M", i1, ") =", es14.5, "      k(E", i1, ") =", es14.5/)') l, kgr(l), l, kgr(l)
-    write(*, '("      E       f(M", i1, ")        f(E", i1, ")", "        T(M", i1, ")        T(E", i1, ")"/)')  l, l, l, l
-    do nen = ebegin(0), eend(0)
-      e = egrid(nen)
-      write(*, '(1x, f8.3, 4es13.5)') e, fstrength(Zcomp, Ncomp, 0., e, 0, l), &
- &      fstrength(Zcomp, Ncomp, 0., e, 1, l), Tjl(0, nen, 0, l), Tjl(0, nen, 1, l)
-    enddo
+  if (strengthM1 == 11) modelM1 = "D1M-Intra-M1             "
+  if (strengthM1 == 12) modelM1 = "Shellmodel-M1            "
+  write(*, '(" Gamma-ray strength function model for E1: ", a25)') modelE1
+  write(*, '(" Gamma-ray strength function model for M1: ", a25,/)') modelM1
+  do l= 1, gammax
 !
 ! Output on separate files
 !
-    if (filepsf .and. l == 1) then
-      quantity='photon strength function'
+    massstring='   '
+    write(massstring,'(i3)') A
+    finalnuclide=trim(nuc(Z))//adjustl(massstring)
+    if (filepsf) then
       if (gamgam(Zcomp,Ncomp) > 0.) then
         CEgamgam = gamgamth(Zcomp,Ncomp,0) / gamgam(Zcomp,Ncomp)
       else
         CEgamgam = 0.
       endif
-      massstring='   '
-      write(massstring,'(i3)') A
-      finalnuclide=trim(nuc(Z))//adjustl(massstring)
       do irad = 0, 1
-        psffile = 'psf000000.E1'
-        write(psffile(4:9), '(2i3.3)') Z, A
         if (irad == 0) then
-          radtype = 'M'
+          radtype = 'M '
           MM = strengthM1
           psfmodel = modelM1
         else
-          radtype = 'E'
+          radtype = 'E '
           MM = strength
           psfmodel = modelE1
         endif
-        psffile(11:11) = radtype
+        write(radtype(2:2),'(i1)') l
+        psffile = 'psf000000.'//radtype
+        write(psffile(4:9), '(2i3.3)') Z, A
+        quantity=radtype//' photon strength function'
         open (unit=1, file=psffile, status='replace')
         topline=trim(finalnuclide)//' '//trim(quantity)
         col(1)='E'
         un(1)='MeV'
-        col(2)='f('//radtype//'1)'
-        un(2)=''
-        Ncol=2
-        call write_header(topline,source,user,date,oformat)
-        call write_residual(Z,A,finalnuclide)
-        write(1,'("# parameters:")')
-        call write_integer(2,'strength keyword',MM)
-        call write_char(2,'PSF model',psfmodel)
-        call write_char(2,'radiation type',radtype//'1')
-        write(1,'("# observables:")')
-        call write_real(2,'experimental Gamma_gamma [eV]',gamgam(Zcomp,Ncomp))
-        call write_real(2,'experimental Gamma_gamma unc. [eV]',dgamgam(Zcomp,Ncomp))
-        call write_real(2,'theoretical Gamma_gamma [eV]',gamgamth(Zcomp,Ncomp,0))
-        call write_real(2,'C/E Gamma_gamma',CEgamgam)
-        call write_datablock(quantity,Ncol,Npsf,col,un)
+        col(2)='f('//radtype//')'
+        un(2)='MeV^-3'
+        col(3)='T('//radtype//')'
+        un(3)=''
+        Ncol=3
+        call write_header(indent,topline,source,user,date,oformat)
+        call write_residual(indent,Z,A,finalnuclide)
+        call write_char(id2,'parameters','')
+        call write_integer(id4,'strength keyword',MM)
+        call write_char(id4,'PSF model',psfmodel)
+        if ((irad == 0 .and. strengthM1 <= 4) .or. (irad == 1 .and. (strength <= 2 .or. strength == 5)) .or. l >= 2) then
+          call write_real(id4,'sigma0 (sgr) [mb]',sgr(Zcomp, Ncomp, irad, l, 1))
+          call write_real(id4,'E (egr) [MeV]',egr(Zcomp, Ncomp, irad, l, 1))
+          call write_real(id4,'gamma (ggr) [MeV]',ggr(Zcomp, Ncomp, irad, l, 1))
+          if (ngr(Zcomp, Ncomp, irad, l) == 2) then
+            call write_real(id4,'sigma0_2 (sgr) [mb]',sgr(Zcomp, Ncomp, irad, l, 2))
+            call write_real(id4,'E_2 (egr) [MeV]',egr(Zcomp, Ncomp, irad, l, 2))
+            call write_real(id4,'gamma_2 (ggr) [MeV]',ggr(Zcomp, Ncomp, irad, l, 2))
+          endif
+        endif
+        if (flagupbend .and. l == 1) then
+          if (irad == 0) then
+            call write_real(id4,'M1 upbend C',upbendadjust(Zcomp, Ncomp, 0, 1, 1) * upbend(Zcomp, Ncomp, 0, 1, 1))
+            call write_real(id4,'M1 upbend eta',upbendadjust(Zcomp, Ncomp, 0, 1, 2) * upbend(Zcomp, Ncomp, 0, 1, 2))
+            call write_real(id4,'M1 upbend F',upbendadjust(Zcomp, Ncomp, 0, 1, 3) * upbend(Zcomp, Ncomp, 0, 1, 3))
+          else
+            call write_real(id4,'E1 upbend C',upbendadjust(Zcomp, Ncomp, 1, 1, 1) * upbend(Zcomp, Ncomp, 1, 1, 1))
+            call write_real(id4,'E1 upbend eta',upbendadjust(Zcomp, Ncomp, 1, 1, 2) * upbend(Zcomp, Ncomp, 1, 1, 2))
+          endif
+        endif
+        if (l == 1) then
+          if (irad == 0) then
+            call write_real(id4,'pygmy tpr [mb]',tpr(Zcomp, Ncomp, 0, 1, 1))
+            call write_real(id4,'pygmy epr [MeV]',epr(Zcomp, Ncomp, 0, 1, 1))
+            call write_real(id4,'pygmy gpr [MeV]',gpr(Zcomp, Ncomp, 0, 1, 1))
+          else
+            if (tpr(Zcomp, Ncomp, 1, 1, 1) > 0.) then
+              call write_real(id4,'pygmy tpr [mb]',tpr(Zcomp, Ncomp, 1, 1, 1))
+              call write_real(id4,'pygmy epr [MeV]',epr(Zcomp, Ncomp, 1, 1, 1))
+              call write_real(id4,'pygmy gpr [MeV]',gpr(Zcomp, Ncomp, 1, 1, 1))
+            endif
+          endif
+        endif
+        call write_real(id4,'ftable',ftable(Zcomp, Ncomp, irad, l))
+        call write_real(id4,'etable',etable(Zcomp, Ncomp, irad, l))
+        call write_real(id4,'wtable',wtable(Zcomp, Ncomp, irad, l))
+        call write_char(id2,'parameters','')
+        call write_real(id4,'experimental Gamma_gamma [eV]',gamgam(Zcomp,Ncomp))
+        call write_real(id4,'experimental Gamma_gamma unc. [eV]',dgamgam(Zcomp,Ncomp))
+        call write_real(id4,'theoretical Gamma_gamma [eV]',gamgamth(Zcomp,Ncomp,0))
+        call write_real(id4,'C/E Gamma_gamma',CEgamgam)
+        call write_real(id4,'average resonance energy [eV]',Eavres * 1.e6)
+        call write_real(id4,'theoretical S-wave strength function [e-4]',1.e4 * swaveth(Zcomp, Ncomp))
+        call write_quantity(id2,quantity)
+        call write_datablock(id2,Ncol,Npsf,col,un)
         do nen = 1, Npsf
           e = Epsf(nen)
-          write(1,'(2es15.6)') e, fstrength(Zcomp, Ncomp, 0., e, irad, 1)
+          write(1,'(3es15.6)') e, fstrength(Zcomp, Ncomp, 0., e, irad, 1),Tjl(0, nen, irad, l)
         enddo
         close (unit=1)
+        call write_outfile(psffile,flagoutall)      
       enddo
     endif
   enddo
 !
 ! **************** Cross sections for inverse channels *****************
 !
+  quantity='photo absorption cross sections'
+  topline=trim(finalnuclide)//' '//trim(quantity)
+  crossfile='cross_g.tot'
+  un='mb'
+  col(1)='E'
+  un(1)='MeV'
+  col(2)='cross section'
+  col(3)='GDR'
+  col(4)='Quasi-deuteron'
+  Ncol = 4
+  open (unit=1, file=crossfile, status='replace')
+  call write_header(indent,topline,source,user,date,oformat)
+  call write_residual(indent,Z,A,finalnuclide)
+  call write_char(id2,'parameters','')
+  call write_char(id4,'particle',parname(0))
+  Nen =  eend(0) - ebegin(0) + 1
+  call write_quantity(id2,quantity)
+  call write_datablock(id2,Ncol,Nen,col,un)
   write(*, '(/" Photoabsorption cross sections"/)')
-  write(*, '("  E [MeV]   xs [mb]"/)')
   do nen = ebegin(0), eend(0)
-    write(*, '(2es15.6)') egrid(nen), xsreac(0, nen)
+    call gammaxs(Zcomp, Ncomp, egrid(nen), xsgamma, xsgdr, xsqd)
+    write(1, '(4es15.6)') egrid(nen), xsgamma, xsgdr, xsqd
   enddo
+  close (unit=1)
+  call write_outfile(crossfile,flagoutall)      
   return
 end subroutine gammaout
 ! Copyright A.J. Koning 2021

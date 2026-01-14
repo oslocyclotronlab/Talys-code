@@ -24,7 +24,7 @@ subroutine inversenorm(Zcomp, Ncomp)
 !   eendmax       ! last energy point of energy grid
 !   egrid         ! outgoing energy grid
 ! Variables for inverse channel data
-!   threshnorm    ! normalization factor at trheshold
+!   threshnorm    ! normalization factor at threshold
 !   Tjl           ! transmission coefficient per particle, energy, spin and l - value
 !   Tl            ! transmission coefficients per particle, energy and l - value
 !   xselas        ! total elastic cross section (shape + compound)
@@ -54,7 +54,7 @@ subroutine inversenorm(Zcomp, Ncomp)
   real(sgl) :: tripathi                     ! function for semi-empirical reaction cross section of
   real(sgl) :: xs                           ! help variable
   real(sgl) :: xsprev                       ! help variable
-  real(sgl) :: xstripathi(numen)            ! help variable
+  real(sgl) :: xstripathi(0:numen)          ! help variable
 !
 ! ************ Normalization with semi-empirical results ***************
 !

@@ -120,6 +120,7 @@ subroutine levels(Zix, Nix)
   jdis(Zix, Nix, 1) = jdis(Zix, Nix, 0) + 2.
   parlev(Zix, Nix, 1) = parlev(Zix, Nix, 0)
   jassign(Zix, Nix, 1) = 'J'
+  eassign(Zix, Nix, 1) = 'E'
   passign(Zix, Nix, 1) = 'P'
   branchratio(Zix, Nix, 1, 1) = 1.
   nbranch(Zix, Nix, 1) = 1
@@ -163,8 +164,8 @@ subroutine levels(Zix, Nix)
 ! 3. Read discrete level information
 !
       do i = 0, nlev2
-        read(2, '(4x, f11.6, f6.1, 3x, i2, i3, 18x, e10.3, 1x, 2a1, a18)') edis(Zix, Nix, i), jdis(Zix, Nix, i), &
- &        parlev(Zix, Nix, i), nb, tau(Zix, Nix, i), jassign(Zix, Nix, i), passign(Zix, Nix, i), ENSDF(Zix, Nix, i)
+        read(2, '(4x, f11.6, f6.1, 3x, i2, i3, 18x, e10.3, 3a1, a18)') edis(Zix, Nix, i), jdis(Zix, Nix, i), parlev(Zix, Nix, i), &
+ &        nb, tau(Zix, Nix, i), eassign(Zix, Nix, i), jassign(Zix, Nix, i), passign(Zix, Nix, i), ENSDF(Zix, Nix, i)
         do j = 1, nb
           read(2, '(29x, i3, f10.6, e10.3, 5x, a1)') klev(j), br(j), con(j), bas(j)
         enddo
@@ -196,17 +197,13 @@ subroutine levels(Zix, Nix)
 ! Spins beyond numJ are set to numJ
 !
         jdis(Zix, Nix, i) = min(jdis(Zix, Nix, i), real(numJ))
-!
-! Overwrite value of isomer for shorter-lived target level.
-!
-        if (Ltarget0 /= 0 .and. Zix == parZ(k0) .and. Nix == parN(k0) .and. i == Ltarget0 .and. tau(Zix, Nix, i) < isomer) &
-          isomer = tau(Zix, Nix, i)
       enddo
 !
 ! Lifetimes below the isomeric definition are set to zero.
 ! The isomeric number is determined.
 !
       do i = 0, nlev2
+        tauripl(Zix, Nix, i) = tau(Zix, Nix, i)
         if (tau(Zix, Nix, i) < isomer) tau(Zix, Nix, i) = 0.
         levnum(Zix, Nix, i) = i
       enddo
@@ -226,8 +223,8 @@ subroutine levels(Zix, Nix)
 !
       nlevmax2(Zix, Nix) = min(nnn, numlev2)
       do i = nlev2 + 1, nlevmax2(Zix, Nix)
-        read(2, '(4x, f11.6, f6.1, 3x, i2, i3, 18x, e10.3, 1x, 2a1)') edis(Zix, Nix, i), jdis(Zix, Nix, i), parlev(Zix, Nix, i), &
- &        nb, tau(Zix, Nix, i), jassign(Zix, Nix, i), passign(Zix, Nix, i)
+        read(2, '(4x, f11.6, f6.1, 3x, i2, i3, 18x, e10.3, 3a1)') edis(Zix, Nix, i), jdis(Zix, Nix, i), parlev(Zix, Nix, i), &
+ &        nb, tau(Zix, Nix, i), eassign(Zix, Nix, i), jassign(Zix, Nix, i), passign(Zix, Nix, i)
         jdis(Zix, Nix, i) = min(jdis(Zix, Nix, i), real(numJ))
         do j = 1, nb
           read(2, * )
@@ -283,7 +280,7 @@ subroutine levels(Zix, Nix)
     else
       Liso = Lisoinp
     endif
-    if (Liso > 0) targetnuclide = trim(targetnuclide0) // isochar(Liso)
+    if (Liso > 0) targetnuclide = trim(targetnuclide0) // isochar(min(Liso,numisom))
   endif
 !
 ! Special treatment for isomers in the continuum. There are about 10 known isomers whose level number is larger than 30.
@@ -292,7 +289,7 @@ subroutine levels(Zix, Nix)
 !
   Lis = Nisomer(Zix, Nix) + 1
   do i = nlevmax2(Zix, Nix), nlev(Zix, Nix) + 1, - 1
-    if (tau(Zix, Nix, i) >= isomer) then
+    if (tau(Zix, Nix, i) > isomer .and. isomer >= 0.1) then
       Lis = Lis - 1
       N = nlev(Zix, Nix) - Nisomer(Zix, Nix) + Lis
       if (Lis >= 0 .and. N >= 0) then
@@ -302,27 +299,29 @@ subroutine levels(Zix, Nix)
         parlev(Zix, Nix, N) = parlev(Zix, Nix, i)
         tau(Zix, Nix, N) = tau(Zix, Nix, i)
         if (N /= i) tau(Zix, Nix, i) = 0.
+        eassign(Zix, Nix, N) = ' '
         jassign(Zix, Nix, N) = ' '
         passign(Zix, Nix, N) = ' '
-        if (Ltarget0 == Lisomer(Zix, Nix, Lis) .and. Zix == parZ(k0) .and. Nix == parN(k0)) Ltarget = N
+        if (Ltarget0 == Lisomer(Zix, Nix, Lis) .and. Zix == parZ(k0) .and. Nix == parN(k0) .and. tau(Zix, Nix, N) > isomer ) & 
+ &        Ltarget = N
       endif
     endif
   enddo
 !
 ! Adjust branching ratios for isomeric cross sections
 !
-  if (Lis > 0 .and. Risomer(Zix, Nix) /= 1.) then
+  if (Lis > 0 .and. Risomer(Zix, Nix) /= 1. .and. branchdone(Zix,Nix) == 0) then
     do i = 1, nlev2
       if (tau(Zix,Nix,i) >= isomer) then
         brexist = .false.
         brexist(i) = .true.
-        do j = 1+1, nlev2
+        do j = i+1, nlev2
           do k = 1, nbranch(Zix,Nix,j)
             lbr = branchlevel(Zix,Nix,j,k)
             if (brexist(lbr)) brexist(j) = .true.
           enddo
         enddo   
-        do j = 1+1, nlev2
+        do j = i+1, nlev2
           do k = 1, nbranch(Zix,Nix,j)
             lbr = branchlevel(Zix,Nix,j,k)
             if (brexist(lbr)) branchratio(Zix,Nix,j,k) = Risomer(Zix,Nix) * branchratio(Zix,Nix,j,k)
@@ -341,7 +340,12 @@ subroutine levels(Zix, Nix)
         enddo
       endif
     enddo
+    branchdone(Zix, Nix) = 1
   endif
+!
+! Extract level information for resonances of light nuclides
+!
+  if (flagpseudores .and. Zix == parZ(k0) .and. Nix == parN(k0)) call pseudo_resonance
   return
 end subroutine levels
 ! Copyright A.J. Koning 2021

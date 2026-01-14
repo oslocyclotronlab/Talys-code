@@ -40,6 +40,8 @@ subroutine input_fissionpar
 !   gefran            ! number of random events for GEF calculation
 !   Rfiseps           ! ratio for limit for fission cross section per nucleus
 !   vfiscor           ! adjustable factor for fission path height
+!   rmiufiscor        ! adjustable factor for inertia mass along the fission path
+!   sffactor          ! factor to constrain vfiscor and rmiufiscor by sp. fis. half-life
 !   vfiscoradjust     ! adjustable factor for fission path height
 !   widthc2           ! width of class2 states
 ! All global variables
@@ -48,8 +50,6 @@ subroutine input_fissionpar
 !   numZ              ! maximum number of protons from initial compound nucleus
 ! Constants
 !   fislim          ! mass above which nuclide fissions
-! Variables for basic reaction
-!   flagffruns  ! flag to designate subsequent evaporation of fission products
 ! Variables for basic reaction
 !   flagastro    ! flag for calculation of astrophysics reaction rate
 !   flagbasic    ! flag for output of basic information and results
@@ -105,6 +105,8 @@ subroutine input_fissionpar
   bdampadjust = 1.
   betafiscor = 1.
   betafiscoradjust = 1.
+  rmiufiscor = -1.
+  rmiufiscoradjust = 1.
   fbaradjust = 1.
   fbarrier = 0.
   fisadjust = .false.
@@ -121,17 +123,31 @@ subroutine input_fissionpar
   Rfiseps = 1.e-3
   if (flagmassdis) Rfiseps = 1.e-9
   if (flagastro) Rfiseps = 1.e-6
-  vfiscor = 1.
+  vfiscor = -1.
   vfiscoradjust = 1.
   Cnubar1 = 1.
   Cnubar2 = 1.
   Tmadjust = 1.
   Fsadjust = 1.
-  if (Atarget <= fislim) then
-    Cbarrier = 0.85
-  else
-    Cbarrier = 1.20
-  endif
+  Cbarrier = 1.
+  if (fismodel == 6 .and. (ldmodel(0,0) == 5 .or. ldmodel(0,0) == 6)) Cbarrier = 1.4
+  if (fismodel <= 3 .or. fismodel == 5) Cbarrier = 1.35
+  if (k0 <= 1 .and. Atarget <= fislim) Cbarrier = Cbarrier * 1.5
+! if (fismodel == 3) then
+!   if (Atarget <= fislim) then
+!     if (ldmodel(0,0) <= 3) then
+!       Cbarrier = 0.85
+!     else
+!       Cbarrier = 2.00
+!     endif
+!   else
+!     if (ldmodel(0,0) <= 3) then
+!       Cbarrier = 1.20
+!     else
+!       Cbarrier = 2.00
+!     endif
+!   endif
+! endif
   do Zix = 0, numZ
     do Nix = 0, numN
       Z = Zinit - Zix
@@ -147,8 +163,13 @@ subroutine input_fissionpar
       Aact = max(min(A, 255), 225)
       rfiscor = 0.005
       vfiscor(Zix, Nix) = Vf0 - rfiscor * (Aact - 240)
+      if (fismodel == 6) vfiscor(Zix,Nix) = -1.
       if (Ninit - Nix > 144 .or. fismodel == 5) axtype(Zix, Nix, 1) = 3
       if (fismodel < 5) axtype(Zix, Nix, 2) = 2
+      if (fismodel == 6) then
+        axtype(Zix, Nix, 1) = 1
+        axtype(Zix, Nix, 2) = 1
+      endif
     enddo
   enddo
   widthc2 = 0.2
@@ -264,6 +285,12 @@ subroutine input_fissionpar
       if (flagassign) vfiscor(Zix, Nix) = val
       cycle
     endif
+    if (key == 'rmiufiscor') then
+      class = 1
+      call getvalues(class, word, Zix, Nix, type, ibar, irad, lval, igr, val, ival, cval, flagassign)
+      if (flagassign) rmiufiscor(Zix, Nix) = val
+      cycle
+    endif
     if (key == 'vfiscoradjust') then
       class = 1
       call getvalues(class, word, Zix, Nix, type, ibar, irad, lval, igr, val, ival, cval, flagassign)
@@ -274,6 +301,12 @@ subroutine input_fissionpar
       class = 1
       call getvalues(class, word, Zix, Nix, type, ibar, irad, lval, igr, val, ival, cval, flagassign)
       if (flagassign) betafiscor(Zix, Nix) = val
+      cycle
+    endif
+    if (key == 'rmiufiscoradjust') then
+      class = 1
+      call getvalues(class, word, Zix, Nix, type, ibar, irad, lval, igr, val, ival, cval, flagassign)
+      if (flagassign) rmiufiscoradjust(Zix, Nix) = val
       cycle
     endif
     if (key == 'cbarrier') then

@@ -5,7 +5,7 @@ subroutine fissionpar(Zix, Nix)
 !
 ! Author    : Stephane Hilaire, Marieke Duijvestijn and Arjan Koning
 !
-! 2021-12-30: Original code
+! 2025-08-15: Original code
 !-----------------------------------------------------------------------------------------------------------------------------------
 !
 ! *** Use data from other modules
@@ -82,10 +82,12 @@ subroutine fissionpar(Zix, Nix)
   integer           :: A           ! mass number of target nucleus
   integer           :: fislocal    ! fission model
   integer           :: i           ! counter
-  integer           :: ia          ! mass number from abundance table
+  integer           :: iz          ! charge number
+  integer           :: ia          ! mass number
   integer           :: il          ! angular momentum
   integer           :: istat       ! logical for file access
   integer           :: j           ! counter
+  integer           :: ib          ! index
   integer           :: modn        ! help variable
   integer           :: modz        ! help variable
   integer           :: N           ! neutron number of residual nucleus
@@ -102,6 +104,11 @@ subroutine fissionpar(Zix, Nix)
   real(sgl)         :: hw2         ! inner and outer barrier curvatures
   real(sgl)         :: lbar0       ! l-value for which bfis becomes zero
   real(sgl)         :: vv          ! fission path parameter
+  real(sgl)         :: b22         ! help variable
+  real(sgl)         :: b30         ! help variable
+  real(sgl)         :: rmiu        ! moment of inertia parameter
+  real(sgl)         :: dum         ! dummy variable
+  real(sgl)         :: sff         ! factor to constrain vfiscor and rmiufiscor by sp. fis. half-life
 !
 ! ****************** Read fission barrier parameters *******************
 !
@@ -138,9 +145,9 @@ subroutine fissionpar(Zix, Nix)
         read(2, '(4x, i4, 4x, 1x, 2(f8.2), 5x, 2(f8.2))', iostat = istat) ia, bar1, hw1, bar2, hw2
         if (istat == -1) exit
         if (A == ia) then
-          if (fbarrier(Zix, Nix, 1) == 0.) fbarrier(Zix, Nix, 1) = bar1
+          if (fbarrier(Zix, Nix, 1) == 0.) fbarrier(Zix, Nix, 1) = Cbarrier * bar1
           if (fwidth(Zix, Nix, 1) == 0.) fwidth(Zix, Nix, 1) = hw1
-          if (fbarrier(Zix, Nix, 2) == 0.) fbarrier(Zix, Nix, 2) = bar2
+          if (fbarrier(Zix, Nix, 2) == 0.) fbarrier(Zix, Nix, 2) = Cbarrier * bar2
           if (fwidth(Zix, Nix, 2) == 0.) fwidth(Zix, Nix, 2) = hw2
           if (nfisbar(Zix, Nix) /= 3) nfisbar(Zix, Nix) = 2
           exit
@@ -163,8 +170,8 @@ subroutine fissionpar(Zix, Nix)
         read(2, '(4x, i4, 2(24x, f8.2))', iostat = istat) ia, bar1, bar2
         if (istat == -1) exit
         if (A == ia) then
-          if (fbarrier(Zix, Nix, 1) == 0.) fbarrier(Zix, Nix, 1) = bar1
-          if (fbarrier(Zix, Nix, 2) == 0.) fbarrier(Zix, Nix, 2) = bar2
+          if (fbarrier(Zix, Nix, 1) == 0.) fbarrier(Zix, Nix, 1) = Cbarrier * bar1
+          if (fbarrier(Zix, Nix, 2) == 0.) fbarrier(Zix, Nix, 2) = Cbarrier * bar2
           if (fbarrier(Zix, Nix, 1) == 0..or.fbarrier(Zix, Nix, 2) == 0.) then
             nfisbar(Zix, Nix) = 1
           else
@@ -202,7 +209,7 @@ subroutine fissionpar(Zix, Nix)
     il = 0
     nfisbar(Zix, Nix) = 1
     call rldm(Z, A, il, egs, esp)
-    if (fbarrier(Zix, Nix, 1) == 0.) fbarrier(Zix, Nix, 1) = esp - egs
+    if (fbarrier(Zix, Nix, 1) == 0.) fbarrier(Zix, Nix, 1) = Cbarrier * (esp - egs)
     if (fwidth(Zix, Nix, 1) == 0.) fwidth(Zix, Nix, 1) = 0.24
   endif
 !
@@ -212,14 +219,43 @@ subroutine fissionpar(Zix, Nix)
 !
 ! wkb       : subroutine for WKB approximation for fission
 !
-  if (fislocal == 5) then
+  nextr = 0
+  iiextr(0)=1
+  if (fislocal >= 5) then
+!
+! Possible use of file with spontaneous fission half-life factor to constrain vfiscor and rmiufiscor
+!
+    if (flagsffactor) then
+      sffactor(Zix, Nix) = 0.
+      fisfile = trim(path)//'fission/hfbpath_bskg3/sf_contraints.dat'
+      open (unit = 2, file = fisfile, status = 'old')
+      read(2, '()')
+      do
+        read(2, *, iostat = istat) iz, ia, dum, dum, sff
+        if (istat == -1) exit
+        if (Z == iz .and. A == ia) then
+          sffactor(Zix, Nix) = sff
+          if (vfiscor(Zix, Nix) == -1.) vfiscor(Zix, Nix) = sffactor(Zix, Nix) / rmiufiscor(Zix, Nix)
+          if (rmiufiscor(Zix, Nix) == -1.) rmiufiscor(Zix, Nix) = sffactor(Zix, Nix) / vfiscor(Zix, Nix)
+        endif
+      enddo
+      close (unit = 2)
+    endif
+!
+! Read hfbpath
+!
     nfisbar(Zix, Nix) = 0
     fischar = trim(nuc(Z))//'.fis'
-    fisfile = trim(path)//'fission/hfbpath/'//fischar
+    if (fislocal == 5) fisfile = trim(path)//'fission/hfbpath/'//fischar
+    if (fislocal == 6) fisfile = trim(path)//'fission/hfbpath_bskg3/'//fischar
     inquire (file = fisfile, exist = lexist)
     if (lexist) then
       open (unit = 2, file = fisfile, status = 'old')
-300   read(2, '(/11x, i4, 12x, i4//)', end = 330) ia, nbeta
+300   if (fislocal.eq.5) then
+        read(2, '(/11x, i4, 12x, i4//)', end = 330) ia, nbeta
+      else
+        read(2, '(/11x, i5, 12x, i4//)', end = 330) ia, nbeta
+      endif
       if (A /= ia) then
         do i = 1, nbeta
           read(2, '()')
@@ -227,14 +263,42 @@ subroutine fissionpar(Zix, Nix)
         goto 300
       else
         do i = 1, nbeta
-          read(2, '(f10.3, 20x, f10.3)') bb, vv
-          betafis(i) = betafiscoradjust(Zix, Nix) * betafiscor(Zix, Nix) * bb
-          vfis(i) = vfiscoradjust(Zix, Nix) * vfiscor(Zix, Nix) * vv
+          if (fislocal.eq.5) then
+            read(2, '(f10.3, 20x, f10.3)') bb, vv
+!
+! 6/12/2024: new mean rmiu value adapted to U236, so that action integral S~S(exp)=52.21
+!               rmiu=0.0047*A**(5./3.)  --> S~39.5
+!
+            rmiu=rmiufiscor(Zix,Nix)*0.0063*A**(5./3.)
+            betafis(i) = betafiscoradjust(Zix, Nix) * betafiscor(Zix, Nix) * bb
+          else
+            read(2,*) bb,b22,b30,vv,rmiu,ib
+!
+! for BSkG3 the deformation corresponds to the index i (rmiu coherently associated)
+!
+            betafis(i) = betafiscoradjust(Zix, Nix) * betafiscor(Zix, Nix) * float(i)
+!
+! ib=-1 corresponds to the ground state
+! ib= 1 corresponds to identified maxima
+! ib= 2 corresponds to identified minima
+! ib= 9 corresponds to non-considered extrema (if more than 3 maxima exist)
+!
+            if ((ib == 1 .or. ib == 2) .and. nextr <= 2*numbar - 1) then
+              nextr=nextr+1
+              iiextr(nextr)=i
+            endif
+          endif
+          vfis(i) = Cbarrier * vfiscoradjust(Zix, Nix) * vfiscor(Zix, Nix) * vv
+          rmiufis(i) = rmiufiscoradjust(Zix, Nix) * rmiufiscor(Zix, Nix) * rmiu
         enddo
         if (nbins0 == 0) then
           nbinswkb = 30
         else
           nbinswkb = nbins0
+        endif
+        if (fismodel == 6) then
+          iiextr(nextr+1) = nbeta
+          if (nextr > 5) write(*, '(" TALYS-warning: number of barriers ",i3," > 3 for Z = ",i3," A = ",i3)') nextr, Z, A
         endif
         call wkb(Z, A, Zix, Nix, nbar)
         nfisbar(Zix, Nix) = nbar

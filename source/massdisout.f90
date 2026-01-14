@@ -55,7 +55,7 @@ subroutine massdisout
   character(len=3) :: massstring
   character(len=6) :: finalnuclide
   character(len=12) :: isostring(0:1)    ! string to designate target isomer
-  character(len=13) :: Estr
+  character(len=12) :: Estr
   character(len=132):: fpfile            ! file with fission product
   character(len=132):: fpyieldfile       ! file with fission yields
   character(len=18) :: reaction   ! reaction
@@ -66,6 +66,9 @@ subroutine massdisout
   integer           :: MF
   integer           :: MT
   integer           :: i
+  integer           :: indent
+  integer           :: id2
+  integer           :: id4
   integer           :: ia                ! mass number from abundance table
   integer           :: in                ! counter for neutrons
   integer           :: iz                ! charge number of residual nucleus
@@ -76,17 +79,20 @@ subroutine massdisout
 !
 ! ****************** Output of fission yields **************************
 !
+  indent = 0
+  id2 = indent + 2
+  id4 = indent + 4
   MF = 8
   MT = 454
   Estr=''
-  write(Estr,'(es13.6)') Einc0
+  write(Estr,'(es12.6)') Einc0
   un = ''
   col(1)='A'
-  col(2)='FP yield'
-  col(3)='FF yield'
-  col(4)='FP xs'
+  col(2)='FP_yield'
+  col(3)='FF_yield'
+  col(4)='FP_xs'
   un(4)='mb'
-  col(5)='FF xs'
+  col(5)='FF_xs'
   un(5)='mb'
   Ncol=5
   isostring(0) = 'ground state'
@@ -106,11 +112,12 @@ subroutine massdisout
   quantity='fission yield'
   reaction='('//parsym(k0)//',f)'
   topline=trim(targetnuclide)//trim(reaction)//' '//trim(quantity)//' per A'//' at '//Estr//' MeV'
-  call write_header(topline,source,user,date,oformat)
-  call write_target
-  call write_reaction(reaction,0.D0,0.D0,MF,MT)
-  call write_real(2,'E-incident [MeV]',Einc0)
-  call write_datablock(quantity,Ncol,Atarget,col,un)
+  call write_header(indent,topline,source,user,date,oformat)
+  call write_target(indent)
+  call write_reaction(indent,reaction,0.D0,0.D0,MF,MT)
+  call write_real(id2,'E-incident [MeV]',Einc0)
+  call write_quantity(id2,quantity)
+  call write_datablock(id2,Ncol,Atarget,col,un)
   write(*, '(" Fission yields as function of A"/)')
   write(*, '("   A       FP yield       FF yield ", "         FP xs          FF xs")')
   do ia = 1, Atarget
@@ -146,25 +153,26 @@ subroutine massdisout
           col(1)='E'
           un(1)='MeV'
           if (i == 1) then
-            col(2)='FP yield'
-            col(3)='FF yield'
-            col(4)='FP xs'
-            col(5)='FF xs'
+            col(2)='FP_yield'
+            col(3)='FF_yield'
+            col(4)='FP_xs'
+            col(5)='FF_xs'
             Ncol=5
           else
-            col(2)='FP xs'
+            col(2)='FP_xs'
             un(2)='mb'
             Ncol=2
           endif
-          call write_header(topline,source,user,date,oformat)
-          call write_target
+          call write_header(indent,topline,source,user,date,oformat)
+          call write_target(indent)
           if (i == 1) then
-            call write_reaction(reaction,0.D0,0.D0,MF,MT)
+            call write_reaction(indent,reaction,0.D0,0.D0,MF,MT)
           else
-            call write_reaction(reaction,0.D0,0.D0,6,5)
+            call write_reaction(indent,reaction,0.D0,0.D0,6,5)
           endif
-          call write_residual(iz,ia,finalnuclide)
-          call write_datablock(quantity,Ncol,Ninc,col,un)
+          call write_residual(id2,iz,ia,finalnuclide)
+          call write_quantity(id2,quantity)
+          call write_datablock(id2,Ncol,Ninc,col,un)
           if (i == 1) then
             do nen = 1, nin0 - 1
               write(1, '(5es15.6)') eninc(nen), 0., 0., 0., 0.
@@ -198,27 +206,33 @@ subroutine massdisout
               col(1)='E'
               un(1)='MeV'
               if (i == 1) then
-                col(2)='FP yield'
+                col(2)='FP_yield'
                 un(2)=''
-                col(3)='FP xs'
+                col(3)='FP_xs'
                 un(3)='mb'
                 col(4)='Ratio'
                 un(4)=''
                 Ncol=4
               else
-                col(2)='FP xs'
+                col(2)='FP_xs'
                 un(2)='mb'
                 Ncol=2
               endif
-              call write_header(topline,source,user,date,oformat)
-              call write_target
+              call write_header(indent,topline,source,user,date,oformat)
+              call write_target(indent)
               if (i == 1) then
-                call write_reaction(reaction,0.D0,0.D0,0,0)
+                call write_reaction(indent,reaction,0.D0,0.D0,0,0)
               else
-                call write_reaction(reaction,0.D0,0.D0,6,5)
+                call write_reaction(indent,reaction,0.D0,0.D0,6,5)
               endif
-              call write_residual(iz,ia,finalnuclide)
-              call write_datablock(quantity,Ncol,Atarget,col,un)
+              call write_residual(id2,iz,ia,finalnuclide)
+              if (nex == 0) then
+                write(1, '("#   isomer: 0")') 
+              else
+                write(1, '("#   isomer: 1")') 
+              endif
+              call write_quantity(id2,quantity)
+              call write_datablock(id2,Ncol,Atarget,col,un)
               if (i == 1) then
                 do nen = 1, nin0 - 1
                   write(1, '(4es15.6)') eninc(nen), 0., 0., 0.
@@ -253,29 +267,31 @@ subroutine massdisout
 !
     un = ''
     if (xsApre(ia) < fpeps .and. xsApost(ia) < fpeps .and. .not. fpaexist(ia)) cycle
-    fpfile = 'fp000000.tot'//natstring(iso)
-    write(fpfile(6:8), '(i3.3)') ia
+    iz = 0
+    fpfile = 'fp000.tot'//natstring(iso)
+    write(fpfile(3:5), '(i3.3)') ia
     if ( .not. fpaexist(ia)) then
       fpaexist(ia) = .true.
-      finalnuclide=trim(nuc(iz))//trim(adjustl(massstring))
+      finalnuclide=trim(adjustl(massstring))
       open (unit = 1, file = fpfile, status = 'replace')
       reaction='('//parsym(k0)//',f)'
       quantity='fission yield'
-      topline=trim(targetnuclide)//trim(reaction)//' '//trim(quantity)//' for '//finalnuclide
+      topline=trim(targetnuclide)//trim(reaction)//' '//trim(quantity)//' for  A='//fpfile(3:5)
       col(1)='E'
       un(1)='MeV'
-      col(2)='FP yield'
-      col(3)='FF yield'
-      col(4)='FP xs'
+      col(2)='FP_yield'
+      col(3)='FF_yield'
+      col(4)='FP_xs'
       un(4)='mb'
-      col(5)='FF xs'
+      col(5)='FF_xs'
       un(5)='mb'
       Ncol=5
-      call write_header(topline,source,user,date,oformat)
-      call write_target
-      call write_reaction(reaction,0.D0,0.D0,0,0)
-      call write_residual(iz,ia,finalnuclide)
-      call write_datablock(quantity,Ncol,Ninc,col,un)
+      call write_header(indent,topline,source,user,date,oformat)
+      call write_target(indent)
+      call write_reaction(indent,reaction,0.D0,0.D0,0,0)
+      call write_residual(id2,iz,ia,finalnuclide)
+      call write_quantity(id2,quantity)
+      call write_datablock(id2,Ncol,Ninc,col,un)
       do nen = 1, nin0 - 1
         write(1, '(5es15.6)') eninc(nen), 0., 0., 0., 0.
       enddo
@@ -299,20 +315,21 @@ subroutine massdisout
   col(1)='Z'
   col(2)='A'
   col(3)='isomer'
-  col(4)='FP yield'
-  col(5)='FF yield'
-  col(6)='FP xs'
+  col(4)='FP_yield'
+  col(5)='FF_yield'
+  col(6)='FP_xs'
   un(6)='mb'
-  col(7)='FF xs'
+  col(7)='FF_xs'
   un(7)='mb'
-  col(8)='Isomeric ratio'
+  col(8)='Isomeric_ratio'
   Ncol=8
   MT = 459
-  call write_header(topline,source,user,date,oformat)
-  call write_target
-  call write_reaction(reaction,0.D0,0.D0,MF,MT)
-  call write_real(2,'E-incident [MeV]',Einc0)
-  call write_datablock(quantity,Ncol,Nfy,col,un)
+  call write_header(indent,topline,source,user,date,oformat)
+  call write_target(indent)
+  call write_reaction(indent,reaction,0.D0,0.D0,MF,MT)
+  call write_real(id2,'E-incident [MeV]',Einc0)
+  call write_quantity(id2,quantity)
+  call write_datablock(id2,Ncol,Nfy,col,un)
   do ia = 1, Atarget
     do iz = 1, Ztarget
       in = ia - iz

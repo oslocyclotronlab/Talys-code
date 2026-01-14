@@ -5,7 +5,7 @@ subroutine constants
 !
 ! Author    : Arjan Koning
 !
-! 2021-12-30: Original code
+! 2025-05-20: Original code
 !-----------------------------------------------------------------------------------------------------------------------------------
 !
 ! *** Use data from other modules
@@ -73,6 +73,9 @@ subroutine constants
 !
 ! ****************** General properties of particles *******************
 !
+!
+! Fundamental masses have been taken from physics.nist.gov 
+!
 ! Indices: fission = -1
 !   photon  = 0
 !   neutron = 1
@@ -87,8 +90,8 @@ subroutine constants
   parZ =    (/ 0, 0, 1, 1, 1, 2, 2 /)
   parN =    (/ 0, 1, 0, 1, 2, 1, 2 /)
   parA =    (/ 0, 1, 1, 2, 3, 3, 4 /)
-  parmass = (/ 0., 1.008664904, 1.007276470, 2.013553214, 3.016049268, 3.016029310, 4.002603250 /)
-  excmass = (/ 0., 8.664923e-3, 7.825032e-3, 1.4101778e-2, 1.6049268e-2, 1.6029310e-2, 2.603250e-3 /)
+  parmass = (/ 0., 1.00866491574, 1.00782495281, 2.01410195518, 3.01604916211, 3.01602879487, 4.00260293529 /)
+  excmass = (/ 0., 8.66491574e-3, 7.82495281e-3, 1.410195518e-2, 1.604916211e-2, 1.602879487e-2, 2.60293529e-3 /)
   parspin = (/ 0., 0.5, 0.5, 1., 0.5, 0.5, 0. /)
 !
 ! ************************ Nuclear symbols *****************************
@@ -109,17 +112,17 @@ subroutine constants
 !
   cparity = (/'-', ' ', '+'/)
 !
-! *********************** Fundamental constants ************************
+! *********************** Fundamental constants (CODATA 2018) **********
 !
   pi = 3.14159265358979323
-  amu = 931.49386
-  e2 = 1.439965161
-  hbar = 6.5821220e-22
+  amu = 931.49410242
+  e2 = 1.4399645
+  hbar = 6.582119569e-22
   clight = 2.99792458e8
-  kT = 0.086173
-  emass = 0.510999
-  avogadro = 6.0221367e23
-  qelem = 1.6021773e-19
+  kT = 0.08617333262
+  emass = 0.510998950
+  avogadro = 6.02214076e23
+  qelem = 1.602176634e-19
 !
 ! ************************* Derived constants **************************
 !
@@ -185,4 +188,4 @@ subroutine constants
   nin0 = 0
   return
 end subroutine constants
-! Copyright A.J. Koning 2021
+! Copyright A.J. Koning 2025
